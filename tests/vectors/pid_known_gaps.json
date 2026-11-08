@@ -1,0 +1,125 @@
+{
+  "proposal": "00FC",
+  "kind": "known_gap_vectors",
+  "note": "These vectors document behavior the current proposal does not prevent. They are expected vulnerability reproductions, not conformance failures. G1 and G2 are executable in pid_pdu.py: the harness records them with Checks.gap, prints them as KNOWN, and exits successfully while they still reproduce. If one stops reproducing the run fails, which is the signal to promote it to a conformance check and update the MSC. G3 and G4 depend on creator-majority finality; G5 depends on a device-revocation rule; G6 depends on a per-signer event chain; G7 depends on a self-sealing rotation rule. They are printed as SPEC and are guarded by a check that they remain declared here.",
+  "vectors": [
+    {
+      "id": "G1-retired-online-key-historical-branch",
+      "status": "open_problem_2",
+      "executable": true,
+      "harness": "proposals/pid_pdu.py",
+      "vectors": [
+        "G1 device co-signs a message on a custodian-selected pre-rotation branch",
+        "G1 device co-signs a state event on a custodian-selected pre-rotation branch",
+        "G1 control: the same retired key is refused at the room's current tip"
+      ],
+      "preconditions": [
+        "Server epoch h=0 uses online signing key K0.",
+        "A later epoch event advances the server to h=1 with online key K1.",
+        "A room DAG branch before that advancement remains available as a prev_events ancestor.",
+        "The user device's master and device keys remain uncompromised."
+      ],
+      "attack": [
+        "A hostile custodian constructs an event envelope using the old branch's prev_events and auth_events.",
+        "The device signs that exact envelope, unaware that the custodian selected a historical tip.",
+        "The event has valid device and custodian signatures and competes in state resolution when the branch and current frontier are merged."
+      ],
+      "expected_current_behavior": "A validly co-signed event is accepted on the custodian-selected old branch. The device signature prevents invention and post-signature re-anchoring, but it does not show that the device's view, which the custodian supplies, was the room's current tip.",
+      "test_scope": "The harness signs the full event as the user device after constructing it from the old branch snapshot. It does not model the user's ability to independently check that the custodian supplied the current DAG tip, nor room state resolution at merge."
+    },
+    {
+      "id": "G2-disjoint-views-cannot-order-conflicting-tips",
+      "status": "open_problem_1",
+      "executable": true,
+      "harness": "proposals/pid_pdu.py",
+      "vectors": [
+        "G2 lagging and advanced tips accepted in two disjoint views of one chain, no local cross-check"
+      ],
+      "preconditions": [
+        "Two views share no event DAG or relay path during the relevant interval.",
+        "The same principal is presented with a different valid chain tip in each view."
+      ],
+      "attack": [
+        "Each view validates only the chain material available locally.",
+        "Neither view has evidence of what the other had already received or resolved."
+      ],
+      "expected_current_behavior": "Neither view can establish a first-seen order from its local DAG. The views hold a lagging prefix (h=0) and an advanced tip (h=1) of one linear chain, not two sibling links, so this is lag, not a fork. The same limit applies across rooms.",
+      "test_scope": "Executable as two disjoint views of one chain in one room: the h=0 view accepts events signed by K0 and the h=1 view accepts events signed by K1, and neither view holds any state that records the other. Lagging versus advanced, not divergent siblings. Federation and a first-seen witness model are still out of scope."
+    },
+    {
+      "id": "G3-finality-checkpoint-signed-by-retired-online-key",
+      "status": "candidate_mitigation_hazard",
+      "executable": false,
+      "preconditions": [
+        "A room adopts creator-majority DAG finality in the style of MSC00FF/00FA.",
+        "A creator's finality event is authorized using a server online key that was later retired or compromised."
+      ],
+      "attack": [
+        "The holder of the retired online key creates a historically authorized finality state event endorsing a checkpoint.",
+        "If accepted, descendant-only finality can reject competing branches beyond that checkpoint."
+      ],
+      "expected_current_behavior": "MSC-00FC does not define this finality mechanism. Any integration must specify signer freshness and how retired-key checkpoint events are excluded; otherwise the proposed mitigation can inherit the historical-branch problem.",
+      "test_scope": "Cross-proposal design hazard; MSC00FF/00FA is a draft proposal, not current 00FC behavior. Not executable until finality is modelled."
+    },
+    {
+      "id": "G4-finality-tradeoff-for-late-branches",
+      "status": "candidate_mitigation_tradeoff",
+      "executable": false,
+      "preconditions": [
+        "A room has an accepted finality checkpoint H.",
+        "A server later returns from a partition with legitimate events on a branch that diverged before H."
+      ],
+      "attack": [
+        "Attempt to admit the late branch into current room state after H has been finalized."
+      ],
+      "expected_current_behavior": "The finality proposal's ancestry rule permits ancestors for backfill but rejects a competing fork that is neither a descendant nor an ancestor of H. Such a branch cannot contribute new post-checkpoint state under that rule; the availability cost is loss of late-branch state merging.",
+      "test_scope": "Candidate mitigation tradeoff; not specified by MSC-00FC. Not executable until finality is modelled."
+    },
+    {
+      "id": "G5-custodian-notice-cannot-revoke-a-device",
+      "status": "open_problem_3",
+      "executable": false,
+      "preconditions": [
+        "A user is custodied by an honest custodian that holds the user's rotation key, as in the baseline custodial model.",
+        "A device key certified under the user's master key is compromised, and the custodian detects it and refuses to sign for that device ID."
+      ],
+      "attack": [
+        "The current custodian's refusal is local to its own submission path.",
+        "A former custodian replays an old prefix into a room that has not seen the move, and signs a user event carrying the old certificate.",
+        "A room that has seen neither a newer epoch nor the revocation still accepts a signature from a custodian it knows."
+      ],
+      "expected_current_behavior": "An accepted event still needs the custodian named in the room's user epoch to sign, so an honest current custodian can stop the device at its own tip. Room version N defines no device-root state, so the refusal is not propagated and a former custodian, a stale room, or a colluding custodian can still make the old certificate count.",
+      "test_scope": "Not executable: room version N defines no device revocation state; the candidate m.room.device_root is described in open problem 3. The current-custodian refusal is a local §9 control; the remaining exposure reduces to prefix replay (open problem 1) or a cooperating custodian. Distinct from G1 (placement) and G3 (a finality checkpoint signed by a retired key)."
+    },
+    {
+      "id": "G6-per-device-event-chain-fork",
+      "status": "candidate_mitigation",
+      "executable": false,
+      "preconditions": [
+        "The room version defines a per-signer event chain: each event cites the signer's previous event in the room, and the signature covers the pointer.",
+        "A cloned or compromised device signs two events that cite the same predecessor, and a room observes both successors."
+      ],
+      "attack": [
+        "The clone signs event E1 and the real device signs E2, both citing the same device-chain predecessor.",
+        "A room receiving both has two valid device signatures over conflicting successors."
+      ],
+      "expected_current_behavior": "Room version N has no per-signer event chain, so it cannot detect the fork from the events alone. Both are ordinary events with valid device and custodian signatures.",
+      "test_scope": "Not executable until the per-signer chain is specified. The intended control is an honest chain, where each event cites the previous one and no predecessor has two successors, surviving. Enforcing the pointer prevents rollback behind a device's locally retained head, so once that head descends from a newer epoch, later events must too; a device that has not anchored the epoch can still be shown a stale tip. A server-epoch commitment to the server's signer-chain head could bound retired server keys if paired with a rule for events outside it. A fork is detected only when both branches are observed, does not decide which branch survives, and gives no first-seen time for a chain withheld in full."
+    },
+    {
+      "id": "G7-self-sealing-rotation",
+      "status": "candidate_mitigation",
+      "executable": false,
+      "preconditions": [
+        "The room version defines m.room.server_seal with state_key set to the server principal and content {sealed_height, previous_seal}; only a joined sender custodied by the subject server may send it (exempt from device co-signing), it is signed under an active m.room.server_epoch at height >= sealed_height, and each seal after height 1 descends from a lower seal for the same server.",
+        "Pass 0 resolves seals top-down by the highest sealed_height with a single valid seal; a same-height conflict falls back to the highest unambiguous seal in the conflicting candidates' common ancestry without tainting event ancestry, and duplicate retransmissions are idempotent."
+      ],
+      "attack": [
+        "A holder of retired key K0 signs an event after a seal at height h and attaches it to a branch outside the seal's causal past.",
+        "The room receives the newer epoch but has no seal rule tying old-height events to its causal past, so the stale branch remains eligible."
+      ],
+      "expected_current_behavior": "Room version N has no seal state. The retired-key event is accepted where the room has not otherwise rejected it, and epoch advancement does not carry the server's causal past.",
+      "test_scope": "The current room version has no seal authorization rule, so G7 remains SPEC. pid_pdu.py now has a candidate merge path: it unions real PDUs previously accepted on separate branches, resolves signing heights from creator_links, signer_links, or auth_events (bound to the subject server), checks that the seal sender is joined and custodied by the subject server, verifies the seal under the active server epoch, and applies the seal ancestry filter before candidate events contribute. pid_cutover.py separately checks top-down seal resolution, relay persistence, lower-epoch seal rejection, same-height conflict fallback to common ancestry without tainting shared honest history, retired-key non-displacement, and top-down-by-epoch device-root resolution with common-ancestry fallback. These are prototype checks, not room-version conformance or full Matrix state resolution; the rule proves inclusion in the seal's causal past, not signing time."
+    }
+  ]
+}

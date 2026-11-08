@@ -1,0 +1,3999 @@
+{
+  "00fc_leaf_binding": {
+    "device_id": "D1",
+    "principal": "@alice:example.org",
+    "revoked_leaf_removed": true,
+    "wrong_key_rejected": true
+  },
+  "00fc_rotation_rejects_update": {
+    "recertification_update_preserved": true,
+    "revoked_member_removed": true,
+    "stale_key_rejected_symmetrically": true,
+    "stale_nonbase_add_dropped_without_remove": true
+  },
+  "ancestry_diamond": {
+    "cycles_terminate": true,
+    "diamond_depth": 32,
+    "diamond_join_status": "orphaned",
+    "incomplete_ancestry_remains_unknown": true
+  },
+  "concurrent_join_same_slot": {
+    "adds": ["yara:D1"],
+    "members": 3
+  },
+  "device_root_resolution_boundary": {
+    "conflict_falls_back_to": "root-h1-g2",
+    "linear_generation_2_installed": true,
+    "reanchor_installed": "root-h2-g1",
+    "same_generation_conflict_rejected": true,
+    "stale_device_remove_planned": true
+  },
+  "draft11_depths": {
+    "16": [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+    "2": [1, 1],
+    "3": [2, 2, 1],
+    "4": [2, 2, 2, 2],
+    "5": [3, 3, 3, 3, 1],
+    "6": [3, 3, 3, 3, 2, 2],
+    "9": [4, 4, 4, 4, 4, 4, 4, 4, 1]
+  },
+  "draft11_tree_math": [
+    {
+      "leaf_count": 1,
+      "node_count": 1,
+      "root": 0,
+      "topology_sha256": "885134631fff84f8ab210d8869a5f75d4589f84108a0a86da3ca95a2620d5743"
+    },
+    {
+      "leaf_count": 2,
+      "node_count": 3,
+      "root": 1,
+      "topology_sha256": "e4bd918b8899b92ff85431b38536d862b7f8abb908edfa96b6c0e62f62d199a4"
+    },
+    {
+      "leaf_count": 3,
+      "node_count": 5,
+      "root": 3,
+      "topology_sha256": "1b2dfc7f0db0a335d979ff5fb12ed1c72f13175277198e6b0b0aa539fdc370dd"
+    },
+    {
+      "leaf_count": 4,
+      "node_count": 7,
+      "root": 3,
+      "topology_sha256": "7107669feaeab3fa238d133264d96596d6dab8c7977436c283829e2a19dbdc8f"
+    },
+    {
+      "leaf_count": 5,
+      "node_count": 9,
+      "root": 7,
+      "topology_sha256": "6f783efd88501a076fb8034520e8b918a887dbc9c071243449e1c2dc5f3ed8cf"
+    },
+    {
+      "leaf_count": 6,
+      "node_count": 11,
+      "root": 7,
+      "topology_sha256": "e7f5ad3a02b71d968269c06b11283eb16f8ebde5d8113a888f6a45b7699fb5f3"
+    },
+    {
+      "leaf_count": 7,
+      "node_count": 13,
+      "root": 7,
+      "topology_sha256": "b57e584b8cc95bc601233e7f06cfa58b71f110634d48f543d72a4749c3c01dfe"
+    },
+    {
+      "leaf_count": 8,
+      "node_count": 15,
+      "root": 7,
+      "topology_sha256": "72f32ad5f7aa896c755607454ca10f66a79e391b10be1d84f3f4b8d3fdac8ab1"
+    },
+    {
+      "leaf_count": 9,
+      "node_count": 17,
+      "root": 15,
+      "topology_sha256": "4694a12905abb3ce9afc56d57f0716bc30224cf3c582d80dfc6d7d040d7179d9"
+    },
+    {
+      "leaf_count": 10,
+      "node_count": 19,
+      "root": 15,
+      "topology_sha256": "ea3a9a8b564985f01dc80b775d7760884a6c125ba71e4e8a8baeb9159108fe44"
+    },
+    {
+      "leaf_count": 11,
+      "node_count": 21,
+      "root": 15,
+      "topology_sha256": "e12bad72ba19efd2c559983da8433bb25ff2f9e3a518914fefdca043d3a29951"
+    },
+    {
+      "leaf_count": 12,
+      "node_count": 23,
+      "root": 15,
+      "topology_sha256": "515358875682c58a8b129865669c660eb19777dfa818fd09eb445794f76be644"
+    },
+    {
+      "leaf_count": 13,
+      "node_count": 25,
+      "root": 15,
+      "topology_sha256": "42c085a1339980e160c08eb2624c5c88470b0587079b4a2b4bc0687a0780ce54"
+    },
+    {
+      "leaf_count": 14,
+      "node_count": 27,
+      "root": 15,
+      "topology_sha256": "2eeb27ce85ef0d7212e7e6ec25aa2fcd4d0331aff30f8e9cf155977aac791eb2"
+    },
+    {
+      "leaf_count": 15,
+      "node_count": 29,
+      "root": 15,
+      "topology_sha256": "6315fb5fd68dc83ad668b26f0079df3aeff9b51ab9ba51f15cc348f5819f10f0"
+    },
+    {
+      "leaf_count": 16,
+      "node_count": 31,
+      "root": 15,
+      "topology_sha256": "1098b9a2eeb91ad60138eeff5a3fae23393ec52d2b0fb1e4c604e07147c65721"
+    },
+    {
+      "leaf_count": 17,
+      "node_count": 33,
+      "root": 31,
+      "topology_sha256": "c91c7ede30fc535807c29b5511681c311b473774d429fc69c90c8d50c3e4719a"
+    },
+    {
+      "leaf_count": 18,
+      "node_count": 35,
+      "root": 31,
+      "topology_sha256": "ccec89aa412edd73d67d784216613b346b4da0e060a99ce10a0b87534184babc"
+    },
+    {
+      "leaf_count": 19,
+      "node_count": 37,
+      "root": 31,
+      "topology_sha256": "2cc75c37b526570184116fe0af31f4a065407d36d1efb42a7df64e22338e6197"
+    },
+    {
+      "leaf_count": 20,
+      "node_count": 39,
+      "root": 31,
+      "topology_sha256": "896f855185524aea511c1d3fed7058356e206b31783b94936875d2b82028c40f"
+    },
+    {
+      "leaf_count": 21,
+      "node_count": 41,
+      "root": 31,
+      "topology_sha256": "3b2d0b81198bf67a02d7b8b8d27a1f4e292e90a64ebcb547e011c17d30f8e387"
+    },
+    {
+      "leaf_count": 22,
+      "node_count": 43,
+      "root": 31,
+      "topology_sha256": "191e74c3e9bc2b4a775b2a3fd2cf919e640b515e336983b1bc84c72333ae42d0"
+    },
+    {
+      "leaf_count": 23,
+      "node_count": 45,
+      "root": 31,
+      "topology_sha256": "aa34ad02be92b4afea1cea343d9f07fc45ee374c7a3656e7fe4e306e6e9d0805"
+    },
+    {
+      "leaf_count": 24,
+      "node_count": 47,
+      "root": 31,
+      "topology_sha256": "5269a17dcd8f7dbeb5d1fe7fe6889529b781c423e7b919f2e488747c7c5b399c"
+    },
+    {
+      "leaf_count": 25,
+      "node_count": 49,
+      "root": 31,
+      "topology_sha256": "c7d8078c85d6769c17dad232095f6aaf3fa2b1db4929f079997367f182e45d35"
+    },
+    {
+      "leaf_count": 26,
+      "node_count": 51,
+      "root": 31,
+      "topology_sha256": "52a066015e24e54619c6a0bf70cfaaafccf92f8d9dfd772c9c2e8079df9fdafb"
+    },
+    {
+      "leaf_count": 27,
+      "node_count": 53,
+      "root": 31,
+      "topology_sha256": "f373c74f1c09385becdfef8791be627dfdc8b3c478ed96a8c58d5d2652673e94"
+    },
+    {
+      "leaf_count": 28,
+      "node_count": 55,
+      "root": 31,
+      "topology_sha256": "9cd035e460196ebd9dd40e38e85a7beaf7b7626fac5ed6bb7db72d238971826c"
+    },
+    {
+      "leaf_count": 29,
+      "node_count": 57,
+      "root": 31,
+      "topology_sha256": "bd05cafd012491eca7818e63cb74ae1e88c10df7a724d750e1794610da1b7a47"
+    },
+    {
+      "leaf_count": 30,
+      "node_count": 59,
+      "root": 31,
+      "topology_sha256": "7f2efcea5aca03dc8e0d1d6c69a1cd0fd8bf8fed8a435fb02c0a64647815c14c"
+    },
+    {
+      "leaf_count": 31,
+      "node_count": 61,
+      "root": 31,
+      "topology_sha256": "6878a82abb0367c2ad447711130c0286b1af737ef448e11f433d2bf9c03d0efd"
+    },
+    {
+      "leaf_count": 32,
+      "node_count": 63,
+      "root": 31,
+      "topology_sha256": "00f152ab5f090cf7fbafa7377fef29a642c582b14531c6aedec0e39b394ed80e"
+    },
+    {
+      "leaf_count": 33,
+      "node_count": 65,
+      "root": 63,
+      "topology_sha256": "43e50c76328c905d266f2eecdeb595dc95d45ddda41815198997bd5a2f514818"
+    },
+    {
+      "leaf_count": 34,
+      "node_count": 67,
+      "root": 63,
+      "topology_sha256": "ab4a05932fb8bf86bd0e3668a67c50495e9217ac3bf6110251ea1c34cabb9c55"
+    },
+    {
+      "leaf_count": 35,
+      "node_count": 69,
+      "root": 63,
+      "topology_sha256": "fd03275e7d92f22f664aa657d6fbe0061611fb837be78604ecd4810dbce6d15a"
+    },
+    {
+      "leaf_count": 36,
+      "node_count": 71,
+      "root": 63,
+      "topology_sha256": "1070b840135f926ffe81833a229e5d6f03ba1f05a8402912e2ec4e4fd9d34931"
+    },
+    {
+      "leaf_count": 37,
+      "node_count": 73,
+      "root": 63,
+      "topology_sha256": "ba2339219beb3550389cb07a74d8d75aef90c6c29abeca4c2468e2ba3469542d"
+    },
+    {
+      "leaf_count": 38,
+      "node_count": 75,
+      "root": 63,
+      "topology_sha256": "aaa421541e829135c4794624ebed36c071ea9f3246a9c77d026c6d7f5dfc8e53"
+    },
+    {
+      "leaf_count": 39,
+      "node_count": 77,
+      "root": 63,
+      "topology_sha256": "f8e35cc83b24f3e59d165aba6bdc05092a5654fb2260509858118b3544cfaf82"
+    },
+    {
+      "leaf_count": 40,
+      "node_count": 79,
+      "root": 63,
+      "topology_sha256": "49b004b7dce5b92d5c7975c28fc81b937159155af8deb1d10fdff87af2735d8c"
+    },
+    {
+      "leaf_count": 41,
+      "node_count": 81,
+      "root": 63,
+      "topology_sha256": "b1cc58734a524d2147262edb9fcf8429244720fcb040508571afac2b1bff6c22"
+    },
+    {
+      "leaf_count": 42,
+      "node_count": 83,
+      "root": 63,
+      "topology_sha256": "56bce7953185c7528399f3c9a14f59993e707b7199c905b0c68c993dce34e63e"
+    },
+    {
+      "leaf_count": 43,
+      "node_count": 85,
+      "root": 63,
+      "topology_sha256": "37024ef587fe11aef5072ff5b8534c99c947c1780ce6b9f35f76c9cce43e6575"
+    },
+    {
+      "leaf_count": 44,
+      "node_count": 87,
+      "root": 63,
+      "topology_sha256": "cdf50259f3a6901b4ed99af5a11f5fffd3a06041c30c774ab4428d92f1d673ae"
+    },
+    {
+      "leaf_count": 45,
+      "node_count": 89,
+      "root": 63,
+      "topology_sha256": "71cd920fc1122b76f1031ed685f96e2647777a70adf2caa31ed1befe18290430"
+    },
+    {
+      "leaf_count": 46,
+      "node_count": 91,
+      "root": 63,
+      "topology_sha256": "c41ab30415ac6b7b602ca24d2ffe4776a204e2c9a27b3a3212397ca35c64b0b2"
+    },
+    {
+      "leaf_count": 47,
+      "node_count": 93,
+      "root": 63,
+      "topology_sha256": "7fbc182d1b98c242653b9363d2e94bcb44ecfc2b0864d4cf651c3aaa8e6b3333"
+    },
+    {
+      "leaf_count": 48,
+      "node_count": 95,
+      "root": 63,
+      "topology_sha256": "d6e5d4358feab21caa8c216cfa95eef2bd1c3f92fb1fd7957191a09a59e6b0e4"
+    },
+    {
+      "leaf_count": 49,
+      "node_count": 97,
+      "root": 63,
+      "topology_sha256": "9436d7a50206af560cc43ec64c9a7859ed6df4f21be66510ee70706030916efd"
+    },
+    {
+      "leaf_count": 50,
+      "node_count": 99,
+      "root": 63,
+      "topology_sha256": "2bcef4b9786d9f6f83369dcf702e784c68da865f8415e23c9baf4b2150ab6f01"
+    },
+    {
+      "leaf_count": 51,
+      "node_count": 101,
+      "root": 63,
+      "topology_sha256": "f17187974c804f77d16d1e3a95044faf8099936856ab26f96194bbd6a0be5ed4"
+    },
+    {
+      "leaf_count": 52,
+      "node_count": 103,
+      "root": 63,
+      "topology_sha256": "61623da113a341e16e7ee87f02f8ce2fcd6120c592afd06ce828cb699328b7d5"
+    },
+    {
+      "leaf_count": 53,
+      "node_count": 105,
+      "root": 63,
+      "topology_sha256": "28960bc51260e5a9e5bbb2db7f53f7c632045246d4f172d602a6e1c2046c16d7"
+    },
+    {
+      "leaf_count": 54,
+      "node_count": 107,
+      "root": 63,
+      "topology_sha256": "b3c24efebc00d2cfb7951c0b94261d100fcf6f4b53c226b98172dc8df3c64081"
+    },
+    {
+      "leaf_count": 55,
+      "node_count": 109,
+      "root": 63,
+      "topology_sha256": "50426e43a75c1e6507d7993e081e53f7ab29811191751f2639c05bd7c5949507"
+    },
+    {
+      "leaf_count": 56,
+      "node_count": 111,
+      "root": 63,
+      "topology_sha256": "67b1e3b3786f59f62e55bab591f6f929d07ccfec8fa2559da32e310f5a34b65b"
+    },
+    {
+      "leaf_count": 57,
+      "node_count": 113,
+      "root": 63,
+      "topology_sha256": "29789345fac553a91808731493ff0dde56c038638816fe3d5cb5a499f7b8d20e"
+    },
+    {
+      "leaf_count": 58,
+      "node_count": 115,
+      "root": 63,
+      "topology_sha256": "8dc817922907cc5e7a9d9460ceb224e4a89585ca469719f149031172e8f3a9aa"
+    },
+    {
+      "leaf_count": 59,
+      "node_count": 117,
+      "root": 63,
+      "topology_sha256": "c14cac1d3f88e66045fd9ba894dba1475fa2bbf050b36ea5ed0f2a7d86a8986e"
+    },
+    {
+      "leaf_count": 60,
+      "node_count": 119,
+      "root": 63,
+      "topology_sha256": "beeeb89e72096b06ffd4e7cc0cc9c915bd2a22b835551343020f188be3534cbd"
+    },
+    {
+      "leaf_count": 61,
+      "node_count": 121,
+      "root": 63,
+      "topology_sha256": "43bce30725c47be62d1ab773adf668f3c459425d3731c4b3c03e22df250edfcd"
+    },
+    {
+      "leaf_count": 62,
+      "node_count": 123,
+      "root": 63,
+      "topology_sha256": "8c9fc75a1d2aee4e82d5f2ca4bc3c43ccc69d8913fc843dbf2125c36f005688c"
+    },
+    {
+      "leaf_count": 63,
+      "node_count": 125,
+      "root": 63,
+      "topology_sha256": "5b42c3e7f7a2b2d78638ead856aade1a76ead1c338e7a4e8a948abfc346641ee"
+    },
+    {
+      "leaf_count": 64,
+      "node_count": 127,
+      "root": 63,
+      "topology_sha256": "45a2d3d8f9326b36e503b445508df921abff42dd5d19392871eaac3f8134312a"
+    },
+    {
+      "leaf_count": 65,
+      "node_count": 129,
+      "root": 127,
+      "topology_sha256": "3960e253c5d560cea461a0161635923c08cc99504733b86976bf60015c43cbc2"
+    },
+    {
+      "leaf_count": 66,
+      "node_count": 131,
+      "root": 127,
+      "topology_sha256": "e5579b95a917407d5dbc50172ccd6ec494c42d52ab4e6eec84e7f8bdfd7ceb9b"
+    },
+    {
+      "leaf_count": 67,
+      "node_count": 133,
+      "root": 127,
+      "topology_sha256": "205f69ba44329fca385afccf9188f2788de001a3b9f9d81aa6dec1b56409357d"
+    },
+    {
+      "leaf_count": 68,
+      "node_count": 135,
+      "root": 127,
+      "topology_sha256": "4fa91a4ec03803f653f6785e387454f720f1de782c7ec770b48f830dfc53b4fd"
+    },
+    {
+      "leaf_count": 69,
+      "node_count": 137,
+      "root": 127,
+      "topology_sha256": "86951da8386e00a1293f7be95d557af9fc2fbb0ec9e04d64af79aba3eb64fa2d"
+    },
+    {
+      "leaf_count": 70,
+      "node_count": 139,
+      "root": 127,
+      "topology_sha256": "274bd0f5d129ef4d443d89eff04dc1941e264ca4ae13ac6229022b699d059609"
+    },
+    {
+      "leaf_count": 71,
+      "node_count": 141,
+      "root": 127,
+      "topology_sha256": "f9ee47a7c8f2cb5893c3cd881a21ad3bd7f76bf467bba0150a399f67b7e2d784"
+    },
+    {
+      "leaf_count": 72,
+      "node_count": 143,
+      "root": 127,
+      "topology_sha256": "4a7af548f63df046385b11c451d1e2db4cea94239e7243918e6cf59a90b8f427"
+    },
+    {
+      "leaf_count": 73,
+      "node_count": 145,
+      "root": 127,
+      "topology_sha256": "80bbaa1bd5005dcc32690aa026f6c0d6685568747b2eadeb30a886c8a55ab346"
+    },
+    {
+      "leaf_count": 74,
+      "node_count": 147,
+      "root": 127,
+      "topology_sha256": "12a5c6418f7e6b6e74f4d5034936d92dc8268f56dc9be9798f2154439f005cc5"
+    },
+    {
+      "leaf_count": 75,
+      "node_count": 149,
+      "root": 127,
+      "topology_sha256": "58e94fdc1f30c2d253ab433c6e1d8d957c0086a63cc91944cca0a8d51d5b6084"
+    },
+    {
+      "leaf_count": 76,
+      "node_count": 151,
+      "root": 127,
+      "topology_sha256": "d14feecddd96898d911a5dcdbc1a46956ccff33c9b9d7a580b84fb9f9a49fe60"
+    },
+    {
+      "leaf_count": 77,
+      "node_count": 153,
+      "root": 127,
+      "topology_sha256": "63112a1d91aa325bd5dfa8b2f71cac03c3c059861a376507d76ede3aa14940c7"
+    },
+    {
+      "leaf_count": 78,
+      "node_count": 155,
+      "root": 127,
+      "topology_sha256": "503afb74d7faad23924da1d5ed6d5715b04f93f3242c352a8af3209e9305dd3e"
+    },
+    {
+      "leaf_count": 79,
+      "node_count": 157,
+      "root": 127,
+      "topology_sha256": "0b43304c5f458f34d41080228d6968169923f1587b43c3df28268478d9af34a3"
+    },
+    {
+      "leaf_count": 80,
+      "node_count": 159,
+      "root": 127,
+      "topology_sha256": "c56f1e13dc207e34aec5aa7764024d24e023d2c1e69cfbefca27b4f4b5d8a843"
+    },
+    {
+      "leaf_count": 81,
+      "node_count": 161,
+      "root": 127,
+      "topology_sha256": "12f1d7c8677122b39e078909978cd47137c756d0ae62a4e7b4730411b8296d47"
+    },
+    {
+      "leaf_count": 82,
+      "node_count": 163,
+      "root": 127,
+      "topology_sha256": "0e49c3c967f70369dde27e8fa8312b1755f4d826b290f8359497b9b4cb761e22"
+    },
+    {
+      "leaf_count": 83,
+      "node_count": 165,
+      "root": 127,
+      "topology_sha256": "1411d8fa535baef64433ebc937e92ddc7b395c474f924870e54b1168f16d11a7"
+    },
+    {
+      "leaf_count": 84,
+      "node_count": 167,
+      "root": 127,
+      "topology_sha256": "6148772d3dd43990e8e4d1fb3704b64c7a137166334e6e16cc8dc837e384b059"
+    },
+    {
+      "leaf_count": 85,
+      "node_count": 169,
+      "root": 127,
+      "topology_sha256": "1455a95ec6b15623b252de2858be82c375ce6f98d3ba236003f3c93733f65e22"
+    },
+    {
+      "leaf_count": 86,
+      "node_count": 171,
+      "root": 127,
+      "topology_sha256": "b6aa2c3c3653e71cafc25ef922817811dba32171968a6ca68be95469597c57f2"
+    },
+    {
+      "leaf_count": 87,
+      "node_count": 173,
+      "root": 127,
+      "topology_sha256": "9e57567930dc90cf3eba37aa0b764ffadd9193035e8d498f9736b3a63b505fef"
+    },
+    {
+      "leaf_count": 88,
+      "node_count": 175,
+      "root": 127,
+      "topology_sha256": "03e04c7f457e6a388c2d5a18acd43b5a2837d8e09ba36fb5de6d0a8ce3032165"
+    },
+    {
+      "leaf_count": 89,
+      "node_count": 177,
+      "root": 127,
+      "topology_sha256": "f25b98f821ec65229fd5291a1bd88632d836844075309727c2a768a6adf0b7b8"
+    },
+    {
+      "leaf_count": 90,
+      "node_count": 179,
+      "root": 127,
+      "topology_sha256": "a11f51117e482d91414f8a4586c748f10c5c152d6fe0df08be49bf47bb9c2e86"
+    },
+    {
+      "leaf_count": 91,
+      "node_count": 181,
+      "root": 127,
+      "topology_sha256": "722cf610c360ed98c27204997c10528b657730a33a3769b5cc262d25966ed4dc"
+    },
+    {
+      "leaf_count": 92,
+      "node_count": 183,
+      "root": 127,
+      "topology_sha256": "765fe4250f580cf7ba3098b3dc8179734d31744eb4001db672ad876fe494bff5"
+    },
+    {
+      "leaf_count": 93,
+      "node_count": 185,
+      "root": 127,
+      "topology_sha256": "119ed476cecc1e91b2cbf80d84fa48b67cbf3fb737083d6856f256bed16431be"
+    },
+    {
+      "leaf_count": 94,
+      "node_count": 187,
+      "root": 127,
+      "topology_sha256": "bb115fa879804b1a99dc09406d0a0e328b453287b874c0c294ffd8108b0463bd"
+    },
+    {
+      "leaf_count": 95,
+      "node_count": 189,
+      "root": 127,
+      "topology_sha256": "b2c161fac541f70cb67a976d720390294bbf1b165838f3b2fa35d2eed827f7b3"
+    },
+    {
+      "leaf_count": 96,
+      "node_count": 191,
+      "root": 127,
+      "topology_sha256": "19168f5533a20cf1e6bbdb90d0661899a13e0747d1289e8ff5c26b160466bb6d"
+    },
+    {
+      "leaf_count": 97,
+      "node_count": 193,
+      "root": 127,
+      "topology_sha256": "7c6067ad35796d7eef07052cf9040adbbac1bc39320b76cc1fbd7af1c281c320"
+    },
+    {
+      "leaf_count": 98,
+      "node_count": 195,
+      "root": 127,
+      "topology_sha256": "64faef42466357fe97bd768a361e48f440b688b0c49f3595dd77fb8c625c0a69"
+    },
+    {
+      "leaf_count": 99,
+      "node_count": 197,
+      "root": 127,
+      "topology_sha256": "096712fcdb7a77e69a8c55e636ca295ee999150b58dc630eb773ed7179b372e0"
+    },
+    {
+      "leaf_count": 100,
+      "node_count": 199,
+      "root": 127,
+      "topology_sha256": "180b28a5f61e0516e9c5d7ac8b07d0ebd647f230846ab7d869924bbd3c9c0732"
+    },
+    {
+      "leaf_count": 101,
+      "node_count": 201,
+      "root": 127,
+      "topology_sha256": "d6abd670fc24adc730dd59c76c6219acdb3dbfbfd0ba9e2728d48e4f6554a285"
+    },
+    {
+      "leaf_count": 102,
+      "node_count": 203,
+      "root": 127,
+      "topology_sha256": "da71600419f63e735139f9be5f4256b69b3ed163cad4d9e552cf1707370d694a"
+    },
+    {
+      "leaf_count": 103,
+      "node_count": 205,
+      "root": 127,
+      "topology_sha256": "f73425f9ee78a47c5d4eb0a891442c56f93c3a2016779a97ca645eb7ec488bc5"
+    },
+    {
+      "leaf_count": 104,
+      "node_count": 207,
+      "root": 127,
+      "topology_sha256": "d59a15f790afc62e18783d3c91fd8f85d839b3c1c30cd31fff37480af400178b"
+    },
+    {
+      "leaf_count": 105,
+      "node_count": 209,
+      "root": 127,
+      "topology_sha256": "0bfd149c54d3c67cd559e8ac8001fd9c151b35cbb058f346f1505c9f00a74218"
+    },
+    {
+      "leaf_count": 106,
+      "node_count": 211,
+      "root": 127,
+      "topology_sha256": "deaab9c629a59a578e7975fbc3f92441cda7074c0de076e2a75e212c95530397"
+    },
+    {
+      "leaf_count": 107,
+      "node_count": 213,
+      "root": 127,
+      "topology_sha256": "586ebcb3457f4fb99a0f5bf38351c3dd272be023d4aad640d54312db41e3a889"
+    },
+    {
+      "leaf_count": 108,
+      "node_count": 215,
+      "root": 127,
+      "topology_sha256": "c9bba4370600846cd34d1eafbf3f27c34614789b287f76dd4bc8b81da64f6910"
+    },
+    {
+      "leaf_count": 109,
+      "node_count": 217,
+      "root": 127,
+      "topology_sha256": "6f5263642a1ca1fb13181e24c1be1e3e88c039a8493bbc4e83dfc32423f688e2"
+    },
+    {
+      "leaf_count": 110,
+      "node_count": 219,
+      "root": 127,
+      "topology_sha256": "8e276474f46d7d063f1ceccb090ebc8ea172a34384bc23b18d82287f8fc4944e"
+    },
+    {
+      "leaf_count": 111,
+      "node_count": 221,
+      "root": 127,
+      "topology_sha256": "e634c90b01d41a33dd054e0d111fd45c0a6a206be09a3db7760a94fbb37e3b61"
+    },
+    {
+      "leaf_count": 112,
+      "node_count": 223,
+      "root": 127,
+      "topology_sha256": "6a065ed6a3a974a8b9baea29ca3e91bd5f24f195d25e208d41002c91274a8f6c"
+    },
+    {
+      "leaf_count": 113,
+      "node_count": 225,
+      "root": 127,
+      "topology_sha256": "e129cf1d07f780e6bf8c1c5c5223d786bb4fa62ba05dcbd208c9e429ae538bea"
+    },
+    {
+      "leaf_count": 114,
+      "node_count": 227,
+      "root": 127,
+      "topology_sha256": "fa2b7c943f3d5f23adff3ce93fb011cc7488003fe21c8b345205c544258df44d"
+    },
+    {
+      "leaf_count": 115,
+      "node_count": 229,
+      "root": 127,
+      "topology_sha256": "48322a9634b58998867d714b3bf03f69c4f48103def676d8ea384bce61871a90"
+    },
+    {
+      "leaf_count": 116,
+      "node_count": 231,
+      "root": 127,
+      "topology_sha256": "1ceb325c1aa24501a0b3fbcaf457cc9ab30c8f3b1334c8ba22f520d3b0fa3e88"
+    },
+    {
+      "leaf_count": 117,
+      "node_count": 233,
+      "root": 127,
+      "topology_sha256": "dfed5e00a1db6c7cdc01409baf01ff8db6e60f96cf49eca24d74d5470a95c0ed"
+    },
+    {
+      "leaf_count": 118,
+      "node_count": 235,
+      "root": 127,
+      "topology_sha256": "7a2464c3116ef0c2524ed1c8e50ae4c1aadcf4ab372d7d0e3cd159cda52d97ba"
+    },
+    {
+      "leaf_count": 119,
+      "node_count": 237,
+      "root": 127,
+      "topology_sha256": "318f2df887c0668d8d1bbfae14fdedeaccc6669e5da1e2a4c05a4ac06109ac86"
+    },
+    {
+      "leaf_count": 120,
+      "node_count": 239,
+      "root": 127,
+      "topology_sha256": "0788f60dfe35f82f0711393a5ea6ce178407541ef4a356f9afe73f628e374de3"
+    },
+    {
+      "leaf_count": 121,
+      "node_count": 241,
+      "root": 127,
+      "topology_sha256": "4e2d4126923f48c4836b5d353653dbe15d55a191450410fe7c89c04ad8d308ff"
+    },
+    {
+      "leaf_count": 122,
+      "node_count": 243,
+      "root": 127,
+      "topology_sha256": "c891b446123e36d41c3c0c602fbec083651ad56423c9bb0fc31b1872251a54aa"
+    },
+    {
+      "leaf_count": 123,
+      "node_count": 245,
+      "root": 127,
+      "topology_sha256": "a860450b7460660121be244b8bb1940d85836cc73a95eb0b6ca4bcba5554a230"
+    },
+    {
+      "leaf_count": 124,
+      "node_count": 247,
+      "root": 127,
+      "topology_sha256": "a6c1f100f0600f4839a2cbe757b66f3f6b5af09991bc543bd53e535a86285229"
+    },
+    {
+      "leaf_count": 125,
+      "node_count": 249,
+      "root": 127,
+      "topology_sha256": "77b1179ddcac66c39795056fc886ab9064b6699b700fed1683d28c21ca0881c7"
+    },
+    {
+      "leaf_count": 126,
+      "node_count": 251,
+      "root": 127,
+      "topology_sha256": "957a59903b6d66cc7132acf99664ed479f259871e8f245651738d1ef530ad591"
+    },
+    {
+      "leaf_count": 127,
+      "node_count": 253,
+      "root": 127,
+      "topology_sha256": "cdf732bf21208a156e6f9fc3e453f4170adc02b22436518ea1defd5d5d747a1b"
+    },
+    {
+      "leaf_count": 128,
+      "node_count": 255,
+      "root": 127,
+      "topology_sha256": "49732116219276bd0ac6a0272c0803ae30c542377d293cc545df90bcc87d83c2"
+    }
+  ],
+  "leaf_signature_guards": {
+    "negative_cases": 7
+  },
+  "merge_invariants": {
+    "bob_base_generation": 1,
+    "bob_self_update_required": true,
+    "consuming_merge_status": "orphaned",
+    "equivocated_extremities": 3,
+    "losing_external_joiner": "orphaned_without_add",
+    "remove_update_conflict_order_independent": true,
+    "removed_external_rejoin_orphaned": true,
+    "removed_member_not_resurrected": true,
+    "selected_base": "0101010101010101010101010101010101010101010101010101010101010101",
+    "unrelated_merge_status": "pending"
+  },
+  "official_tree_math": [
+    {
+      "leaf_capacity": 1,
+      "node_count": 1,
+      "paths_sha256": "f897cf807fed3c1a4f5b6127b65f2a2bf8ae3a1d420691c0b66bec22bcfc99b4",
+      "root": 0,
+      "tree_sha256": "885134631fff84f8ab210d8869a5f75d4589f84108a0a86da3ca95a2620d5743",
+      "vector_sha256": "b5f2bdbf23363b696cb1c3022c4ce739d04803647b1a9939c4f4dd8c2853361b"
+    },
+    {
+      "leaf_capacity": 2,
+      "node_count": 3,
+      "paths_sha256": "b5ffa8013205b3b87f3812662fb40e923e6c7682ba21f495c55aa0c0af931fe7",
+      "root": 1,
+      "tree_sha256": "e4bd918b8899b92ff85431b38536d862b7f8abb908edfa96b6c0e62f62d199a4",
+      "vector_sha256": "7a82211e0693a5375b804c229f9daf2fa5b7940b36df6e6ced781ca5300d7f4b"
+    },
+    {
+      "leaf_capacity": 4,
+      "node_count": 7,
+      "paths_sha256": "23f207c5a48bdb76a9f9256522916d0da2a29fb2a5bda1dab94ce4b28b30b1ce",
+      "root": 3,
+      "tree_sha256": "7107669feaeab3fa238d133264d96596d6dab8c7977436c283829e2a19dbdc8f",
+      "vector_sha256": "a35645840511a96570c64ccd990d04368939a1d48d9d490d17b65792f33b5a92"
+    },
+    {
+      "leaf_capacity": 8,
+      "node_count": 15,
+      "paths_sha256": "1ddf88cb87051891d6261626746612f71fa0ecaa59e5320f54fa438d5c227d20",
+      "root": 7,
+      "tree_sha256": "72f32ad5f7aa896c755607454ca10f66a79e391b10be1d84f3f4b8d3fdac8ab1",
+      "vector_sha256": "ad4361c89c3e9e4b93d99f893f58ba075d5cf4b420058a764d2e3c2a22c25ce8"
+    },
+    {
+      "leaf_capacity": 16,
+      "node_count": 31,
+      "paths_sha256": "e29c0e5ea8fe839422600c83e2f72c9566690f4dc8a9db8ded25edc72f84ba2c",
+      "root": 15,
+      "tree_sha256": "1098b9a2eeb91ad60138eeff5a3fae23393ec52d2b0fb1e4c604e07147c65721",
+      "vector_sha256": "7d6e1c190285feb1c9a29fc66602dff7119269845f529a1c502c2658179d1f24"
+    },
+    {
+      "leaf_capacity": 32,
+      "node_count": 63,
+      "paths_sha256": "cccef43f90d057a97446698e39f64b3737f87f67b62c45e605d929c18e9b1f45",
+      "root": 31,
+      "tree_sha256": "00f152ab5f090cf7fbafa7377fef29a642c582b14531c6aedec0e39b394ed80e",
+      "vector_sha256": "96069df297f7bbcba0b6720bff0b115b395daaf3b761ca416fbf4b3ddb3f62d6"
+    },
+    {
+      "leaf_capacity": 64,
+      "node_count": 127,
+      "paths_sha256": "a9c942c02b72c15ae8b3897670d9d3396b14c65831f74677d5d4c37b9f362ac1",
+      "root": 63,
+      "tree_sha256": "45a2d3d8f9326b36e503b445508df921abff42dd5d19392871eaac3f8134312a",
+      "vector_sha256": "b1560989778ec22c4242fb04853b10075ad093d3e0da7d2082ebb1421f692071"
+    },
+    {
+      "leaf_capacity": 128,
+      "node_count": 255,
+      "paths_sha256": "0d68bfbd3077bcf6cf2b8cf68f33a0b60ef1f252362dcea2dafb9905e043a385",
+      "root": 127,
+      "tree_sha256": "49732116219276bd0ac6a0272c0803ae30c542377d293cc545df90bcc87d83c2",
+      "vector_sha256": "6c31e045fe5bb36a4131ad26090158f086236ad78d8cd7c79c7f7c7fd52a2135"
+    },
+    {
+      "leaf_capacity": 256,
+      "node_count": 511,
+      "paths_sha256": "46b98e826affb1d8901beaee236de3e2fb3e92daba4316bf2b22fb4b837a156b",
+      "root": 255,
+      "tree_sha256": "e94b543f1f2c131648264905148f7f60b0e2cbc76b06e8670710560ffcf92d39",
+      "vector_sha256": "ee0c9f937eb6b48742be09c9814791bdfc2f55219249a6d1c922fe9da7a213bf"
+    },
+    {
+      "leaf_capacity": 512,
+      "node_count": 1023,
+      "paths_sha256": "0beb4e2dd46d72d192345dadb3db64f2904a2f42d7cbbcb24e0a5d7a95132084",
+      "root": 511,
+      "tree_sha256": "7c3ea666a033c4b001c36b41883d88da4a981904e75ea60cb3d918b081e98550",
+      "vector_sha256": "cc35dad139d3a0375000f43e351c63a37dc14ce3db4b206454b1345fb2bd2501"
+    }
+  ],
+  "resolution_cost": {
+    "blanked_cost_right": 4,
+    "clean_cost_left": 4,
+    "clean_cost_right": 1
+  },
+  "resync_and_device_isolation": {
+    "resync_ok": true
+  },
+  "rfc_member_counts": [
+    {
+      "blank_leaf_count": 0,
+      "leaf_capacity": 1,
+      "member_count": 1,
+      "structural_depth": 0
+    },
+    {
+      "blank_leaf_count": 0,
+      "leaf_capacity": 2,
+      "member_count": 2,
+      "structural_depth": 1
+    },
+    {
+      "blank_leaf_count": 1,
+      "leaf_capacity": 4,
+      "member_count": 3,
+      "structural_depth": 2
+    },
+    {
+      "blank_leaf_count": 0,
+      "leaf_capacity": 4,
+      "member_count": 4,
+      "structural_depth": 2
+    },
+    {
+      "blank_leaf_count": 3,
+      "leaf_capacity": 8,
+      "member_count": 5,
+      "structural_depth": 3
+    },
+    {
+      "blank_leaf_count": 2,
+      "leaf_capacity": 8,
+      "member_count": 6,
+      "structural_depth": 3
+    },
+    {
+      "blank_leaf_count": 1,
+      "leaf_capacity": 8,
+      "member_count": 7,
+      "structural_depth": 3
+    },
+    {
+      "blank_leaf_count": 0,
+      "leaf_capacity": 8,
+      "member_count": 8,
+      "structural_depth": 3
+    },
+    {
+      "blank_leaf_count": 7,
+      "leaf_capacity": 16,
+      "member_count": 9,
+      "structural_depth": 4
+    },
+    {
+      "blank_leaf_count": 6,
+      "leaf_capacity": 16,
+      "member_count": 10,
+      "structural_depth": 4
+    },
+    {
+      "blank_leaf_count": 5,
+      "leaf_capacity": 16,
+      "member_count": 11,
+      "structural_depth": 4
+    },
+    {
+      "blank_leaf_count": 4,
+      "leaf_capacity": 16,
+      "member_count": 12,
+      "structural_depth": 4
+    },
+    {
+      "blank_leaf_count": 3,
+      "leaf_capacity": 16,
+      "member_count": 13,
+      "structural_depth": 4
+    },
+    {
+      "blank_leaf_count": 2,
+      "leaf_capacity": 16,
+      "member_count": 14,
+      "structural_depth": 4
+    },
+    {
+      "blank_leaf_count": 1,
+      "leaf_capacity": 16,
+      "member_count": 15,
+      "structural_depth": 4
+    },
+    {
+      "blank_leaf_count": 0,
+      "leaf_capacity": 16,
+      "member_count": 16,
+      "structural_depth": 4
+    },
+    {
+      "blank_leaf_count": 15,
+      "leaf_capacity": 32,
+      "member_count": 17,
+      "structural_depth": 5
+    },
+    {
+      "blank_leaf_count": 14,
+      "leaf_capacity": 32,
+      "member_count": 18,
+      "structural_depth": 5
+    },
+    {
+      "blank_leaf_count": 13,
+      "leaf_capacity": 32,
+      "member_count": 19,
+      "structural_depth": 5
+    },
+    {
+      "blank_leaf_count": 12,
+      "leaf_capacity": 32,
+      "member_count": 20,
+      "structural_depth": 5
+    },
+    {
+      "blank_leaf_count": 11,
+      "leaf_capacity": 32,
+      "member_count": 21,
+      "structural_depth": 5
+    },
+    {
+      "blank_leaf_count": 10,
+      "leaf_capacity": 32,
+      "member_count": 22,
+      "structural_depth": 5
+    },
+    {
+      "blank_leaf_count": 9,
+      "leaf_capacity": 32,
+      "member_count": 23,
+      "structural_depth": 5
+    },
+    {
+      "blank_leaf_count": 8,
+      "leaf_capacity": 32,
+      "member_count": 24,
+      "structural_depth": 5
+    },
+    {
+      "blank_leaf_count": 7,
+      "leaf_capacity": 32,
+      "member_count": 25,
+      "structural_depth": 5
+    },
+    {
+      "blank_leaf_count": 6,
+      "leaf_capacity": 32,
+      "member_count": 26,
+      "structural_depth": 5
+    },
+    {
+      "blank_leaf_count": 5,
+      "leaf_capacity": 32,
+      "member_count": 27,
+      "structural_depth": 5
+    },
+    {
+      "blank_leaf_count": 4,
+      "leaf_capacity": 32,
+      "member_count": 28,
+      "structural_depth": 5
+    },
+    {
+      "blank_leaf_count": 3,
+      "leaf_capacity": 32,
+      "member_count": 29,
+      "structural_depth": 5
+    },
+    {
+      "blank_leaf_count": 2,
+      "leaf_capacity": 32,
+      "member_count": 30,
+      "structural_depth": 5
+    },
+    {
+      "blank_leaf_count": 1,
+      "leaf_capacity": 32,
+      "member_count": 31,
+      "structural_depth": 5
+    },
+    {
+      "blank_leaf_count": 0,
+      "leaf_capacity": 32,
+      "member_count": 32,
+      "structural_depth": 5
+    },
+    {
+      "blank_leaf_count": 31,
+      "leaf_capacity": 64,
+      "member_count": 33,
+      "structural_depth": 6
+    },
+    {
+      "blank_leaf_count": 30,
+      "leaf_capacity": 64,
+      "member_count": 34,
+      "structural_depth": 6
+    },
+    {
+      "blank_leaf_count": 29,
+      "leaf_capacity": 64,
+      "member_count": 35,
+      "structural_depth": 6
+    },
+    {
+      "blank_leaf_count": 28,
+      "leaf_capacity": 64,
+      "member_count": 36,
+      "structural_depth": 6
+    },
+    {
+      "blank_leaf_count": 27,
+      "leaf_capacity": 64,
+      "member_count": 37,
+      "structural_depth": 6
+    },
+    {
+      "blank_leaf_count": 26,
+      "leaf_capacity": 64,
+      "member_count": 38,
+      "structural_depth": 6
+    },
+    {
+      "blank_leaf_count": 25,
+      "leaf_capacity": 64,
+      "member_count": 39,
+      "structural_depth": 6
+    },
+    {
+      "blank_leaf_count": 24,
+      "leaf_capacity": 64,
+      "member_count": 40,
+      "structural_depth": 6
+    },
+    {
+      "blank_leaf_count": 23,
+      "leaf_capacity": 64,
+      "member_count": 41,
+      "structural_depth": 6
+    },
+    {
+      "blank_leaf_count": 22,
+      "leaf_capacity": 64,
+      "member_count": 42,
+      "structural_depth": 6
+    },
+    {
+      "blank_leaf_count": 21,
+      "leaf_capacity": 64,
+      "member_count": 43,
+      "structural_depth": 6
+    },
+    {
+      "blank_leaf_count": 20,
+      "leaf_capacity": 64,
+      "member_count": 44,
+      "structural_depth": 6
+    },
+    {
+      "blank_leaf_count": 19,
+      "leaf_capacity": 64,
+      "member_count": 45,
+      "structural_depth": 6
+    },
+    {
+      "blank_leaf_count": 18,
+      "leaf_capacity": 64,
+      "member_count": 46,
+      "structural_depth": 6
+    },
+    {
+      "blank_leaf_count": 17,
+      "leaf_capacity": 64,
+      "member_count": 47,
+      "structural_depth": 6
+    },
+    {
+      "blank_leaf_count": 16,
+      "leaf_capacity": 64,
+      "member_count": 48,
+      "structural_depth": 6
+    },
+    {
+      "blank_leaf_count": 15,
+      "leaf_capacity": 64,
+      "member_count": 49,
+      "structural_depth": 6
+    },
+    {
+      "blank_leaf_count": 14,
+      "leaf_capacity": 64,
+      "member_count": 50,
+      "structural_depth": 6
+    },
+    {
+      "blank_leaf_count": 13,
+      "leaf_capacity": 64,
+      "member_count": 51,
+      "structural_depth": 6
+    },
+    {
+      "blank_leaf_count": 12,
+      "leaf_capacity": 64,
+      "member_count": 52,
+      "structural_depth": 6
+    },
+    {
+      "blank_leaf_count": 11,
+      "leaf_capacity": 64,
+      "member_count": 53,
+      "structural_depth": 6
+    },
+    {
+      "blank_leaf_count": 10,
+      "leaf_capacity": 64,
+      "member_count": 54,
+      "structural_depth": 6
+    },
+    {
+      "blank_leaf_count": 9,
+      "leaf_capacity": 64,
+      "member_count": 55,
+      "structural_depth": 6
+    },
+    {
+      "blank_leaf_count": 8,
+      "leaf_capacity": 64,
+      "member_count": 56,
+      "structural_depth": 6
+    },
+    {
+      "blank_leaf_count": 7,
+      "leaf_capacity": 64,
+      "member_count": 57,
+      "structural_depth": 6
+    },
+    {
+      "blank_leaf_count": 6,
+      "leaf_capacity": 64,
+      "member_count": 58,
+      "structural_depth": 6
+    },
+    {
+      "blank_leaf_count": 5,
+      "leaf_capacity": 64,
+      "member_count": 59,
+      "structural_depth": 6
+    },
+    {
+      "blank_leaf_count": 4,
+      "leaf_capacity": 64,
+      "member_count": 60,
+      "structural_depth": 6
+    },
+    {
+      "blank_leaf_count": 3,
+      "leaf_capacity": 64,
+      "member_count": 61,
+      "structural_depth": 6
+    },
+    {
+      "blank_leaf_count": 2,
+      "leaf_capacity": 64,
+      "member_count": 62,
+      "structural_depth": 6
+    },
+    {
+      "blank_leaf_count": 1,
+      "leaf_capacity": 64,
+      "member_count": 63,
+      "structural_depth": 6
+    },
+    {
+      "blank_leaf_count": 0,
+      "leaf_capacity": 64,
+      "member_count": 64,
+      "structural_depth": 6
+    },
+    {
+      "blank_leaf_count": 63,
+      "leaf_capacity": 128,
+      "member_count": 65,
+      "structural_depth": 7
+    },
+    {
+      "blank_leaf_count": 62,
+      "leaf_capacity": 128,
+      "member_count": 66,
+      "structural_depth": 7
+    },
+    {
+      "blank_leaf_count": 61,
+      "leaf_capacity": 128,
+      "member_count": 67,
+      "structural_depth": 7
+    },
+    {
+      "blank_leaf_count": 60,
+      "leaf_capacity": 128,
+      "member_count": 68,
+      "structural_depth": 7
+    },
+    {
+      "blank_leaf_count": 59,
+      "leaf_capacity": 128,
+      "member_count": 69,
+      "structural_depth": 7
+    },
+    {
+      "blank_leaf_count": 58,
+      "leaf_capacity": 128,
+      "member_count": 70,
+      "structural_depth": 7
+    },
+    {
+      "blank_leaf_count": 57,
+      "leaf_capacity": 128,
+      "member_count": 71,
+      "structural_depth": 7
+    },
+    {
+      "blank_leaf_count": 56,
+      "leaf_capacity": 128,
+      "member_count": 72,
+      "structural_depth": 7
+    },
+    {
+      "blank_leaf_count": 55,
+      "leaf_capacity": 128,
+      "member_count": 73,
+      "structural_depth": 7
+    },
+    {
+      "blank_leaf_count": 54,
+      "leaf_capacity": 128,
+      "member_count": 74,
+      "structural_depth": 7
+    },
+    {
+      "blank_leaf_count": 53,
+      "leaf_capacity": 128,
+      "member_count": 75,
+      "structural_depth": 7
+    },
+    {
+      "blank_leaf_count": 52,
+      "leaf_capacity": 128,
+      "member_count": 76,
+      "structural_depth": 7
+    },
+    {
+      "blank_leaf_count": 51,
+      "leaf_capacity": 128,
+      "member_count": 77,
+      "structural_depth": 7
+    },
+    {
+      "blank_leaf_count": 50,
+      "leaf_capacity": 128,
+      "member_count": 78,
+      "structural_depth": 7
+    },
+    {
+      "blank_leaf_count": 49,
+      "leaf_capacity": 128,
+      "member_count": 79,
+      "structural_depth": 7
+    },
+    {
+      "blank_leaf_count": 48,
+      "leaf_capacity": 128,
+      "member_count": 80,
+      "structural_depth": 7
+    },
+    {
+      "blank_leaf_count": 47,
+      "leaf_capacity": 128,
+      "member_count": 81,
+      "structural_depth": 7
+    },
+    {
+      "blank_leaf_count": 46,
+      "leaf_capacity": 128,
+      "member_count": 82,
+      "structural_depth": 7
+    },
+    {
+      "blank_leaf_count": 45,
+      "leaf_capacity": 128,
+      "member_count": 83,
+      "structural_depth": 7
+    },
+    {
+      "blank_leaf_count": 44,
+      "leaf_capacity": 128,
+      "member_count": 84,
+      "structural_depth": 7
+    },
+    {
+      "blank_leaf_count": 43,
+      "leaf_capacity": 128,
+      "member_count": 85,
+      "structural_depth": 7
+    },
+    {
+      "blank_leaf_count": 42,
+      "leaf_capacity": 128,
+      "member_count": 86,
+      "structural_depth": 7
+    },
+    {
+      "blank_leaf_count": 41,
+      "leaf_capacity": 128,
+      "member_count": 87,
+      "structural_depth": 7
+    },
+    {
+      "blank_leaf_count": 40,
+      "leaf_capacity": 128,
+      "member_count": 88,
+      "structural_depth": 7
+    },
+    {
+      "blank_leaf_count": 39,
+      "leaf_capacity": 128,
+      "member_count": 89,
+      "structural_depth": 7
+    },
+    {
+      "blank_leaf_count": 38,
+      "leaf_capacity": 128,
+      "member_count": 90,
+      "structural_depth": 7
+    },
+    {
+      "blank_leaf_count": 37,
+      "leaf_capacity": 128,
+      "member_count": 91,
+      "structural_depth": 7
+    },
+    {
+      "blank_leaf_count": 36,
+      "leaf_capacity": 128,
+      "member_count": 92,
+      "structural_depth": 7
+    },
+    {
+      "blank_leaf_count": 35,
+      "leaf_capacity": 128,
+      "member_count": 93,
+      "structural_depth": 7
+    },
+    {
+      "blank_leaf_count": 34,
+      "leaf_capacity": 128,
+      "member_count": 94,
+      "structural_depth": 7
+    },
+    {
+      "blank_leaf_count": 33,
+      "leaf_capacity": 128,
+      "member_count": 95,
+      "structural_depth": 7
+    },
+    {
+      "blank_leaf_count": 32,
+      "leaf_capacity": 128,
+      "member_count": 96,
+      "structural_depth": 7
+    },
+    {
+      "blank_leaf_count": 31,
+      "leaf_capacity": 128,
+      "member_count": 97,
+      "structural_depth": 7
+    },
+    {
+      "blank_leaf_count": 30,
+      "leaf_capacity": 128,
+      "member_count": 98,
+      "structural_depth": 7
+    },
+    {
+      "blank_leaf_count": 29,
+      "leaf_capacity": 128,
+      "member_count": 99,
+      "structural_depth": 7
+    },
+    {
+      "blank_leaf_count": 28,
+      "leaf_capacity": 128,
+      "member_count": 100,
+      "structural_depth": 7
+    },
+    {
+      "blank_leaf_count": 27,
+      "leaf_capacity": 128,
+      "member_count": 101,
+      "structural_depth": 7
+    },
+    {
+      "blank_leaf_count": 26,
+      "leaf_capacity": 128,
+      "member_count": 102,
+      "structural_depth": 7
+    },
+    {
+      "blank_leaf_count": 25,
+      "leaf_capacity": 128,
+      "member_count": 103,
+      "structural_depth": 7
+    },
+    {
+      "blank_leaf_count": 24,
+      "leaf_capacity": 128,
+      "member_count": 104,
+      "structural_depth": 7
+    },
+    {
+      "blank_leaf_count": 23,
+      "leaf_capacity": 128,
+      "member_count": 105,
+      "structural_depth": 7
+    },
+    {
+      "blank_leaf_count": 22,
+      "leaf_capacity": 128,
+      "member_count": 106,
+      "structural_depth": 7
+    },
+    {
+      "blank_leaf_count": 21,
+      "leaf_capacity": 128,
+      "member_count": 107,
+      "structural_depth": 7
+    },
+    {
+      "blank_leaf_count": 20,
+      "leaf_capacity": 128,
+      "member_count": 108,
+      "structural_depth": 7
+    },
+    {
+      "blank_leaf_count": 19,
+      "leaf_capacity": 128,
+      "member_count": 109,
+      "structural_depth": 7
+    },
+    {
+      "blank_leaf_count": 18,
+      "leaf_capacity": 128,
+      "member_count": 110,
+      "structural_depth": 7
+    },
+    {
+      "blank_leaf_count": 17,
+      "leaf_capacity": 128,
+      "member_count": 111,
+      "structural_depth": 7
+    },
+    {
+      "blank_leaf_count": 16,
+      "leaf_capacity": 128,
+      "member_count": 112,
+      "structural_depth": 7
+    },
+    {
+      "blank_leaf_count": 15,
+      "leaf_capacity": 128,
+      "member_count": 113,
+      "structural_depth": 7
+    },
+    {
+      "blank_leaf_count": 14,
+      "leaf_capacity": 128,
+      "member_count": 114,
+      "structural_depth": 7
+    },
+    {
+      "blank_leaf_count": 13,
+      "leaf_capacity": 128,
+      "member_count": 115,
+      "structural_depth": 7
+    },
+    {
+      "blank_leaf_count": 12,
+      "leaf_capacity": 128,
+      "member_count": 116,
+      "structural_depth": 7
+    },
+    {
+      "blank_leaf_count": 11,
+      "leaf_capacity": 128,
+      "member_count": 117,
+      "structural_depth": 7
+    },
+    {
+      "blank_leaf_count": 10,
+      "leaf_capacity": 128,
+      "member_count": 118,
+      "structural_depth": 7
+    },
+    {
+      "blank_leaf_count": 9,
+      "leaf_capacity": 128,
+      "member_count": 119,
+      "structural_depth": 7
+    },
+    {
+      "blank_leaf_count": 8,
+      "leaf_capacity": 128,
+      "member_count": 120,
+      "structural_depth": 7
+    },
+    {
+      "blank_leaf_count": 7,
+      "leaf_capacity": 128,
+      "member_count": 121,
+      "structural_depth": 7
+    },
+    {
+      "blank_leaf_count": 6,
+      "leaf_capacity": 128,
+      "member_count": 122,
+      "structural_depth": 7
+    },
+    {
+      "blank_leaf_count": 5,
+      "leaf_capacity": 128,
+      "member_count": 123,
+      "structural_depth": 7
+    },
+    {
+      "blank_leaf_count": 4,
+      "leaf_capacity": 128,
+      "member_count": 124,
+      "structural_depth": 7
+    },
+    {
+      "blank_leaf_count": 3,
+      "leaf_capacity": 128,
+      "member_count": 125,
+      "structural_depth": 7
+    },
+    {
+      "blank_leaf_count": 2,
+      "leaf_capacity": 128,
+      "member_count": 126,
+      "structural_depth": 7
+    },
+    {
+      "blank_leaf_count": 1,
+      "leaf_capacity": 128,
+      "member_count": 127,
+      "structural_depth": 7
+    },
+    {
+      "blank_leaf_count": 0,
+      "leaf_capacity": 128,
+      "member_count": 128,
+      "structural_depth": 7
+    },
+    {
+      "blank_leaf_count": 127,
+      "leaf_capacity": 256,
+      "member_count": 129,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 126,
+      "leaf_capacity": 256,
+      "member_count": 130,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 125,
+      "leaf_capacity": 256,
+      "member_count": 131,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 124,
+      "leaf_capacity": 256,
+      "member_count": 132,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 123,
+      "leaf_capacity": 256,
+      "member_count": 133,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 122,
+      "leaf_capacity": 256,
+      "member_count": 134,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 121,
+      "leaf_capacity": 256,
+      "member_count": 135,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 120,
+      "leaf_capacity": 256,
+      "member_count": 136,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 119,
+      "leaf_capacity": 256,
+      "member_count": 137,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 118,
+      "leaf_capacity": 256,
+      "member_count": 138,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 117,
+      "leaf_capacity": 256,
+      "member_count": 139,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 116,
+      "leaf_capacity": 256,
+      "member_count": 140,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 115,
+      "leaf_capacity": 256,
+      "member_count": 141,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 114,
+      "leaf_capacity": 256,
+      "member_count": 142,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 113,
+      "leaf_capacity": 256,
+      "member_count": 143,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 112,
+      "leaf_capacity": 256,
+      "member_count": 144,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 111,
+      "leaf_capacity": 256,
+      "member_count": 145,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 110,
+      "leaf_capacity": 256,
+      "member_count": 146,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 109,
+      "leaf_capacity": 256,
+      "member_count": 147,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 108,
+      "leaf_capacity": 256,
+      "member_count": 148,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 107,
+      "leaf_capacity": 256,
+      "member_count": 149,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 106,
+      "leaf_capacity": 256,
+      "member_count": 150,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 105,
+      "leaf_capacity": 256,
+      "member_count": 151,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 104,
+      "leaf_capacity": 256,
+      "member_count": 152,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 103,
+      "leaf_capacity": 256,
+      "member_count": 153,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 102,
+      "leaf_capacity": 256,
+      "member_count": 154,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 101,
+      "leaf_capacity": 256,
+      "member_count": 155,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 100,
+      "leaf_capacity": 256,
+      "member_count": 156,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 99,
+      "leaf_capacity": 256,
+      "member_count": 157,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 98,
+      "leaf_capacity": 256,
+      "member_count": 158,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 97,
+      "leaf_capacity": 256,
+      "member_count": 159,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 96,
+      "leaf_capacity": 256,
+      "member_count": 160,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 95,
+      "leaf_capacity": 256,
+      "member_count": 161,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 94,
+      "leaf_capacity": 256,
+      "member_count": 162,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 93,
+      "leaf_capacity": 256,
+      "member_count": 163,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 92,
+      "leaf_capacity": 256,
+      "member_count": 164,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 91,
+      "leaf_capacity": 256,
+      "member_count": 165,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 90,
+      "leaf_capacity": 256,
+      "member_count": 166,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 89,
+      "leaf_capacity": 256,
+      "member_count": 167,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 88,
+      "leaf_capacity": 256,
+      "member_count": 168,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 87,
+      "leaf_capacity": 256,
+      "member_count": 169,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 86,
+      "leaf_capacity": 256,
+      "member_count": 170,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 85,
+      "leaf_capacity": 256,
+      "member_count": 171,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 84,
+      "leaf_capacity": 256,
+      "member_count": 172,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 83,
+      "leaf_capacity": 256,
+      "member_count": 173,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 82,
+      "leaf_capacity": 256,
+      "member_count": 174,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 81,
+      "leaf_capacity": 256,
+      "member_count": 175,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 80,
+      "leaf_capacity": 256,
+      "member_count": 176,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 79,
+      "leaf_capacity": 256,
+      "member_count": 177,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 78,
+      "leaf_capacity": 256,
+      "member_count": 178,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 77,
+      "leaf_capacity": 256,
+      "member_count": 179,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 76,
+      "leaf_capacity": 256,
+      "member_count": 180,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 75,
+      "leaf_capacity": 256,
+      "member_count": 181,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 74,
+      "leaf_capacity": 256,
+      "member_count": 182,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 73,
+      "leaf_capacity": 256,
+      "member_count": 183,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 72,
+      "leaf_capacity": 256,
+      "member_count": 184,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 71,
+      "leaf_capacity": 256,
+      "member_count": 185,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 70,
+      "leaf_capacity": 256,
+      "member_count": 186,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 69,
+      "leaf_capacity": 256,
+      "member_count": 187,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 68,
+      "leaf_capacity": 256,
+      "member_count": 188,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 67,
+      "leaf_capacity": 256,
+      "member_count": 189,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 66,
+      "leaf_capacity": 256,
+      "member_count": 190,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 65,
+      "leaf_capacity": 256,
+      "member_count": 191,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 64,
+      "leaf_capacity": 256,
+      "member_count": 192,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 63,
+      "leaf_capacity": 256,
+      "member_count": 193,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 62,
+      "leaf_capacity": 256,
+      "member_count": 194,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 61,
+      "leaf_capacity": 256,
+      "member_count": 195,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 60,
+      "leaf_capacity": 256,
+      "member_count": 196,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 59,
+      "leaf_capacity": 256,
+      "member_count": 197,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 58,
+      "leaf_capacity": 256,
+      "member_count": 198,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 57,
+      "leaf_capacity": 256,
+      "member_count": 199,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 56,
+      "leaf_capacity": 256,
+      "member_count": 200,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 55,
+      "leaf_capacity": 256,
+      "member_count": 201,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 54,
+      "leaf_capacity": 256,
+      "member_count": 202,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 53,
+      "leaf_capacity": 256,
+      "member_count": 203,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 52,
+      "leaf_capacity": 256,
+      "member_count": 204,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 51,
+      "leaf_capacity": 256,
+      "member_count": 205,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 50,
+      "leaf_capacity": 256,
+      "member_count": 206,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 49,
+      "leaf_capacity": 256,
+      "member_count": 207,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 48,
+      "leaf_capacity": 256,
+      "member_count": 208,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 47,
+      "leaf_capacity": 256,
+      "member_count": 209,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 46,
+      "leaf_capacity": 256,
+      "member_count": 210,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 45,
+      "leaf_capacity": 256,
+      "member_count": 211,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 44,
+      "leaf_capacity": 256,
+      "member_count": 212,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 43,
+      "leaf_capacity": 256,
+      "member_count": 213,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 42,
+      "leaf_capacity": 256,
+      "member_count": 214,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 41,
+      "leaf_capacity": 256,
+      "member_count": 215,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 40,
+      "leaf_capacity": 256,
+      "member_count": 216,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 39,
+      "leaf_capacity": 256,
+      "member_count": 217,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 38,
+      "leaf_capacity": 256,
+      "member_count": 218,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 37,
+      "leaf_capacity": 256,
+      "member_count": 219,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 36,
+      "leaf_capacity": 256,
+      "member_count": 220,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 35,
+      "leaf_capacity": 256,
+      "member_count": 221,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 34,
+      "leaf_capacity": 256,
+      "member_count": 222,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 33,
+      "leaf_capacity": 256,
+      "member_count": 223,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 32,
+      "leaf_capacity": 256,
+      "member_count": 224,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 31,
+      "leaf_capacity": 256,
+      "member_count": 225,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 30,
+      "leaf_capacity": 256,
+      "member_count": 226,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 29,
+      "leaf_capacity": 256,
+      "member_count": 227,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 28,
+      "leaf_capacity": 256,
+      "member_count": 228,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 27,
+      "leaf_capacity": 256,
+      "member_count": 229,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 26,
+      "leaf_capacity": 256,
+      "member_count": 230,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 25,
+      "leaf_capacity": 256,
+      "member_count": 231,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 24,
+      "leaf_capacity": 256,
+      "member_count": 232,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 23,
+      "leaf_capacity": 256,
+      "member_count": 233,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 22,
+      "leaf_capacity": 256,
+      "member_count": 234,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 21,
+      "leaf_capacity": 256,
+      "member_count": 235,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 20,
+      "leaf_capacity": 256,
+      "member_count": 236,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 19,
+      "leaf_capacity": 256,
+      "member_count": 237,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 18,
+      "leaf_capacity": 256,
+      "member_count": 238,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 17,
+      "leaf_capacity": 256,
+      "member_count": 239,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 16,
+      "leaf_capacity": 256,
+      "member_count": 240,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 15,
+      "leaf_capacity": 256,
+      "member_count": 241,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 14,
+      "leaf_capacity": 256,
+      "member_count": 242,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 13,
+      "leaf_capacity": 256,
+      "member_count": 243,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 12,
+      "leaf_capacity": 256,
+      "member_count": 244,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 11,
+      "leaf_capacity": 256,
+      "member_count": 245,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 10,
+      "leaf_capacity": 256,
+      "member_count": 246,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 9,
+      "leaf_capacity": 256,
+      "member_count": 247,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 8,
+      "leaf_capacity": 256,
+      "member_count": 248,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 7,
+      "leaf_capacity": 256,
+      "member_count": 249,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 6,
+      "leaf_capacity": 256,
+      "member_count": 250,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 5,
+      "leaf_capacity": 256,
+      "member_count": 251,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 4,
+      "leaf_capacity": 256,
+      "member_count": 252,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 3,
+      "leaf_capacity": 256,
+      "member_count": 253,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 2,
+      "leaf_capacity": 256,
+      "member_count": 254,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 1,
+      "leaf_capacity": 256,
+      "member_count": 255,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 0,
+      "leaf_capacity": 256,
+      "member_count": 256,
+      "structural_depth": 8
+    },
+    {
+      "blank_leaf_count": 255,
+      "leaf_capacity": 512,
+      "member_count": 257,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 254,
+      "leaf_capacity": 512,
+      "member_count": 258,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 253,
+      "leaf_capacity": 512,
+      "member_count": 259,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 252,
+      "leaf_capacity": 512,
+      "member_count": 260,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 251,
+      "leaf_capacity": 512,
+      "member_count": 261,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 250,
+      "leaf_capacity": 512,
+      "member_count": 262,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 249,
+      "leaf_capacity": 512,
+      "member_count": 263,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 248,
+      "leaf_capacity": 512,
+      "member_count": 264,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 247,
+      "leaf_capacity": 512,
+      "member_count": 265,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 246,
+      "leaf_capacity": 512,
+      "member_count": 266,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 245,
+      "leaf_capacity": 512,
+      "member_count": 267,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 244,
+      "leaf_capacity": 512,
+      "member_count": 268,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 243,
+      "leaf_capacity": 512,
+      "member_count": 269,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 242,
+      "leaf_capacity": 512,
+      "member_count": 270,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 241,
+      "leaf_capacity": 512,
+      "member_count": 271,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 240,
+      "leaf_capacity": 512,
+      "member_count": 272,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 239,
+      "leaf_capacity": 512,
+      "member_count": 273,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 238,
+      "leaf_capacity": 512,
+      "member_count": 274,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 237,
+      "leaf_capacity": 512,
+      "member_count": 275,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 236,
+      "leaf_capacity": 512,
+      "member_count": 276,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 235,
+      "leaf_capacity": 512,
+      "member_count": 277,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 234,
+      "leaf_capacity": 512,
+      "member_count": 278,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 233,
+      "leaf_capacity": 512,
+      "member_count": 279,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 232,
+      "leaf_capacity": 512,
+      "member_count": 280,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 231,
+      "leaf_capacity": 512,
+      "member_count": 281,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 230,
+      "leaf_capacity": 512,
+      "member_count": 282,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 229,
+      "leaf_capacity": 512,
+      "member_count": 283,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 228,
+      "leaf_capacity": 512,
+      "member_count": 284,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 227,
+      "leaf_capacity": 512,
+      "member_count": 285,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 226,
+      "leaf_capacity": 512,
+      "member_count": 286,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 225,
+      "leaf_capacity": 512,
+      "member_count": 287,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 224,
+      "leaf_capacity": 512,
+      "member_count": 288,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 223,
+      "leaf_capacity": 512,
+      "member_count": 289,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 222,
+      "leaf_capacity": 512,
+      "member_count": 290,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 221,
+      "leaf_capacity": 512,
+      "member_count": 291,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 220,
+      "leaf_capacity": 512,
+      "member_count": 292,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 219,
+      "leaf_capacity": 512,
+      "member_count": 293,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 218,
+      "leaf_capacity": 512,
+      "member_count": 294,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 217,
+      "leaf_capacity": 512,
+      "member_count": 295,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 216,
+      "leaf_capacity": 512,
+      "member_count": 296,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 215,
+      "leaf_capacity": 512,
+      "member_count": 297,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 214,
+      "leaf_capacity": 512,
+      "member_count": 298,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 213,
+      "leaf_capacity": 512,
+      "member_count": 299,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 212,
+      "leaf_capacity": 512,
+      "member_count": 300,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 211,
+      "leaf_capacity": 512,
+      "member_count": 301,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 210,
+      "leaf_capacity": 512,
+      "member_count": 302,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 209,
+      "leaf_capacity": 512,
+      "member_count": 303,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 208,
+      "leaf_capacity": 512,
+      "member_count": 304,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 207,
+      "leaf_capacity": 512,
+      "member_count": 305,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 206,
+      "leaf_capacity": 512,
+      "member_count": 306,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 205,
+      "leaf_capacity": 512,
+      "member_count": 307,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 204,
+      "leaf_capacity": 512,
+      "member_count": 308,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 203,
+      "leaf_capacity": 512,
+      "member_count": 309,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 202,
+      "leaf_capacity": 512,
+      "member_count": 310,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 201,
+      "leaf_capacity": 512,
+      "member_count": 311,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 200,
+      "leaf_capacity": 512,
+      "member_count": 312,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 199,
+      "leaf_capacity": 512,
+      "member_count": 313,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 198,
+      "leaf_capacity": 512,
+      "member_count": 314,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 197,
+      "leaf_capacity": 512,
+      "member_count": 315,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 196,
+      "leaf_capacity": 512,
+      "member_count": 316,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 195,
+      "leaf_capacity": 512,
+      "member_count": 317,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 194,
+      "leaf_capacity": 512,
+      "member_count": 318,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 193,
+      "leaf_capacity": 512,
+      "member_count": 319,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 192,
+      "leaf_capacity": 512,
+      "member_count": 320,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 191,
+      "leaf_capacity": 512,
+      "member_count": 321,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 190,
+      "leaf_capacity": 512,
+      "member_count": 322,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 189,
+      "leaf_capacity": 512,
+      "member_count": 323,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 188,
+      "leaf_capacity": 512,
+      "member_count": 324,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 187,
+      "leaf_capacity": 512,
+      "member_count": 325,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 186,
+      "leaf_capacity": 512,
+      "member_count": 326,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 185,
+      "leaf_capacity": 512,
+      "member_count": 327,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 184,
+      "leaf_capacity": 512,
+      "member_count": 328,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 183,
+      "leaf_capacity": 512,
+      "member_count": 329,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 182,
+      "leaf_capacity": 512,
+      "member_count": 330,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 181,
+      "leaf_capacity": 512,
+      "member_count": 331,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 180,
+      "leaf_capacity": 512,
+      "member_count": 332,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 179,
+      "leaf_capacity": 512,
+      "member_count": 333,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 178,
+      "leaf_capacity": 512,
+      "member_count": 334,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 177,
+      "leaf_capacity": 512,
+      "member_count": 335,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 176,
+      "leaf_capacity": 512,
+      "member_count": 336,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 175,
+      "leaf_capacity": 512,
+      "member_count": 337,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 174,
+      "leaf_capacity": 512,
+      "member_count": 338,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 173,
+      "leaf_capacity": 512,
+      "member_count": 339,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 172,
+      "leaf_capacity": 512,
+      "member_count": 340,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 171,
+      "leaf_capacity": 512,
+      "member_count": 341,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 170,
+      "leaf_capacity": 512,
+      "member_count": 342,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 169,
+      "leaf_capacity": 512,
+      "member_count": 343,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 168,
+      "leaf_capacity": 512,
+      "member_count": 344,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 167,
+      "leaf_capacity": 512,
+      "member_count": 345,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 166,
+      "leaf_capacity": 512,
+      "member_count": 346,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 165,
+      "leaf_capacity": 512,
+      "member_count": 347,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 164,
+      "leaf_capacity": 512,
+      "member_count": 348,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 163,
+      "leaf_capacity": 512,
+      "member_count": 349,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 162,
+      "leaf_capacity": 512,
+      "member_count": 350,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 161,
+      "leaf_capacity": 512,
+      "member_count": 351,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 160,
+      "leaf_capacity": 512,
+      "member_count": 352,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 159,
+      "leaf_capacity": 512,
+      "member_count": 353,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 158,
+      "leaf_capacity": 512,
+      "member_count": 354,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 157,
+      "leaf_capacity": 512,
+      "member_count": 355,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 156,
+      "leaf_capacity": 512,
+      "member_count": 356,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 155,
+      "leaf_capacity": 512,
+      "member_count": 357,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 154,
+      "leaf_capacity": 512,
+      "member_count": 358,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 153,
+      "leaf_capacity": 512,
+      "member_count": 359,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 152,
+      "leaf_capacity": 512,
+      "member_count": 360,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 151,
+      "leaf_capacity": 512,
+      "member_count": 361,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 150,
+      "leaf_capacity": 512,
+      "member_count": 362,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 149,
+      "leaf_capacity": 512,
+      "member_count": 363,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 148,
+      "leaf_capacity": 512,
+      "member_count": 364,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 147,
+      "leaf_capacity": 512,
+      "member_count": 365,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 146,
+      "leaf_capacity": 512,
+      "member_count": 366,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 145,
+      "leaf_capacity": 512,
+      "member_count": 367,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 144,
+      "leaf_capacity": 512,
+      "member_count": 368,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 143,
+      "leaf_capacity": 512,
+      "member_count": 369,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 142,
+      "leaf_capacity": 512,
+      "member_count": 370,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 141,
+      "leaf_capacity": 512,
+      "member_count": 371,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 140,
+      "leaf_capacity": 512,
+      "member_count": 372,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 139,
+      "leaf_capacity": 512,
+      "member_count": 373,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 138,
+      "leaf_capacity": 512,
+      "member_count": 374,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 137,
+      "leaf_capacity": 512,
+      "member_count": 375,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 136,
+      "leaf_capacity": 512,
+      "member_count": 376,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 135,
+      "leaf_capacity": 512,
+      "member_count": 377,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 134,
+      "leaf_capacity": 512,
+      "member_count": 378,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 133,
+      "leaf_capacity": 512,
+      "member_count": 379,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 132,
+      "leaf_capacity": 512,
+      "member_count": 380,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 131,
+      "leaf_capacity": 512,
+      "member_count": 381,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 130,
+      "leaf_capacity": 512,
+      "member_count": 382,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 129,
+      "leaf_capacity": 512,
+      "member_count": 383,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 128,
+      "leaf_capacity": 512,
+      "member_count": 384,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 127,
+      "leaf_capacity": 512,
+      "member_count": 385,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 126,
+      "leaf_capacity": 512,
+      "member_count": 386,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 125,
+      "leaf_capacity": 512,
+      "member_count": 387,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 124,
+      "leaf_capacity": 512,
+      "member_count": 388,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 123,
+      "leaf_capacity": 512,
+      "member_count": 389,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 122,
+      "leaf_capacity": 512,
+      "member_count": 390,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 121,
+      "leaf_capacity": 512,
+      "member_count": 391,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 120,
+      "leaf_capacity": 512,
+      "member_count": 392,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 119,
+      "leaf_capacity": 512,
+      "member_count": 393,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 118,
+      "leaf_capacity": 512,
+      "member_count": 394,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 117,
+      "leaf_capacity": 512,
+      "member_count": 395,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 116,
+      "leaf_capacity": 512,
+      "member_count": 396,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 115,
+      "leaf_capacity": 512,
+      "member_count": 397,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 114,
+      "leaf_capacity": 512,
+      "member_count": 398,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 113,
+      "leaf_capacity": 512,
+      "member_count": 399,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 112,
+      "leaf_capacity": 512,
+      "member_count": 400,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 111,
+      "leaf_capacity": 512,
+      "member_count": 401,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 110,
+      "leaf_capacity": 512,
+      "member_count": 402,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 109,
+      "leaf_capacity": 512,
+      "member_count": 403,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 108,
+      "leaf_capacity": 512,
+      "member_count": 404,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 107,
+      "leaf_capacity": 512,
+      "member_count": 405,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 106,
+      "leaf_capacity": 512,
+      "member_count": 406,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 105,
+      "leaf_capacity": 512,
+      "member_count": 407,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 104,
+      "leaf_capacity": 512,
+      "member_count": 408,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 103,
+      "leaf_capacity": 512,
+      "member_count": 409,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 102,
+      "leaf_capacity": 512,
+      "member_count": 410,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 101,
+      "leaf_capacity": 512,
+      "member_count": 411,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 100,
+      "leaf_capacity": 512,
+      "member_count": 412,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 99,
+      "leaf_capacity": 512,
+      "member_count": 413,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 98,
+      "leaf_capacity": 512,
+      "member_count": 414,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 97,
+      "leaf_capacity": 512,
+      "member_count": 415,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 96,
+      "leaf_capacity": 512,
+      "member_count": 416,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 95,
+      "leaf_capacity": 512,
+      "member_count": 417,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 94,
+      "leaf_capacity": 512,
+      "member_count": 418,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 93,
+      "leaf_capacity": 512,
+      "member_count": 419,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 92,
+      "leaf_capacity": 512,
+      "member_count": 420,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 91,
+      "leaf_capacity": 512,
+      "member_count": 421,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 90,
+      "leaf_capacity": 512,
+      "member_count": 422,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 89,
+      "leaf_capacity": 512,
+      "member_count": 423,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 88,
+      "leaf_capacity": 512,
+      "member_count": 424,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 87,
+      "leaf_capacity": 512,
+      "member_count": 425,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 86,
+      "leaf_capacity": 512,
+      "member_count": 426,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 85,
+      "leaf_capacity": 512,
+      "member_count": 427,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 84,
+      "leaf_capacity": 512,
+      "member_count": 428,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 83,
+      "leaf_capacity": 512,
+      "member_count": 429,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 82,
+      "leaf_capacity": 512,
+      "member_count": 430,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 81,
+      "leaf_capacity": 512,
+      "member_count": 431,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 80,
+      "leaf_capacity": 512,
+      "member_count": 432,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 79,
+      "leaf_capacity": 512,
+      "member_count": 433,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 78,
+      "leaf_capacity": 512,
+      "member_count": 434,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 77,
+      "leaf_capacity": 512,
+      "member_count": 435,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 76,
+      "leaf_capacity": 512,
+      "member_count": 436,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 75,
+      "leaf_capacity": 512,
+      "member_count": 437,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 74,
+      "leaf_capacity": 512,
+      "member_count": 438,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 73,
+      "leaf_capacity": 512,
+      "member_count": 439,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 72,
+      "leaf_capacity": 512,
+      "member_count": 440,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 71,
+      "leaf_capacity": 512,
+      "member_count": 441,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 70,
+      "leaf_capacity": 512,
+      "member_count": 442,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 69,
+      "leaf_capacity": 512,
+      "member_count": 443,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 68,
+      "leaf_capacity": 512,
+      "member_count": 444,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 67,
+      "leaf_capacity": 512,
+      "member_count": 445,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 66,
+      "leaf_capacity": 512,
+      "member_count": 446,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 65,
+      "leaf_capacity": 512,
+      "member_count": 447,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 64,
+      "leaf_capacity": 512,
+      "member_count": 448,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 63,
+      "leaf_capacity": 512,
+      "member_count": 449,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 62,
+      "leaf_capacity": 512,
+      "member_count": 450,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 61,
+      "leaf_capacity": 512,
+      "member_count": 451,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 60,
+      "leaf_capacity": 512,
+      "member_count": 452,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 59,
+      "leaf_capacity": 512,
+      "member_count": 453,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 58,
+      "leaf_capacity": 512,
+      "member_count": 454,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 57,
+      "leaf_capacity": 512,
+      "member_count": 455,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 56,
+      "leaf_capacity": 512,
+      "member_count": 456,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 55,
+      "leaf_capacity": 512,
+      "member_count": 457,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 54,
+      "leaf_capacity": 512,
+      "member_count": 458,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 53,
+      "leaf_capacity": 512,
+      "member_count": 459,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 52,
+      "leaf_capacity": 512,
+      "member_count": 460,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 51,
+      "leaf_capacity": 512,
+      "member_count": 461,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 50,
+      "leaf_capacity": 512,
+      "member_count": 462,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 49,
+      "leaf_capacity": 512,
+      "member_count": 463,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 48,
+      "leaf_capacity": 512,
+      "member_count": 464,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 47,
+      "leaf_capacity": 512,
+      "member_count": 465,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 46,
+      "leaf_capacity": 512,
+      "member_count": 466,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 45,
+      "leaf_capacity": 512,
+      "member_count": 467,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 44,
+      "leaf_capacity": 512,
+      "member_count": 468,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 43,
+      "leaf_capacity": 512,
+      "member_count": 469,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 42,
+      "leaf_capacity": 512,
+      "member_count": 470,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 41,
+      "leaf_capacity": 512,
+      "member_count": 471,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 40,
+      "leaf_capacity": 512,
+      "member_count": 472,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 39,
+      "leaf_capacity": 512,
+      "member_count": 473,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 38,
+      "leaf_capacity": 512,
+      "member_count": 474,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 37,
+      "leaf_capacity": 512,
+      "member_count": 475,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 36,
+      "leaf_capacity": 512,
+      "member_count": 476,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 35,
+      "leaf_capacity": 512,
+      "member_count": 477,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 34,
+      "leaf_capacity": 512,
+      "member_count": 478,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 33,
+      "leaf_capacity": 512,
+      "member_count": 479,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 32,
+      "leaf_capacity": 512,
+      "member_count": 480,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 31,
+      "leaf_capacity": 512,
+      "member_count": 481,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 30,
+      "leaf_capacity": 512,
+      "member_count": 482,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 29,
+      "leaf_capacity": 512,
+      "member_count": 483,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 28,
+      "leaf_capacity": 512,
+      "member_count": 484,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 27,
+      "leaf_capacity": 512,
+      "member_count": 485,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 26,
+      "leaf_capacity": 512,
+      "member_count": 486,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 25,
+      "leaf_capacity": 512,
+      "member_count": 487,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 24,
+      "leaf_capacity": 512,
+      "member_count": 488,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 23,
+      "leaf_capacity": 512,
+      "member_count": 489,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 22,
+      "leaf_capacity": 512,
+      "member_count": 490,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 21,
+      "leaf_capacity": 512,
+      "member_count": 491,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 20,
+      "leaf_capacity": 512,
+      "member_count": 492,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 19,
+      "leaf_capacity": 512,
+      "member_count": 493,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 18,
+      "leaf_capacity": 512,
+      "member_count": 494,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 17,
+      "leaf_capacity": 512,
+      "member_count": 495,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 16,
+      "leaf_capacity": 512,
+      "member_count": 496,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 15,
+      "leaf_capacity": 512,
+      "member_count": 497,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 14,
+      "leaf_capacity": 512,
+      "member_count": 498,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 13,
+      "leaf_capacity": 512,
+      "member_count": 499,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 12,
+      "leaf_capacity": 512,
+      "member_count": 500,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 11,
+      "leaf_capacity": 512,
+      "member_count": 501,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 10,
+      "leaf_capacity": 512,
+      "member_count": 502,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 9,
+      "leaf_capacity": 512,
+      "member_count": 503,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 8,
+      "leaf_capacity": 512,
+      "member_count": 504,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 7,
+      "leaf_capacity": 512,
+      "member_count": 505,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 6,
+      "leaf_capacity": 512,
+      "member_count": 506,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 5,
+      "leaf_capacity": 512,
+      "member_count": 507,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 4,
+      "leaf_capacity": 512,
+      "member_count": 508,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 3,
+      "leaf_capacity": 512,
+      "member_count": 509,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 2,
+      "leaf_capacity": 512,
+      "member_count": 510,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 1,
+      "leaf_capacity": 512,
+      "member_count": 511,
+      "structural_depth": 9
+    },
+    {
+      "blank_leaf_count": 0,
+      "leaf_capacity": 512,
+      "member_count": 512,
+      "structural_depth": 9
+    }
+  ],
+  "tree_math_fixture": {
+    "file": "dmls_tree_math_vectors.json",
+    "sha256": "c19ebe0957f03b447c5d133feffcdcd42e2f84a9bc1dd800e61deb41208c240f"
+  },
+  "tree_math_source": "mlswg/mls-implementations tree-math vectors",
+  "version": 1,
+  "wire_cost_513_and_truncation": {
+    "blank_one_snapshot": [11, 9],
+    "clean": [10, 1]
+  }
+}

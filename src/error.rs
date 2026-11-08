@@ -38,6 +38,10 @@ pub enum Error {
     Commitment,
     /// Device certificate parsing or verification failed.
     Certificate(&'static str),
+    /// Event envelope has an invalid shape or required field.
+    Envelope(&'static str),
+    /// Event data is not valid Matrix canonical JSON.
+    CanonicalJson,
 }
 
 impl fmt::Display for Error {
@@ -59,6 +63,8 @@ impl fmt::Display for Error {
             Self::Successor(rule) => write!(f, "successor rule violated: {rule}"),
             Self::Commitment => f.write_str("revealed key does not match commitment"),
             Self::Certificate(what) => write!(f, "invalid device certificate: {what}"),
+            Self::Envelope(what) => write!(f, "invalid event envelope: {what}"),
+            Self::CanonicalJson => f.write_str("event is not valid Matrix canonical JSON"),
         }
     }
 }

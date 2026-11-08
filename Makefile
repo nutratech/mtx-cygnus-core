@@ -15,6 +15,10 @@ format: ##H Format code
 	-prettier -w $$(git ls-files '*.md' '*.y*ml' '*.json')
 	-pre-commit run --all-files
 
+.PHONY: fix
+fix: ##H Apply auto-fixes with clippy
+	$(CARGO) clippy --fix --allow-dirty --allow-staged --allow-no-vcs --all-targets
+
 .PHONY: lint
 lint: ##H Clippy, warnings are errors
 	$(CARGO) clippy --workspace --all-targets --all-features -- -D warnings

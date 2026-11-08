@@ -1,0 +1,308 @@
+{
+  "seeds": {
+    "srv_a_online_0": "0101010101010101010101010101010101010101010101010101010101010101",
+    "srv_a_rot_1": "0202020202020202020202020202020202020202020202020202020202020202",
+    "srv_a_online_1": "0303030303030303030303030303030303030303030303030303030303030303",
+    "srv_a_rot_2": "0404040404040404040404040404040404040404040404040404040404040404",
+    "srv_b_online_0": "1111111111111111111111111111111111111111111111111111111111111111",
+    "srv_b_rot_1": "1212121212121212121212121212121212121212121212121212121212121212",
+    "usr_rot_1": "2121212121212121212121212121212121212121212121212121212121212121",
+    "usr_rot_2": "2222222222222222222222222222222222222222222222222222222222222222",
+    "usr_msk": "2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f"
+  },
+  "public_keys": {
+    "srv_a_online_0": "8a88e3dd7409f195fd52db2d3cba5d72ca6709bf1d94121bf3748801b40f6f5c",
+    "srv_a_rot_1": "8139770ea87d175f56a35466c34c7ecccb8d8a91b4ee37a25df60f5b8fc9b394",
+    "srv_a_online_1": "ed4928c628d1c2c6eae90338905995612959273a5c63f93636c14614ac8737d1",
+    "srv_a_rot_2": "ca93ac1705187071d67b83c7ff0efe8108e8ec4530575d7726879333dbdabe7c",
+    "srv_b_online_0": "d04ab232742bb4ab3a1368bd4615e4e6d0224ab71a016baf8520a332c9778737",
+    "srv_b_rot_1": "204040e364c10f2bec9c1fe500a1cd4c247c89d650a01ed7e82caba867877c21",
+    "usr_rot_1": "884b8857f4eaa1613c61504db34d4beaf346517a0e31de3cddd4d9b4201d9d0b",
+    "usr_rot_2": "a09aa5f47a6759802ff955f8dc2d2a14a5c99d23be97f864127ff9383455a4f0",
+    "usr_msk": "6e32c19741f0af8260612ae99fd13d8a38944722e08964dd239738f552a6153b"
+  },
+  "commitments": {
+    "C(srv_a_rot_1)": "a7e376e5cd3eab82c54dcd960eed0d91b72e86ba2eaa0c4b4b4fd293c60ffc50",
+    "C(srv_a_rot_2)": "35366c39713749e62fbc8b2936fee7120f175074eea03dd6f34daf5b0bf6e51f",
+    "C(srv_b_rot_1)": "355ff3b61d527fd17e50c67d8a02995483ff3d9d7369ac6307372ebd28eb6376",
+    "C(usr_rot_1)": "38901c60bafa23457926e89b4e45bd710dc05bdfb5e54d9f6f37c6dc99eb0a3c",
+    "C(usr_rot_2)": "3ae3d138123ae39a139a9c81c8b932e9a566311bb496c4116b2c7461b508e17b"
+  },
+  "links": {
+    "A0_server_genesis": {
+      "height": 0,
+      "body_len": 156,
+      "trailer_len": 64,
+      "body_hex": "0101000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000a7e376e5cd3eab82c54dcd960eed0d91b72e86ba2eaa0c4b4b4fd293c60ffc508a88e3dd7409f195fd52db2d3cba5d72ca6709bf1d94121bf3748801b40f6f5c0010636861742e6578616d706c652e6f7267",
+      "trailer_hex": "d90d53b428b3d5e3e412534c7caefcd6ef5831a1619cb3b4846f33e8aff2d9a49a8531d1927910f0c54bb1c2016f37f42ed0fdf097f36b99d791542e87f2b409",
+      "link_b64u": "AQEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACn43blzT6rgsVNzZYO7Q2Rty6Gui6qDEtLT9KTxg_8UIqI4910CfGV_VLbLTy6XXLKZwm_HZQSG_N0iAG0D29cABBjaGF0LmV4YW1wbGUub3Jn2Q1TtCiz1ePkElNMfK781u9YMaFhnLO0hG8z6K_y2aSahTHRknkQ8MVLscIBbzf0LtD98Jfza5nXkVQuh_K0CQ",
+      "digest_hex": "b28114c7d862b5e6682f1f4ec0127de3e182b95ac392c5d13a4218b8b9fc2dbd",
+      "next_commit_hex": "a7e376e5cd3eab82c54dcd960eed0d91b72e86ba2eaa0c4b4b4fd293c60ffc50",
+      "principal": "soEUx9hiteZoLx9OwBJ94-GCuVrDksXROkIYuLn8Lb0"
+    },
+    "A1_server_rotation": {
+      "height": 1,
+      "body_len": 156,
+      "trailer_len": 96,
+      "body_hex": "0101b28114c7d862b5e6682f1f4ec0127de3e182b95ac392c5d13a4218b8b9fc2dbd0000000000000001b28114c7d862b5e6682f1f4ec0127de3e182b95ac392c5d13a4218b8b9fc2dbd35366c39713749e62fbc8b2936fee7120f175074eea03dd6f34daf5b0bf6e51fed4928c628d1c2c6eae90338905995612959273a5c63f93636c14614ac8737d10010636861742e6578616d706c652e6f7267",
+      "trailer_hex": "8139770ea87d175f56a35466c34c7ecccb8d8a91b4ee37a25df60f5b8fc9b394b103b176a47fa234987c4429b06c2964d7cf147d6a2d7a2b03ade7e39cee167318e0e83febe5fce05a5e1c63cc6a900c5f12e86aa23de1650c4d7f73f665f90a",
+      "link_b64u": "AQGygRTH2GK15mgvH07AEn3j4YK5WsOSxdE6Qhi4ufwtvQAAAAAAAAABsoEUx9hiteZoLx9OwBJ94-GCuVrDksXROkIYuLn8Lb01Nmw5cTdJ5i-8iyk2_ucSDxdQdO6gPdbzTa9bC_blH-1JKMYo0cLG6ukDOJBZlWEpWSc6XGP5NjbBRhSshzfRABBjaGF0LmV4YW1wbGUub3JngTl3Dqh9F19Wo1Rmw0x-zMuNipG07jeiXfYPW4_Js5SxA7F2pH-iNJh8RCmwbClk188UfWoteisDrefjnO4Wcxjg6D_r5fzgWl4cY8xqkAxfEuhqoj3hZQxNf3P2ZfkK",
+      "digest_hex": "3b550534d12fe542d2ae09bfc3fefbfd52422b53633584bcd9e99123699e3e3e",
+      "next_commit_hex": "35366c39713749e62fbc8b2936fee7120f175074eea03dd6f34daf5b0bf6e51f"
+    },
+    "B0_server_genesis": {
+      "height": 0,
+      "body_len": 158,
+      "trailer_len": 64,
+      "body_hex": "0101000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000355ff3b61d527fd17e50c67d8a02995483ff3d9d7369ac6307372ebd28eb6376d04ab232742bb4ab3a1368bd4615e4e6d0224ab71a016baf8520a332c977873700127365636f6e642e6578616d706c652e6e6574",
+      "trailer_hex": "510c498c6e72a962ff10a2ec419c9ad5bd59564fd719fc68bd39d7b499445f86714c1ea784f2a1dda57d02099cde4aaecc4ee489ef24d5078bab5eb678a38b07",
+      "link_b64u": "AQEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA1X_O2HVJ_0X5Qxn2KAplUg_89nXNprGMHNy69KOtjdtBKsjJ0K7SrOhNovUYV5ObQIkq3GgFrr4UgozLJd4c3ABJzZWNvbmQuZXhhbXBsZS5uZXRRDEmMbnKpYv8QouxBnJrVvVlWT9cZ_Gi9Ode0mURfhnFMHqeE8qHdpX0CCZzeSq7MTuSJ7yTVB4urXrZ4o4sH",
+      "digest_hex": "11bbd3dbf3dfc949036656ccb0565e029fdedf4badb4490a7f045a46ea91e4c4",
+      "next_commit_hex": "355ff3b61d527fd17e50c67d8a02995483ff3d9d7369ac6307372ebd28eb6376",
+      "principal": "EbvT2_PfyUkDZlbMsFZeAp_e30uttEkKfwRaRuqR5MQ"
+    },
+    "U0_user_genesis": {
+      "height": 0,
+      "body_len": 196,
+      "trailer_len": 0,
+      "body_hex": "010200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000038901c60bafa23457926e89b4e45bd710dc05bdfb5e54d9f6f37c6dc99eb0a3cb28114c7d862b5e6682f1f4ec0127de3e182b95ac392c5d13a4218b8b9fc2dbd016e32c19741f0af8260612ae99fd13d8a38944722e08964dd239738f552a6153b001740616c6963653a636861742e6578616d706c652e6f7267",
+      "trailer_hex": "",
+      "link_b64u": "AQIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA4kBxguvojRXkm6JtORb1xDcBb37XlTZ9vN8bcmesKPLKBFMfYYrXmaC8fTsASfePhgrlaw5LF0TpCGLi5_C29AW4ywZdB8K-CYGEq6Z_RPYo4lEci4Ilk3SOXOPVSphU7ABdAYWxpY2U6Y2hhdC5leGFtcGxlLm9yZw",
+      "digest_hex": "0a5e6b3c6823dacec91ccc05c5210e1df15833f2b43c3a6785710c63032042ea",
+      "next_commit_hex": "38901c60bafa23457926e89b4e45bd710dc05bdfb5e54d9f6f37c6dc99eb0a3c",
+      "principal": "Cl5rPGgj2s7JHMwFxSEOHfFYM_K0PDpnhXEMYwMgQuo"
+    },
+    "U1_user_migration": {
+      "height": 1,
+      "body_len": 198,
+      "trailer_len": 96,
+      "body_hex": "01020a5e6b3c6823dacec91ccc05c5210e1df15833f2b43c3a6785710c63032042ea00000000000000010a5e6b3c6823dacec91ccc05c5210e1df15833f2b43c3a6785710c63032042ea3ae3d138123ae39a139a9c81c8b932e9a566311bb496c4116b2c7461b508e17b11bbd3dbf3dfc949036656ccb0565e029fdedf4badb4490a7f045a46ea91e4c4016e32c19741f0af8260612ae99fd13d8a38944722e08964dd239738f552a6153b001940616c6963653a7365636f6e642e6578616d706c652e6e6574",
+      "trailer_hex": "884b8857f4eaa1613c61504db34d4beaf346517a0e31de3cddd4d9b4201d9d0b7245dd30e30cc618af193ba30e273c4b0de4c5a66cfd0daa746cd09295a69e9bbf62e18ba610de6c7eb15d57ccfc9188349b9172e3ae836ac4679b9f037d1607",
+      "link_b64u": "AQIKXms8aCPazskczAXFIQ4d8Vgz8rQ8OmeFcQxjAyBC6gAAAAAAAAABCl5rPGgj2s7JHMwFxSEOHfFYM_K0PDpnhXEMYwMgQuo649E4EjrjmhOanIHIuTLppWYxG7SWxBFrLHRhtQjhexG709vz38lJA2ZWzLBWXgKf3t9LrbRJCn8EWkbqkeTEAW4ywZdB8K-CYGEq6Z_RPYo4lEci4Ilk3SOXOPVSphU7ABlAYWxpY2U6c2Vjb25kLmV4YW1wbGUubmV0iEuIV_TqoWE8YVBNs01L6vNGUXoOMd483dTZtCAdnQtyRd0w4wzGGK8ZO6MOJzxLDeTFpmz9Dap0bNCSlaaem79i4YumEN5sfrFdV8z8kYg0m5Fy466DasRnm58DfRYH",
+      "digest_hex": "aa445a56a12eb923b2e38448fbe46324fb5833807a6c0306dff913c863c36267",
+      "next_commit_hex": "3ae3d138123ae39a139a9c81c8b932e9a566311bb496c4116b2c7461b508e17b"
+    }
+  },
+  "principals": {
+    "server_A": "~soEUx9hiteZoLx9OwBJ94-GCuVrDksXROkIYuLn8Lb0",
+    "server_B": "~EbvT2_PfyUkDZlbMsFZeAp_e30uttEkKfwRaRuqR5MQ",
+    "user_U": "@Cl5rPGgj2s7JHMwFxSEOHfFYM_K0PDpnhXEMYwMgQuo"
+  },
+  "checks": [
+    {
+      "name": "name-binding lookup takeover contests the earlier principal",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "name-binding outage preserves contested and retries formerly verified",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "name-binding successful recovery restores the earlier principal",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "name-binding single-pair outage preserves formerly-verified admission",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "name-binding formerly verified pair recovers to verified on same result",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "ingress admits rename before room processes epoch advancement",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "ingress rejects alias from before the room epoch tip",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "ingress deny matches a name on another validated fork branch",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "ingress rejects a name on a branch that does not contain the room tip",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "ingress still rejects it when the tip branch is also supplied",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "ingress historical deny finds the oldest of multiple prior aliases",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "first contact with complete supplied links evaluates ingress",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "first contact without complete links defers ingress",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "server genesis verifies",
+      "pass": true,
+      "detail": "accepted"
+    },
+    {
+      "name": "server rotation verifies",
+      "pass": true,
+      "detail": "accepted"
+    },
+    {
+      "name": "user genesis (unsigned, client commitment) verifies",
+      "pass": true,
+      "detail": "accepted"
+    },
+    {
+      "name": "user migration link verifies",
+      "pass": true,
+      "detail": "accepted"
+    },
+    {
+      "name": "user rotation cannot replace its committed master key",
+      "pass": true,
+      "detail": "rejected: user master key changed"
+    },
+    {
+      "name": "online key cannot sign a rotation",
+      "pass": true,
+      "detail": "rejected: revealed rotation key does not match commitment"
+    },
+    {
+      "name": "tampered body fails rotation signature",
+      "pass": true,
+      "detail": "rejected: bad rotation signature"
+    },
+    {
+      "name": "T1 ex-custodian burn below an up-to-date tip is stale",
+      "pass": true,
+      "detail": "rejected: stale: fork below the room's established tip"
+    },
+    {
+      "name": "T1 residual: same burn in a room still at the handover tip",
+      "pass": true,
+      "detail": "accepted"
+    },
+    {
+      "name": "T1 Pass 0: lagging-branch burn is stale once h=2 is in the merge",
+      "pass": true,
+      "detail": "resolved $e2"
+    },
+    {
+      "name": "T2 honest burn anchored on the common tip passes auth",
+      "pass": true,
+      "detail": "accepted"
+    },
+    {
+      "name": "T2 draft rule: attacker wins (burn ignored as 'stale', grind wins tie-break)",
+      "pass": true,
+      "detail": "draft resolved $x; grind took 3 tries"
+    },
+    {
+      "name": "T2 this MSC: burn is live, principal burned",
+      "pass": true,
+      "detail": "resolved $hb"
+    },
+    {
+      "name": "T2 this MSC, before any burn: freeze at common epoch",
+      "pass": true,
+      "detail": "resolved $c0"
+    },
+    {
+      "name": "T2 freeze with only branch tips in conflicted set resolves to common ancestor",
+      "pass": true,
+      "detail": "resolved $c0"
+    },
+    {
+      "name": "T2 draft, before any burn: attacker branch selected",
+      "pass": true,
+      "detail": "draft resolved $x"
+    },
+    {
+      "name": "T2 burn anchored on the frozen common epoch passes auth",
+      "pass": true,
+      "detail": "accepted"
+    },
+    {
+      "name": "T3 draft auth accepts an off-chain burn (kill with a consumed key)",
+      "pass": true,
+      "detail": "accepted"
+    },
+    {
+      "name": "T3 this MSC rejects it (branch_a must be the room tip)",
+      "pass": true,
+      "detail": "rejected: parent is not the tip's parent"
+    },
+    {
+      "name": "T4 two children of the tip (unused key used twice) burn",
+      "pass": true,
+      "detail": "accepted"
+    },
+    {
+      "name": "T4 Pass 0 selects the burn",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "T4 sibling of the tip burns (consumed tip key; room cannot tell)",
+      "pass": true,
+      "detail": "accepted"
+    },
+    {
+      "name": "T4 burn-only conflict with empty actives selects earliest fork height",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "T5 linear: highest tip wins, identical tips broken by event_id",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "T5 re-posting the same height fails auth",
+      "pass": true,
+      "detail": "rejected: height must increment"
+    },
+    {
+      "name": "T6 first introduction carrying more than genesis fails auth",
+      "pass": true,
+      "detail": "rejected: first introduction must carry exactly this principal's genesis link"
+    },
+    {
+      "name": "T6 concurrent introductions that fork freeze at a genesis event",
+      "pass": true,
+      "detail": "resolved $ga"
+    },
+    {
+      "name": "T6 burn anchored on the frozen genesis passes auth",
+      "pass": true,
+      "detail": "accepted"
+    },
+    {
+      "name": "T6 Pass 0 then selects the burn",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "T7 freeze across sweep heights 1..10 is order-independent and finds common ancestor",
+      "pass": true,
+      "detail": ""
+    }
+  ]
+}

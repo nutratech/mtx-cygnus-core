@@ -23,6 +23,9 @@ jobs:
         with:
           toolchain: "1.89.0"
           components: clippy, rustfmt
+      - run: python3 -m venv .venv-reference-models
+      - run: .venv-reference-models/bin/python -m pip install -r tools/reference_models/requirements.txt
+      - run: .venv-reference-models/bin/python tools/reference_models/check.py
       - run: cargo fmt --check
       - run: cargo clippy --workspace --all-targets --all-features -- -D warnings
       - run: cargo test --workspace --all-features

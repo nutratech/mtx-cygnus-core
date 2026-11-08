@@ -6,6 +6,7 @@
 //! envelopes, tip bundles) build on these primitives.
 
 pub mod cert;
+pub mod envelope;
 pub mod error;
 pub mod link;
 pub mod principal;

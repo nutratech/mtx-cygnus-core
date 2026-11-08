@@ -1,0 +1,835 @@
+{
+  "room_version": "tk.nutra.cygnus.1",
+  "room_id": "!30zU4L44nR8z-TbH4R7So2CfI9UJzMYnMhzY9NKHXgY",
+  "events": [
+    {
+      "step": "create",
+      "event_id": "$30zU4L44nR8z-TbH4R7So2CfI9UJzMYnMhzY9NKHXgY",
+      "reference_hash_hex": "df4cd4e0be389d1f33f936c7e11ed2a3609f23d509ccc627321cd8f4d2875e06",
+      "content_hash": "e5NpEDDw1KZbA9D9bbrQ2dbGRfdz3R0TMUb6Ak_lcSo",
+      "pdu": {
+        "type": "m.room.create",
+        "sender": "@Cl5rPGgj2s7JHMwFxSEOHfFYM_K0PDpnhXEMYwMgQuo",
+        "content": {
+          "room_version": "tk.nutra.cygnus.1",
+          "creator_links": {
+            "server": [
+              "AQEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACn43blzT6rgsVNzZYO7Q2Rty6Gui6qDEtLT9KTxg_8UIqI4910CfGV_VLbLTy6XXLKZwm_HZQSG_N0iAG0D29cABBjaGF0LmV4YW1wbGUub3Jn2Q1TtCiz1ePkElNMfK781u9YMaFhnLO0hG8z6K_y2aSahTHRknkQ8MVLscIBbzf0LtD98Jfza5nXkVQuh_K0CQ",
+              "AQGygRTH2GK15mgvH07AEn3j4YK5WsOSxdE6Qhi4ufwtvQAAAAAAAAABsoEUx9hiteZoLx9OwBJ94-GCuVrDksXROkIYuLn8Lb01Nmw5cTdJ5i-8iyk2_ucSDxdQdO6gPdbzTa9bC_blH-1JKMYo0cLG6ukDOJBZlWEpWSc6XGP5NjbBRhSshzfRABBjaGF0LmV4YW1wbGUub3JngTl3Dqh9F19Wo1Rmw0x-zMuNipG07jeiXfYPW4_Js5SxA7F2pH-iNJh8RCmwbClk188UfWoteisDrefjnO4Wcxjg6D_r5fzgWl4cY8xqkAxfEuhqoj3hZQxNf3P2ZfkK"
+            ],
+            "user": [
+              "AQIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA4kBxguvojRXkm6JtORb1xDcBb37XlTZ9vN8bcmesKPLKBFMfYYrXmaC8fTsASfePhgrlaw5LF0TpCGLi5_C29AW4ywZdB8K-CYGEq6Z_RPYo4lEci4Ilk3SOXOPVSphU7ABdAYWxpY2U6Y2hhdC5leGFtcGxlLm9yZw"
+            ]
+          }
+        },
+        "origin_server_ts": 1792860000001,
+        "depth": 1,
+        "prev_events": [],
+        "auth_events": [],
+        "state_key": "",
+        "device_certificate": {
+          "version": 1,
+          "device_id": "TEST51",
+          "device_key": "IBLLkMpg6OXY2vZuInLSIz4EhtVX6MZhQe2JIBd9frc",
+          "self_signing_key": "wFDFY3pE-oYp__PMzOIwDLNipj2Z2V_FQUUmb0MyRFo",
+          "self_signing_signature": "ys_tG6Q3JAG5v3krZ4L5TLouhSjJU81Pm_H0hHKTq7FbAQ_Rl-0tZv_uapVujfIdUcWTp7bTrSAFv-SQ2uBoCA",
+          "device_key_signature": "7zYaOIuKCsgcOt4tMIAuhAm7OSMjCyzFSE0oQcq1jkAuhrecPh6pwjIv5ydMvxInav5awswxeXXxz_OzaALKBg"
+        },
+        "hashes": {
+          "sha256": "e5NpEDDw1KZbA9D9bbrQ2dbGRfdz3R0TMUb6Ak_lcSo"
+        },
+        "signatures": {
+          "@Cl5rPGgj2s7JHMwFxSEOHfFYM_K0PDpnhXEMYwMgQuo": {
+            "ed25519:TEST51": "sU9DMTt-NT6yDX9SpJWeN0YRWUK7RYj4kPhEVy0zN9PNm_PZJUdU_3XCVcSTpZdnOs9panZeL1EXN3RAk3_kDg"
+          },
+          "~soEUx9hiteZoLx9OwBJ94-GCuVrDksXROkIYuLn8Lb0": {
+            "ed25519:1": "QHSLkH65P9dFeDgiTDVZvYc3UAmPjHf5nJXmBeZmV_oJZFxH1D25lr_AZ7E7wFrj2rlLrZ8zqmUrFqN6mdr7BQ"
+          }
+        }
+      }
+    },
+    {
+      "step": "alice user epoch (genesis, signer_links)",
+      "event_id": "$j_tljUJSgN0jipQxkSkmfWN5J2r1KFpQGcA7sPe372w",
+      "reference_hash_hex": "8ffb658d425280dd238a94319129267d6379276af5285a5019c03bb0f7b7ef6c",
+      "content_hash": "YkxYmHwySTVFyZDDqCRW9devaZF9V0-GRNa5_8Oh2Ok",
+      "pdu": {
+        "type": "m.room.user_epoch",
+        "sender": "@Cl5rPGgj2s7JHMwFxSEOHfFYM_K0PDpnhXEMYwMgQuo",
+        "content": {
+          "status": "active",
+          "links": [
+            "AQIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA4kBxguvojRXkm6JtORb1xDcBb37XlTZ9vN8bcmesKPLKBFMfYYrXmaC8fTsASfePhgrlaw5LF0TpCGLi5_C29AW4ywZdB8K-CYGEq6Z_RPYo4lEci4Ilk3SOXOPVSphU7ABdAYWxpY2U6Y2hhdC5leGFtcGxlLm9yZw"
+          ],
+          "height": 0,
+          "tip": "Cl5rPGgj2s7JHMwFxSEOHfFYM_K0PDpnhXEMYwMgQuo",
+          "custodian": "~soEUx9hiteZoLx9OwBJ94-GCuVrDksXROkIYuLn8Lb0",
+          "display_user_id": "@alice:chat.example.org",
+          "master_key": "bjLBl0Hwr4JgYSrpn9E9ijiURyLgiWTdI5c49VKmFTs",
+          "signer_links": [
+            "AQEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACn43blzT6rgsVNzZYO7Q2Rty6Gui6qDEtLT9KTxg_8UIqI4910CfGV_VLbLTy6XXLKZwm_HZQSG_N0iAG0D29cABBjaGF0LmV4YW1wbGUub3Jn2Q1TtCiz1ePkElNMfK781u9YMaFhnLO0hG8z6K_y2aSahTHRknkQ8MVLscIBbzf0LtD98Jfza5nXkVQuh_K0CQ",
+            "AQGygRTH2GK15mgvH07AEn3j4YK5WsOSxdE6Qhi4ufwtvQAAAAAAAAABsoEUx9hiteZoLx9OwBJ94-GCuVrDksXROkIYuLn8Lb01Nmw5cTdJ5i-8iyk2_ucSDxdQdO6gPdbzTa9bC_blH-1JKMYo0cLG6ukDOJBZlWEpWSc6XGP5NjbBRhSshzfRABBjaGF0LmV4YW1wbGUub3JngTl3Dqh9F19Wo1Rmw0x-zMuNipG07jeiXfYPW4_Js5SxA7F2pH-iNJh8RCmwbClk188UfWoteisDrefjnO4Wcxjg6D_r5fzgWl4cY8xqkAxfEuhqoj3hZQxNf3P2ZfkK"
+          ]
+        },
+        "origin_server_ts": 1792860000002,
+        "depth": 2,
+        "prev_events": ["$30zU4L44nR8z-TbH4R7So2CfI9UJzMYnMhzY9NKHXgY"],
+        "auth_events": ["$30zU4L44nR8z-TbH4R7So2CfI9UJzMYnMhzY9NKHXgY"],
+        "state_key": "@Cl5rPGgj2s7JHMwFxSEOHfFYM_K0PDpnhXEMYwMgQuo",
+        "room_id": "!30zU4L44nR8z-TbH4R7So2CfI9UJzMYnMhzY9NKHXgY",
+        "hashes": {
+          "sha256": "YkxYmHwySTVFyZDDqCRW9devaZF9V0-GRNa5_8Oh2Ok"
+        },
+        "signatures": {
+          "~soEUx9hiteZoLx9OwBJ94-GCuVrDksXROkIYuLn8Lb0": {
+            "ed25519:1": "hfcRtWFSs6g6at1oLYcBvu4uNohCX1iOoqYkb93TAlIrb3pkV9NnSgjB_k4MFbyxkPXwn95acb4eSraHUEU5BQ"
+          }
+        }
+      }
+    },
+    {
+      "step": "server A epoch (genesis, signer_links)",
+      "event_id": "$snVG0EnnpFOf-mq0BsyDxpG1loccjewnXqupWd76KXw",
+      "reference_hash_hex": "b27546d049e7a4539ffa6ab406cc83c691b596871c8dec275eaba959defa297c",
+      "content_hash": "r6DxfRW8tka779pvKGSmqxX4UHvKBQT_pUmo2yPCQdw",
+      "pdu": {
+        "type": "m.room.server_epoch",
+        "sender": "@Cl5rPGgj2s7JHMwFxSEOHfFYM_K0PDpnhXEMYwMgQuo",
+        "content": {
+          "status": "active",
+          "links": [
+            "AQEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACn43blzT6rgsVNzZYO7Q2Rty6Gui6qDEtLT9KTxg_8UIqI4910CfGV_VLbLTy6XXLKZwm_HZQSG_N0iAG0D29cABBjaGF0LmV4YW1wbGUub3Jn2Q1TtCiz1ePkElNMfK781u9YMaFhnLO0hG8z6K_y2aSahTHRknkQ8MVLscIBbzf0LtD98Jfza5nXkVQuh_K0CQ"
+          ],
+          "height": 0,
+          "tip": "soEUx9hiteZoLx9OwBJ94-GCuVrDksXROkIYuLn8Lb0",
+          "online_key": "iojj3XQJ8ZX9UtstPLpdcspnCb8dlBIb83SIAbQPb1w",
+          "server_name": "chat.example.org",
+          "signer_links": [
+            "AQEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACn43blzT6rgsVNzZYO7Q2Rty6Gui6qDEtLT9KTxg_8UIqI4910CfGV_VLbLTy6XXLKZwm_HZQSG_N0iAG0D29cABBjaGF0LmV4YW1wbGUub3Jn2Q1TtCiz1ePkElNMfK781u9YMaFhnLO0hG8z6K_y2aSahTHRknkQ8MVLscIBbzf0LtD98Jfza5nXkVQuh_K0CQ",
+            "AQGygRTH2GK15mgvH07AEn3j4YK5WsOSxdE6Qhi4ufwtvQAAAAAAAAABsoEUx9hiteZoLx9OwBJ94-GCuVrDksXROkIYuLn8Lb01Nmw5cTdJ5i-8iyk2_ucSDxdQdO6gPdbzTa9bC_blH-1JKMYo0cLG6ukDOJBZlWEpWSc6XGP5NjbBRhSshzfRABBjaGF0LmV4YW1wbGUub3JngTl3Dqh9F19Wo1Rmw0x-zMuNipG07jeiXfYPW4_Js5SxA7F2pH-iNJh8RCmwbClk188UfWoteisDrefjnO4Wcxjg6D_r5fzgWl4cY8xqkAxfEuhqoj3hZQxNf3P2ZfkK"
+          ]
+        },
+        "origin_server_ts": 1792860000003,
+        "depth": 3,
+        "prev_events": ["$j_tljUJSgN0jipQxkSkmfWN5J2r1KFpQGcA7sPe372w"],
+        "auth_events": [
+          "$30zU4L44nR8z-TbH4R7So2CfI9UJzMYnMhzY9NKHXgY",
+          "$j_tljUJSgN0jipQxkSkmfWN5J2r1KFpQGcA7sPe372w"
+        ],
+        "state_key": "~soEUx9hiteZoLx9OwBJ94-GCuVrDksXROkIYuLn8Lb0",
+        "room_id": "!30zU4L44nR8z-TbH4R7So2CfI9UJzMYnMhzY9NKHXgY",
+        "hashes": {
+          "sha256": "r6DxfRW8tka779pvKGSmqxX4UHvKBQT_pUmo2yPCQdw"
+        },
+        "signatures": {
+          "~soEUx9hiteZoLx9OwBJ94-GCuVrDksXROkIYuLn8Lb0": {
+            "ed25519:1": "6kGGxV062XpNbgSfl1l7weNSB-fdswctai94PHog35s9vmmSTASoV41-vMfKh_9TNS3aqDttaOofseYuLSA9Bw"
+          }
+        }
+      }
+    },
+    {
+      "step": "server A epoch (advance to h=1)",
+      "event_id": "$fi3T31nHNiiYBgbqjRI6dSCQvMYG6gBQTYxFVoOFJLY",
+      "reference_hash_hex": "7e2dd3df59c73628980606ea8d123a752090bcc606ea00504d8c4556838524b6",
+      "content_hash": "1v0RPNRCVIlLlPQLQEU9CqhIelHnlLZr0rPOzb-zNjE",
+      "pdu": {
+        "type": "m.room.server_epoch",
+        "sender": "@Cl5rPGgj2s7JHMwFxSEOHfFYM_K0PDpnhXEMYwMgQuo",
+        "content": {
+          "status": "active",
+          "links": [
+            "AQGygRTH2GK15mgvH07AEn3j4YK5WsOSxdE6Qhi4ufwtvQAAAAAAAAABsoEUx9hiteZoLx9OwBJ94-GCuVrDksXROkIYuLn8Lb01Nmw5cTdJ5i-8iyk2_ucSDxdQdO6gPdbzTa9bC_blH-1JKMYo0cLG6ukDOJBZlWEpWSc6XGP5NjbBRhSshzfRABBjaGF0LmV4YW1wbGUub3JngTl3Dqh9F19Wo1Rmw0x-zMuNipG07jeiXfYPW4_Js5SxA7F2pH-iNJh8RCmwbClk188UfWoteisDrefjnO4Wcxjg6D_r5fzgWl4cY8xqkAxfEuhqoj3hZQxNf3P2ZfkK"
+          ],
+          "height": 1,
+          "tip": "O1UFNNEv5ULSrgm_w_77_VJCK1NjNYS82emRI2mePj4",
+          "online_key": "7UkoxijRwsbq6QM4kFmVYSlZJzpcY_k2NsFGFKyHN9E",
+          "server_name": "chat.example.org"
+        },
+        "origin_server_ts": 1792860000004,
+        "depth": 4,
+        "prev_events": ["$snVG0EnnpFOf-mq0BsyDxpG1loccjewnXqupWd76KXw"],
+        "auth_events": [
+          "$30zU4L44nR8z-TbH4R7So2CfI9UJzMYnMhzY9NKHXgY",
+          "$j_tljUJSgN0jipQxkSkmfWN5J2r1KFpQGcA7sPe372w",
+          "$snVG0EnnpFOf-mq0BsyDxpG1loccjewnXqupWd76KXw"
+        ],
+        "state_key": "~soEUx9hiteZoLx9OwBJ94-GCuVrDksXROkIYuLn8Lb0",
+        "room_id": "!30zU4L44nR8z-TbH4R7So2CfI9UJzMYnMhzY9NKHXgY",
+        "hashes": {
+          "sha256": "1v0RPNRCVIlLlPQLQEU9CqhIelHnlLZr0rPOzb-zNjE"
+        },
+        "signatures": {
+          "~soEUx9hiteZoLx9OwBJ94-GCuVrDksXROkIYuLn8Lb0": {
+            "ed25519:1": "d4gr7_VHhDncxRoOboUVEkx3RUFm18MjCc95ixRF-fFBL4P5Tz9U1YTQH7cuMQDUNmS9PPB7oc9x8KFf2xbCCg"
+          }
+        }
+      }
+    },
+    {
+      "step": "alice joins",
+      "event_id": "$C8i5Ge_hS22gMYJ787v2i-SpIKe2xT5-YrXrLhJVCVQ",
+      "reference_hash_hex": "0bc8b919efe14b6da031827bf3bbf68be4a920a7b6c53e7e62b5eb2e12550954",
+      "content_hash": "F3ERZW2vIt4xk9cJRKw0xnnO_JTK9xqkZHkyN8NPpDg",
+      "pdu": {
+        "type": "m.room.member",
+        "sender": "@Cl5rPGgj2s7JHMwFxSEOHfFYM_K0PDpnhXEMYwMgQuo",
+        "content": {
+          "membership": "join",
+          "custodian": "~soEUx9hiteZoLx9OwBJ94-GCuVrDksXROkIYuLn8Lb0"
+        },
+        "origin_server_ts": 1792860000005,
+        "depth": 5,
+        "prev_events": ["$fi3T31nHNiiYBgbqjRI6dSCQvMYG6gBQTYxFVoOFJLY"],
+        "auth_events": [
+          "$30zU4L44nR8z-TbH4R7So2CfI9UJzMYnMhzY9NKHXgY",
+          "$j_tljUJSgN0jipQxkSkmfWN5J2r1KFpQGcA7sPe372w",
+          "$fi3T31nHNiiYBgbqjRI6dSCQvMYG6gBQTYxFVoOFJLY"
+        ],
+        "state_key": "@Cl5rPGgj2s7JHMwFxSEOHfFYM_K0PDpnhXEMYwMgQuo",
+        "room_id": "!30zU4L44nR8z-TbH4R7So2CfI9UJzMYnMhzY9NKHXgY",
+        "device_certificate": {
+          "version": 1,
+          "device_id": "TEST51",
+          "device_key": "IBLLkMpg6OXY2vZuInLSIz4EhtVX6MZhQe2JIBd9frc",
+          "self_signing_key": "wFDFY3pE-oYp__PMzOIwDLNipj2Z2V_FQUUmb0MyRFo",
+          "self_signing_signature": "ys_tG6Q3JAG5v3krZ4L5TLouhSjJU81Pm_H0hHKTq7FbAQ_Rl-0tZv_uapVujfIdUcWTp7bTrSAFv-SQ2uBoCA",
+          "device_key_signature": "7zYaOIuKCsgcOt4tMIAuhAm7OSMjCyzFSE0oQcq1jkAuhrecPh6pwjIv5ydMvxInav5awswxeXXxz_OzaALKBg"
+        },
+        "hashes": {
+          "sha256": "F3ERZW2vIt4xk9cJRKw0xnnO_JTK9xqkZHkyN8NPpDg"
+        },
+        "signatures": {
+          "@Cl5rPGgj2s7JHMwFxSEOHfFYM_K0PDpnhXEMYwMgQuo": {
+            "ed25519:TEST51": "T-kD8EJ_Mvwun05SVgg7slB_XQ0AYsf13bQyvrH1-mL0LvJ_CvfFqcUReLMDp54ZUl2YgOc0sy1TZCrhEBkqCQ"
+          },
+          "~soEUx9hiteZoLx9OwBJ94-GCuVrDksXROkIYuLn8Lb0": {
+            "ed25519:1": "WAwdO-_Pix9YUeHMCg0BvnnlDVqc27jM0ohIZzqbH-f7KWJ3IbwLxUKhIDzlhHccYwoGVdyaq_fItLq8BwNoBQ"
+          }
+        }
+      }
+    },
+    {
+      "step": "join rules",
+      "event_id": "$zFfd61SnHculdNRHz3GQsXsN7ImD7k_UZtvVmjyjuc4",
+      "reference_hash_hex": "cc57ddeb54a71dcba574d447cf7190b17b0dec8983ee4fd466dbd59a3ca3b9ce",
+      "content_hash": "Su8cnY0XBkoiatiOvMmKiqtPvx1VFQuY73ZClBmN0QQ",
+      "pdu": {
+        "type": "m.room.join_rules",
+        "sender": "@Cl5rPGgj2s7JHMwFxSEOHfFYM_K0PDpnhXEMYwMgQuo",
+        "content": {
+          "join_rule": "invite"
+        },
+        "origin_server_ts": 1792860000006,
+        "depth": 6,
+        "prev_events": ["$C8i5Ge_hS22gMYJ787v2i-SpIKe2xT5-YrXrLhJVCVQ"],
+        "auth_events": [
+          "$30zU4L44nR8z-TbH4R7So2CfI9UJzMYnMhzY9NKHXgY",
+          "$C8i5Ge_hS22gMYJ787v2i-SpIKe2xT5-YrXrLhJVCVQ",
+          "$j_tljUJSgN0jipQxkSkmfWN5J2r1KFpQGcA7sPe372w",
+          "$fi3T31nHNiiYBgbqjRI6dSCQvMYG6gBQTYxFVoOFJLY"
+        ],
+        "state_key": "",
+        "room_id": "!30zU4L44nR8z-TbH4R7So2CfI9UJzMYnMhzY9NKHXgY",
+        "device_certificate": {
+          "version": 1,
+          "device_id": "TEST51",
+          "device_key": "IBLLkMpg6OXY2vZuInLSIz4EhtVX6MZhQe2JIBd9frc",
+          "self_signing_key": "wFDFY3pE-oYp__PMzOIwDLNipj2Z2V_FQUUmb0MyRFo",
+          "self_signing_signature": "ys_tG6Q3JAG5v3krZ4L5TLouhSjJU81Pm_H0hHKTq7FbAQ_Rl-0tZv_uapVujfIdUcWTp7bTrSAFv-SQ2uBoCA",
+          "device_key_signature": "7zYaOIuKCsgcOt4tMIAuhAm7OSMjCyzFSE0oQcq1jkAuhrecPh6pwjIv5ydMvxInav5awswxeXXxz_OzaALKBg"
+        },
+        "hashes": {
+          "sha256": "Su8cnY0XBkoiatiOvMmKiqtPvx1VFQuY73ZClBmN0QQ"
+        },
+        "signatures": {
+          "@Cl5rPGgj2s7JHMwFxSEOHfFYM_K0PDpnhXEMYwMgQuo": {
+            "ed25519:TEST51": "0Kk-gJerOahd3psfK4iZ1IMiUt-xm7qvH26VJpMmAW8Uk97itYOIp1uhroi_Mzj25FxLGIOPK2WplIJuwyRxCw"
+          },
+          "~soEUx9hiteZoLx9OwBJ94-GCuVrDksXROkIYuLn8Lb0": {
+            "ed25519:1": "HwHbJVvOuHrnBbD5rs97so921GZRT5G--KsuDgMmIN8b3c5_rPhVrQ1W_iy_UXBml0RoT9snxcnCtPoeWtebDg"
+          }
+        }
+      }
+    },
+    {
+      "step": "server ACL",
+      "event_id": "$93JPeeEvhC6SMdkndezvrSXqOeTUafA3pfmU9jx6CUI",
+      "reference_hash_hex": "f7724f79e12f842e9231d92775ecefad25ea39e4d469f037a5f994f63c7a0942",
+      "content_hash": "SZ2ldlJOYEHompeNMD-kts_XfiUxGzvRRiCQD3FQ7CM",
+      "pdu": {
+        "type": "m.room.server_acl",
+        "sender": "@Cl5rPGgj2s7JHMwFxSEOHfFYM_K0PDpnhXEMYwMgQuo",
+        "content": {
+          "allow": ["*"],
+          "deny": [],
+          "allow_ip_literals": false
+        },
+        "origin_server_ts": 1792860000007,
+        "depth": 7,
+        "prev_events": ["$zFfd61SnHculdNRHz3GQsXsN7ImD7k_UZtvVmjyjuc4"],
+        "auth_events": [
+          "$30zU4L44nR8z-TbH4R7So2CfI9UJzMYnMhzY9NKHXgY",
+          "$zFfd61SnHculdNRHz3GQsXsN7ImD7k_UZtvVmjyjuc4",
+          "$C8i5Ge_hS22gMYJ787v2i-SpIKe2xT5-YrXrLhJVCVQ",
+          "$j_tljUJSgN0jipQxkSkmfWN5J2r1KFpQGcA7sPe372w",
+          "$fi3T31nHNiiYBgbqjRI6dSCQvMYG6gBQTYxFVoOFJLY"
+        ],
+        "state_key": "",
+        "room_id": "!30zU4L44nR8z-TbH4R7So2CfI9UJzMYnMhzY9NKHXgY",
+        "device_certificate": {
+          "version": 1,
+          "device_id": "TEST51",
+          "device_key": "IBLLkMpg6OXY2vZuInLSIz4EhtVX6MZhQe2JIBd9frc",
+          "self_signing_key": "wFDFY3pE-oYp__PMzOIwDLNipj2Z2V_FQUUmb0MyRFo",
+          "self_signing_signature": "ys_tG6Q3JAG5v3krZ4L5TLouhSjJU81Pm_H0hHKTq7FbAQ_Rl-0tZv_uapVujfIdUcWTp7bTrSAFv-SQ2uBoCA",
+          "device_key_signature": "7zYaOIuKCsgcOt4tMIAuhAm7OSMjCyzFSE0oQcq1jkAuhrecPh6pwjIv5ydMvxInav5awswxeXXxz_OzaALKBg"
+        },
+        "hashes": {
+          "sha256": "SZ2ldlJOYEHompeNMD-kts_XfiUxGzvRRiCQD3FQ7CM"
+        },
+        "signatures": {
+          "@Cl5rPGgj2s7JHMwFxSEOHfFYM_K0PDpnhXEMYwMgQuo": {
+            "ed25519:TEST51": "iQD3h0a4VSAOFItf6aA1ZJdOrj0Qib5loSXZETcu07jzA6ZVhizFF6Uq7HsGJyFItMlDVdPo9i5HVoIfVd7ECQ"
+          },
+          "~soEUx9hiteZoLx9OwBJ94-GCuVrDksXROkIYuLn8Lb0": {
+            "ed25519:1": "Wtbmrk1bHZohDTvun9bDmk4Y5PG7688rlHkytPj6zbE3QAtnRYLUqJCuNKL-G4izR31k__VrFIm16HhPK_xXCQ"
+          }
+        }
+      }
+    },
+    {
+      "step": "message via A",
+      "event_id": "$Q5ktShqqQUYdK3OZseihIUJ2ktzL87JO_wq7ktgQecA",
+      "reference_hash_hex": "43992d4a1aaa41461d2b7399b1e8a121427692dccbf3b24eff0abb92d81079c0",
+      "content_hash": "9nmOdQq_kpcr3and5Xmi9a9bj4wFlqRAb6Jc7qzt4pk",
+      "pdu": {
+        "type": "m.room.message",
+        "sender": "@Cl5rPGgj2s7JHMwFxSEOHfFYM_K0PDpnhXEMYwMgQuo",
+        "content": {
+          "msgtype": "m.text",
+          "body": "hello"
+        },
+        "origin_server_ts": 1792860000008,
+        "depth": 8,
+        "prev_events": ["$93JPeeEvhC6SMdkndezvrSXqOeTUafA3pfmU9jx6CUI"],
+        "auth_events": [
+          "$30zU4L44nR8z-TbH4R7So2CfI9UJzMYnMhzY9NKHXgY",
+          "$zFfd61SnHculdNRHz3GQsXsN7ImD7k_UZtvVmjyjuc4",
+          "$C8i5Ge_hS22gMYJ787v2i-SpIKe2xT5-YrXrLhJVCVQ",
+          "$j_tljUJSgN0jipQxkSkmfWN5J2r1KFpQGcA7sPe372w",
+          "$fi3T31nHNiiYBgbqjRI6dSCQvMYG6gBQTYxFVoOFJLY"
+        ],
+        "room_id": "!30zU4L44nR8z-TbH4R7So2CfI9UJzMYnMhzY9NKHXgY",
+        "device_certificate": {
+          "version": 1,
+          "device_id": "TEST51",
+          "device_key": "IBLLkMpg6OXY2vZuInLSIz4EhtVX6MZhQe2JIBd9frc",
+          "self_signing_key": "wFDFY3pE-oYp__PMzOIwDLNipj2Z2V_FQUUmb0MyRFo",
+          "self_signing_signature": "ys_tG6Q3JAG5v3krZ4L5TLouhSjJU81Pm_H0hHKTq7FbAQ_Rl-0tZv_uapVujfIdUcWTp7bTrSAFv-SQ2uBoCA",
+          "device_key_signature": "7zYaOIuKCsgcOt4tMIAuhAm7OSMjCyzFSE0oQcq1jkAuhrecPh6pwjIv5ydMvxInav5awswxeXXxz_OzaALKBg"
+        },
+        "hashes": {
+          "sha256": "9nmOdQq_kpcr3and5Xmi9a9bj4wFlqRAb6Jc7qzt4pk"
+        },
+        "signatures": {
+          "@Cl5rPGgj2s7JHMwFxSEOHfFYM_K0PDpnhXEMYwMgQuo": {
+            "ed25519:TEST51": "G2ElFqtGfzci7iWTZcW-VEf-FxAvBjq7bThCvMt1JD2In30iEKNPSErletOPFXT9GX8Oi3DbrvcADjjM4NyADg"
+          },
+          "~soEUx9hiteZoLx9OwBJ94-GCuVrDksXROkIYuLn8Lb0": {
+            "ed25519:1": "MOCS_3FPU1byXTqRVjgI24dVlR2cd5GqxN3h1xVYS7QFEKZogZFqdVN7Im7DI8hsmQBYAz-PR8PHlhkXBQZKCQ"
+          }
+        }
+      }
+    },
+    {
+      "step": "alice moves to B (user epoch advance, signer_links)",
+      "event_id": "$RTpi_hRBzIOkrHWXarwoa3tPRqwNlEQZzHsH4GVuVk0",
+      "reference_hash_hex": "453a62fe1441cc83a4ac75976abc286b7b4f46ac0d944419cc7b07e0656e564d",
+      "content_hash": "p03Qaq63kUQTvpQwCAkWY_hVhJN0mg91Bpzbf7aESpI",
+      "pdu": {
+        "type": "m.room.user_epoch",
+        "sender": "@Cl5rPGgj2s7JHMwFxSEOHfFYM_K0PDpnhXEMYwMgQuo",
+        "content": {
+          "status": "active",
+          "links": [
+            "AQIKXms8aCPazskczAXFIQ4d8Vgz8rQ8OmeFcQxjAyBC6gAAAAAAAAABCl5rPGgj2s7JHMwFxSEOHfFYM_K0PDpnhXEMYwMgQuo649E4EjrjmhOanIHIuTLppWYxG7SWxBFrLHRhtQjhexG709vz38lJA2ZWzLBWXgKf3t9LrbRJCn8EWkbqkeTEAW4ywZdB8K-CYGEq6Z_RPYo4lEci4Ilk3SOXOPVSphU7ABlAYWxpY2U6c2Vjb25kLmV4YW1wbGUubmV0iEuIV_TqoWE8YVBNs01L6vNGUXoOMd483dTZtCAdnQtyRd0w4wzGGK8ZO6MOJzxLDeTFpmz9Dap0bNCSlaaem79i4YumEN5sfrFdV8z8kYg0m5Fy466DasRnm58DfRYH"
+          ],
+          "height": 1,
+          "tip": "qkRaVqEuuSOy44RI--RjJPtYM4B6bAMG3_kTyGPDYmc",
+          "custodian": "~EbvT2_PfyUkDZlbMsFZeAp_e30uttEkKfwRaRuqR5MQ",
+          "display_user_id": "@alice:second.example.net",
+          "master_key": "bjLBl0Hwr4JgYSrpn9E9ijiURyLgiWTdI5c49VKmFTs",
+          "signer_links": [
+            "AQEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA1X_O2HVJ_0X5Qxn2KAplUg_89nXNprGMHNy69KOtjdtBKsjJ0K7SrOhNovUYV5ObQIkq3GgFrr4UgozLJd4c3ABJzZWNvbmQuZXhhbXBsZS5uZXRRDEmMbnKpYv8QouxBnJrVvVlWT9cZ_Gi9Ode0mURfhnFMHqeE8qHdpX0CCZzeSq7MTuSJ7yTVB4urXrZ4o4sH"
+          ]
+        },
+        "origin_server_ts": 1792860000012,
+        "depth": 9,
+        "prev_events": ["$Q5ktShqqQUYdK3OZseihIUJ2ktzL87JO_wq7ktgQecA"],
+        "auth_events": [
+          "$30zU4L44nR8z-TbH4R7So2CfI9UJzMYnMhzY9NKHXgY",
+          "$zFfd61SnHculdNRHz3GQsXsN7ImD7k_UZtvVmjyjuc4",
+          "$C8i5Ge_hS22gMYJ787v2i-SpIKe2xT5-YrXrLhJVCVQ",
+          "$j_tljUJSgN0jipQxkSkmfWN5J2r1KFpQGcA7sPe372w",
+          "$fi3T31nHNiiYBgbqjRI6dSCQvMYG6gBQTYxFVoOFJLY"
+        ],
+        "state_key": "@Cl5rPGgj2s7JHMwFxSEOHfFYM_K0PDpnhXEMYwMgQuo",
+        "room_id": "!30zU4L44nR8z-TbH4R7So2CfI9UJzMYnMhzY9NKHXgY",
+        "hashes": {
+          "sha256": "p03Qaq63kUQTvpQwCAkWY_hVhJN0mg91Bpzbf7aESpI"
+        },
+        "signatures": {
+          "~EbvT2_PfyUkDZlbMsFZeAp_e30uttEkKfwRaRuqR5MQ": {
+            "ed25519:0": "_lnXQS4W7NyOHgnPzCNjVCuF3LCxIAW4EgABEwUnW79alaPv_0v0NJH3MZ_sW3eFd4tjwkfx4yyNFubTr5flAw"
+          }
+        }
+      }
+    },
+    {
+      "step": "server B epoch (genesis, signer_links)",
+      "event_id": "$o-WTeQ_Hr6A4T-y8Ylt-h9m2LV16IeKXIQv2KrFeCNo",
+      "reference_hash_hex": "a3e593790fc7afa0384fecbc625b7e87d9b62d5d7a21e297210bf62ab15e08da",
+      "content_hash": "FYudZL7nZ58DMhx-T2xAvTCe5v1rKQoE1DHNUMI6v5I",
+      "pdu": {
+        "type": "m.room.server_epoch",
+        "sender": "@Cl5rPGgj2s7JHMwFxSEOHfFYM_K0PDpnhXEMYwMgQuo",
+        "content": {
+          "status": "active",
+          "links": [
+            "AQEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA1X_O2HVJ_0X5Qxn2KAplUg_89nXNprGMHNy69KOtjdtBKsjJ0K7SrOhNovUYV5ObQIkq3GgFrr4UgozLJd4c3ABJzZWNvbmQuZXhhbXBsZS5uZXRRDEmMbnKpYv8QouxBnJrVvVlWT9cZ_Gi9Ode0mURfhnFMHqeE8qHdpX0CCZzeSq7MTuSJ7yTVB4urXrZ4o4sH"
+          ],
+          "height": 0,
+          "tip": "EbvT2_PfyUkDZlbMsFZeAp_e30uttEkKfwRaRuqR5MQ",
+          "online_key": "0EqyMnQrtKs6E2i9RhXk5tAiSrcaAWuvhSCjMsl3hzc",
+          "server_name": "second.example.net",
+          "signer_links": [
+            "AQEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA1X_O2HVJ_0X5Qxn2KAplUg_89nXNprGMHNy69KOtjdtBKsjJ0K7SrOhNovUYV5ObQIkq3GgFrr4UgozLJd4c3ABJzZWNvbmQuZXhhbXBsZS5uZXRRDEmMbnKpYv8QouxBnJrVvVlWT9cZ_Gi9Ode0mURfhnFMHqeE8qHdpX0CCZzeSq7MTuSJ7yTVB4urXrZ4o4sH"
+          ]
+        },
+        "origin_server_ts": 1792860000015,
+        "depth": 10,
+        "prev_events": ["$RTpi_hRBzIOkrHWXarwoa3tPRqwNlEQZzHsH4GVuVk0"],
+        "auth_events": [
+          "$30zU4L44nR8z-TbH4R7So2CfI9UJzMYnMhzY9NKHXgY",
+          "$zFfd61SnHculdNRHz3GQsXsN7ImD7k_UZtvVmjyjuc4",
+          "$C8i5Ge_hS22gMYJ787v2i-SpIKe2xT5-YrXrLhJVCVQ",
+          "$RTpi_hRBzIOkrHWXarwoa3tPRqwNlEQZzHsH4GVuVk0"
+        ],
+        "state_key": "~EbvT2_PfyUkDZlbMsFZeAp_e30uttEkKfwRaRuqR5MQ",
+        "room_id": "!30zU4L44nR8z-TbH4R7So2CfI9UJzMYnMhzY9NKHXgY",
+        "hashes": {
+          "sha256": "FYudZL7nZ58DMhx-T2xAvTCe5v1rKQoE1DHNUMI6v5I"
+        },
+        "signatures": {
+          "~EbvT2_PfyUkDZlbMsFZeAp_e30uttEkKfwRaRuqR5MQ": {
+            "ed25519:0": "pL_U7KQk2naLX3c8Fo43TJTFUiwD2Y0yWP38bm8Wl9BNjHlH184RUnLvmSo2Ihqozx7COi6CeRPeMceeeI01Ag"
+          }
+        }
+      }
+    },
+    {
+      "step": "alice rebinds to B",
+      "event_id": "$kcT9zzgpGObXP_1zWZ8_CB34NZrTidz4Wg2LaAArDDg",
+      "reference_hash_hex": "91c4fdcf382918e6d73ffd73599f3f081df8359ad389dcf85a0d8b68002b0c38",
+      "content_hash": "B13EUdXlh4OLzPOQp5XTZs0FAxkgaG-GTKc7q2fO_Hg",
+      "pdu": {
+        "type": "m.room.member",
+        "sender": "@Cl5rPGgj2s7JHMwFxSEOHfFYM_K0PDpnhXEMYwMgQuo",
+        "content": {
+          "membership": "join",
+          "custodian": "~EbvT2_PfyUkDZlbMsFZeAp_e30uttEkKfwRaRuqR5MQ"
+        },
+        "origin_server_ts": 1792860000018,
+        "depth": 11,
+        "prev_events": ["$o-WTeQ_Hr6A4T-y8Ylt-h9m2LV16IeKXIQv2KrFeCNo"],
+        "auth_events": [
+          "$30zU4L44nR8z-TbH4R7So2CfI9UJzMYnMhzY9NKHXgY",
+          "$zFfd61SnHculdNRHz3GQsXsN7ImD7k_UZtvVmjyjuc4",
+          "$C8i5Ge_hS22gMYJ787v2i-SpIKe2xT5-YrXrLhJVCVQ",
+          "$RTpi_hRBzIOkrHWXarwoa3tPRqwNlEQZzHsH4GVuVk0",
+          "$o-WTeQ_Hr6A4T-y8Ylt-h9m2LV16IeKXIQv2KrFeCNo",
+          "$93JPeeEvhC6SMdkndezvrSXqOeTUafA3pfmU9jx6CUI",
+          "$fi3T31nHNiiYBgbqjRI6dSCQvMYG6gBQTYxFVoOFJLY"
+        ],
+        "state_key": "@Cl5rPGgj2s7JHMwFxSEOHfFYM_K0PDpnhXEMYwMgQuo",
+        "room_id": "!30zU4L44nR8z-TbH4R7So2CfI9UJzMYnMhzY9NKHXgY",
+        "device_certificate": {
+          "version": 1,
+          "device_id": "TEST51",
+          "device_key": "IBLLkMpg6OXY2vZuInLSIz4EhtVX6MZhQe2JIBd9frc",
+          "self_signing_key": "wFDFY3pE-oYp__PMzOIwDLNipj2Z2V_FQUUmb0MyRFo",
+          "self_signing_signature": "ys_tG6Q3JAG5v3krZ4L5TLouhSjJU81Pm_H0hHKTq7FbAQ_Rl-0tZv_uapVujfIdUcWTp7bTrSAFv-SQ2uBoCA",
+          "device_key_signature": "7zYaOIuKCsgcOt4tMIAuhAm7OSMjCyzFSE0oQcq1jkAuhrecPh6pwjIv5ydMvxInav5awswxeXXxz_OzaALKBg"
+        },
+        "hashes": {
+          "sha256": "B13EUdXlh4OLzPOQp5XTZs0FAxkgaG-GTKc7q2fO_Hg"
+        },
+        "signatures": {
+          "@Cl5rPGgj2s7JHMwFxSEOHfFYM_K0PDpnhXEMYwMgQuo": {
+            "ed25519:TEST51": "FzJyxgsOB_2L00akjApYQ6l9CJPja0gcYCO-Oiup88aQ8GV86TdjZyLGdtXfRS8Rqum3VcSKFWCuVIpkpQdhAw"
+          },
+          "~EbvT2_PfyUkDZlbMsFZeAp_e30uttEkKfwRaRuqR5MQ": {
+            "ed25519:0": "liSlzcc49e1aFWwPE9JppyL8P7sdK9SB6gv9iEMjzj49uhAcmIUmig7NjzCTKoTlZVxmS-8mGzjM522xpHvOAw"
+          }
+        }
+      }
+    },
+    {
+      "step": "message via B",
+      "event_id": "$BXkrdLiSP578J-TcBTJKLVTHoYgEhN33tOiDFORGzMo",
+      "reference_hash_hex": "05792b74b8923f9efc27e4dc05324a2d54c7a1880484ddf7b4e88314e446ccca",
+      "content_hash": "szYwSmFKtxkW5zhtaqJnExRmYJ1peIDCBUKJLmvtOsQ",
+      "pdu": {
+        "type": "m.room.message",
+        "sender": "@Cl5rPGgj2s7JHMwFxSEOHfFYM_K0PDpnhXEMYwMgQuo",
+        "content": {
+          "msgtype": "m.text",
+          "body": "hello from B"
+        },
+        "origin_server_ts": 1792860000019,
+        "depth": 12,
+        "prev_events": ["$kcT9zzgpGObXP_1zWZ8_CB34NZrTidz4Wg2LaAArDDg"],
+        "auth_events": [
+          "$30zU4L44nR8z-TbH4R7So2CfI9UJzMYnMhzY9NKHXgY",
+          "$zFfd61SnHculdNRHz3GQsXsN7ImD7k_UZtvVmjyjuc4",
+          "$kcT9zzgpGObXP_1zWZ8_CB34NZrTidz4Wg2LaAArDDg",
+          "$RTpi_hRBzIOkrHWXarwoa3tPRqwNlEQZzHsH4GVuVk0",
+          "$o-WTeQ_Hr6A4T-y8Ylt-h9m2LV16IeKXIQv2KrFeCNo"
+        ],
+        "room_id": "!30zU4L44nR8z-TbH4R7So2CfI9UJzMYnMhzY9NKHXgY",
+        "device_certificate": {
+          "version": 1,
+          "device_id": "TEST51",
+          "device_key": "IBLLkMpg6OXY2vZuInLSIz4EhtVX6MZhQe2JIBd9frc",
+          "self_signing_key": "wFDFY3pE-oYp__PMzOIwDLNipj2Z2V_FQUUmb0MyRFo",
+          "self_signing_signature": "ys_tG6Q3JAG5v3krZ4L5TLouhSjJU81Pm_H0hHKTq7FbAQ_Rl-0tZv_uapVujfIdUcWTp7bTrSAFv-SQ2uBoCA",
+          "device_key_signature": "7zYaOIuKCsgcOt4tMIAuhAm7OSMjCyzFSE0oQcq1jkAuhrecPh6pwjIv5ydMvxInav5awswxeXXxz_OzaALKBg"
+        },
+        "hashes": {
+          "sha256": "szYwSmFKtxkW5zhtaqJnExRmYJ1peIDCBUKJLmvtOsQ"
+        },
+        "signatures": {
+          "@Cl5rPGgj2s7JHMwFxSEOHfFYM_K0PDpnhXEMYwMgQuo": {
+            "ed25519:TEST51": "2unqReAyBYXZEzlxG0beZSnDXUYc30n7BI0Fdx6BKSPu1aS82qCux1zfMh2IILZfRx74nUuqw3ghp9tuCJXSCw"
+          },
+          "~EbvT2_PfyUkDZlbMsFZeAp_e30uttEkKfwRaRuqR5MQ": {
+            "ed25519:0": "2l6s8gXtUzg6xQKsdWmXbWvfXuDxmHKHFgNqD5jvnsaKH9l6Y4iTlZm0BInd_X7zdB5IBzVfcfHNBH9SmrljBQ"
+          }
+        }
+      }
+    }
+  ],
+  "checks": [
+    {
+      "name": "P1 founding flow (create, genesis-only epochs, join, message) accepted",
+      "pass": true,
+      "detail": "room !30zU4L44nR8z-TbH4R7So2CfI9UJzMYnMhzY9NKHXgY"
+    },
+    {
+      "name": "P1 create signed with the server's retired key is rejected",
+      "pass": true,
+      "detail": "rejected: create not signed by creating server's current key"
+    },
+    {
+      "name": "P1 a second genesis introduction for server A is rejected (already introduced)",
+      "pass": true,
+      "detail": "rejected: genesis cannot have a parent"
+    },
+    {
+      "name": "P1 malformed device certificate is rejected",
+      "pass": true,
+      "detail": "rejected: invalid base64url encoding"
+    },
+    {
+      "name": "P2 custodian cannot replace Alice's master key in a migration link",
+      "pass": true,
+      "detail": "rejected: user master key changed"
+    },
+    {
+      "name": "P2 alice's migration link, signed by new custodian B",
+      "pass": true,
+      "detail": "accepted"
+    },
+    {
+      "name": "P2 old custodian A can no longer send as alice",
+      "pass": true,
+      "detail": "rejected: custodian has no active server epoch"
+    },
+    {
+      "name": "P2 B cannot send for alice before B is introduced",
+      "pass": true,
+      "detail": "rejected: custodian has no active server epoch"
+    },
+    {
+      "name": "P2 server B introduced (sender alice, now custodied by B)",
+      "pass": true,
+      "detail": "accepted"
+    },
+    {
+      "name": "P2 once B is present, A's signature is refused for alice",
+      "pass": true,
+      "detail": "rejected: not signed by the sender's custodian"
+    },
+    {
+      "name": "P2 B cannot send for alice before she rebinds",
+      "pass": true,
+      "detail": "rejected: membership is bound to a different custodian"
+    },
+    {
+      "name": "P2 rebinding join via B (invite-only room, ACL open)",
+      "pass": true,
+      "detail": "accepted"
+    },
+    {
+      "name": "P2 alice sends via B",
+      "pass": true,
+      "detail": "accepted"
+    },
+    {
+      "name": "P3 rebinding when the ACL denies the old server, join rule invite",
+      "pass": true,
+      "detail": "rejected: rebinding refused: previous custodian denied by server ACL"
+    },
+    {
+      "name": "P3 rebinding when the ACL denies the old server, join rule public",
+      "pass": true,
+      "detail": "accepted"
+    },
+    {
+      "name": "P4 ex-custodian A introduces alice's h=0 prefix (no key needed)",
+      "pass": true,
+      "detail": "accepted"
+    },
+    {
+      "name": "P4 ex-custodian cannot forge Alice's join without her device signature",
+      "pass": true,
+      "detail": "rejected: missing or malformed device certificate"
+    },
+    {
+      "name": "P4 ex-custodian cannot post as Alice without her device signature",
+      "pass": true,
+      "detail": "rejected: missing or malformed device certificate"
+    },
+    {
+      "name": "P4 a non-member cannot relay (relay requires join)",
+      "pass": true,
+      "detail": "rejected: sender may not send this epoch event"
+    },
+    {
+      "name": "P4 bob's server relays alice's newer link (signed by B as bob's custodian)",
+      "pass": true,
+      "detail": "accepted"
+    },
+    {
+      "name": "P4 after the relay, A can no longer send as alice",
+      "pass": true,
+      "detail": "rejected: not signed by the sender's custodian"
+    },
+    {
+      "name": "P4 citing the pre-relay state is rejected as stale",
+      "pass": true,
+      "detail": "rejected: auth event is not current state (state-before check)"
+    },
+    {
+      "name": "P5 retired key 0 of server A is useless where the room knows A's current tip",
+      "pass": true,
+      "detail": "rejected: not signed by a permitted signer"
+    },
+    {
+      "name": "P5 thief with A's retired key 0 introduces a user under A's h=0 prefix",
+      "pass": true,
+      "detail": "accepted"
+    },
+    {
+      "name": "P5 thief cannot join Mallory without her device signature",
+      "pass": true,
+      "detail": "rejected: missing or malformed device certificate"
+    },
+    {
+      "name": "P5 thief cannot post for Mallory without her device signature",
+      "pass": true,
+      "detail": "rejected: missing or malformed device certificate"
+    },
+    {
+      "name": "P5 bob's server relays A's newer link",
+      "pass": true,
+      "detail": "accepted"
+    },
+    {
+      "name": "P5 after the relay, the retired key no longer verifies",
+      "pass": true,
+      "detail": "rejected: not signed by the sender's custodian"
+    },
+    {
+      "name": "G1 control: the same retired key is refused at the room's current tip",
+      "pass": true,
+      "detail": "rejected: not signed by the sender's custodian"
+    },
+    {
+      "name": "G7 merge: create and signer_links use the actual server signing height",
+      "pass": true,
+      "detail": "creator links and signer_links may be ahead of an introduced subject chain"
+    },
+    {
+      "name": "G7 merge: creator and signer chains are bound to the subject server",
+      "pass": true,
+      "detail": "a chain beginning at another server cannot supply this server's height"
+    },
+    {
+      "name": "G7 merge: seal signature verifies under the active epoch",
+      "pass": true,
+      "detail": "candidate seal signed by server A at height 1"
+    },
+    {
+      "name": "G7 merge: seal sender must be custodied by the subject server",
+      "pass": true,
+      "detail": "rejected: seal sender is not custodied by the subject server"
+    },
+    {
+      "name": "G7 merge: a sender custodied by another server is rejected",
+      "pass": true,
+      "detail": "rejected: seal sender is not custodied by the subject server"
+    },
+    {
+      "name": "G7 merge: a non-joined seal sender is rejected",
+      "pass": true,
+      "detail": "rejected: seal sender is not joined"
+    },
+    {
+      "name": "G7 merge: honest old-height ancestor survives",
+      "pass": true,
+      "detail": "the event is in the seal's prev_events ancestry"
+    },
+    {
+      "name": "G7 merge: historical-branch message is excluded by the resolved seal",
+      "pass": true,
+      "detail": "old-height server signature is outside the resolved seal's causal past"
+    },
+    {
+      "name": "G7 merge: historical-branch state event is excluded before state resolution",
+      "pass": true,
+      "detail": "the event was valid on its branch but is outside the merged seal's ancestry"
+    },
+    {
+      "name": "P6 redacted server ACL keeps allow, deny",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "P6 redacted rebinding member keeps membership, custodian",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "P6 redacted user epoch keeps all content",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "P7 unknown device-certificate fields are ignored at version 1",
+      "pass": true,
+      "detail": "accepted"
+    },
+    {
+      "name": "P7 unsupported device-certificate version is rejected",
+      "pass": true,
+      "detail": "rejected: device certificate version must be the integer 1"
+    },
+    {
+      "name": "P7 non-integer device-certificate version is rejected",
+      "pass": true,
+      "detail": "rejected: device certificate version must be the integer 1"
+    },
+    {
+      "name": "P1 malformed principal entry in server ACL is rejected",
+      "pass": true,
+      "detail": "rejected: not a principal: ~*"
+    },
+    {
+      "name": "P8 canonical principal encoding is accepted in server ACL",
+      "pass": true,
+      "detail": "accepted"
+    },
+    {
+      "name": "P8 rejects padded principal encoding in server ACL",
+      "pass": true,
+      "detail": "rejected: not a principal: ~-__7__v_-__7__v_-__7__v_-__7__v_-__7__v_-_8="
+    },
+    {
+      "name": "P8 rejects 42-character principal payload in server ACL",
+      "pass": true,
+      "detail": "rejected: not a principal: ~-__7__v_-__7__v_-__7__v_-__7__v_-__7__v_-_"
+    },
+    {
+      "name": "P8 rejects 44-character principal payload in server ACL",
+      "pass": true,
+      "detail": "rejected: not a principal: ~-__7__v_-__7__v_-__7__v_-__7__v_-__7__v_-_8A"
+    },
+    {
+      "name": "P8 rejects standard-base64 plus in server ACL",
+      "pass": true,
+      "detail": "rejected: non-canonical base64url encoding"
+    },
+    {
+      "name": "P8 rejects standard-base64 slash in server ACL",
+      "pass": true,
+      "detail": "rejected: non-canonical base64url encoding"
+    },
+    {
+      "name": "P8 rejects nonzero base64url trailing bits in server ACL",
+      "pass": true,
+      "detail": "rejected: non-canonical base64url encoding"
+    },
+    {
+      "name": "P8 principal_digest rejects padded input",
+      "pass": true,
+      "detail": "rejected: not a principal: ~-__7__v_-__7__v_-__7__v_-__7__v_-__7__v_-_8="
+    }
+  ],
+  "known_gaps": [
+    {
+      "name": "G1 device co-signs a message on a custodian-selected pre-rotation branch",
+      "reproduced": true,
+      "detail": "accepted: nothing ties the branch to the room's current tip",
+      "problem": "open problem 2"
+    },
+    {
+      "name": "G1 device co-signs a state event on a custodian-selected pre-rotation branch",
+      "reproduced": true,
+      "detail": "accepted: nothing ties the branch to the room's current tip; \u00a76 defines no rule that drops it from state resolution",
+      "problem": "open problem 2"
+    },
+    {
+      "name": "G2 lagging and advanced tips accepted in two disjoint views of one chain, no local cross-check",
+      "reproduced": true,
+      "detail": "h=0 view accepted: nothing ties the branch to the room's current tip; h=1 view accepted: nothing ties the branch to the room's current tip",
+      "problem": "open problem 1"
+    },
+    {
+      "name": "G3-finality-checkpoint-signed-by-retired-online-key",
+      "reproduced": null,
+      "detail": "a checkpoint signed by a retired online key is irreversible, so 00FA-style finality inherits open problem 2 unless checkpoint signers are rotation keys"
+    },
+    {
+      "name": "G4-finality-tradeoff-for-late-branches",
+      "reproduced": null,
+      "detail": "sealed history rejects late branches and their state, trading availability for no-backdating"
+    },
+    {
+      "name": "G5-custodian-notice-cannot-revoke-a-device",
+      "reproduced": null,
+      "detail": "an honest current custodian can refuse to sign for a compromised device, but the refusal is local and a former or colluding custodian can still make its certificate count"
+    },
+    {
+      "name": "G6-per-device-event-chain-fork",
+      "reproduced": null,
+      "detail": "a per-signer event chain would turn a cloned-device fork into in-DAG evidence, but room version N does not define the chain"
+    },
+    {
+      "name": "G7-self-sealing-rotation",
+      "reproduced": null,
+      "detail": "a self-signed epoch advancement could seal the height it leaves, but room version N has no ancestry rule tying old-height events to it"
+    }
+  ]
+}

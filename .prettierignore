@@ -1,2 +1,4 @@
 target/
 spec/
+tests/vectors/
+tools/reference_models/

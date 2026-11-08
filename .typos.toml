@@ -5,4 +5,5 @@ extend-ignore-re = ["[A-Za-z0-9_-]{40,}"]
 [default.extend-words]
 
 [files]
-extend-exclude = ["Cargo.lock"]
+# Vendored verbatim from the proposals repo; do not rewrite or spell-check.
+extend-exclude = ["Cargo.lock", "tests/vectors/", "tools/reference_models/"]
