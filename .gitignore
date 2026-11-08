@@ -1,0 +1,23 @@
+# rust
+target/
+.coverage/
+lcov.info
+perf.data*
+
+# IDEs
+.idea/
+.vscode/
+
+# python
+__pycache__
+.pytest_cache
+
+# git stuff
+*.diff
+*.patch
+
+# other stuff
+.env
+.env.*
+.tmp/
+/*.txt

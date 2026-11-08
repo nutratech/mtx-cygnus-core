@@ -1,0 +1,8 @@
+[default]
+# Base64url blobs (test vectors, links) and long hex digests are not prose.
+extend-ignore-re = ["[A-Za-z0-9_-]{40,}"]
+
+[default.extend-words]
+
+[files]
+extend-exclude = ["Cargo.lock"]
