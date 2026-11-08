@@ -12,9 +12,11 @@ readme = "README.md"
 
 [dependencies]
 base64 = "0.22"
-ed25519-consensus = "2"
+ed25519-consensus = { version = "2", default-features = false }
 sha2 = "0.10"
-thiserror = "2"
+# Tracks the `dev` branch of rezzy, which carries the strict `Value` canonical
+# writer. Pinned by branch (not rev), so `cargo update -p rezzy-json` moves it.
+rezzy-json = { git = "https://gitlab.com/wombat-foundation/rezzy.git", branch = "dev" }
 
 [dev-dependencies]
 hex = "0.4"

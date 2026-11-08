@@ -5,10 +5,12 @@
 //! its verification rules (spec §2). Later layers (device certificates, event
 //! envelopes, tip bundles) build on these primitives.
 
+pub mod cert;
 pub mod error;
 pub mod link;
 pub mod principal;
 
+pub use cert::DeviceCertificate;
 pub use error::Error;
 pub use link::{Body, Kind, Link, Payload};
 pub use principal::Principal;
@@ -17,6 +19,8 @@ pub use principal::Principal;
 pub const ROT_TAG: &[u8] = b"matrix-cygnus-rot-v1\0";
 /// Domain tag for link signatures (§2.4), including trailing NUL.
 pub const LINK_TAG: &[u8] = b"matrix-cygnus-link-v1\0";
+/// Domain tag for user-device certificates (§5.2.1), including trailing NUL.
+pub const DEVICE_CERT_TAG: &[u8] = b"matrix-cygnus-device-cert-v1\0";
 
 /// `SHA-256(ROT_TAG ‖ key)`: the commitment to a future rotation key.
 #[must_use]

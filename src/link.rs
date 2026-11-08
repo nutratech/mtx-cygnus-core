@@ -412,7 +412,7 @@ pub fn verify_slice<'a>(parent: &'a Link, slice: &'a [Link]) -> Result<&'a Link,
     Ok(tip)
 }
 
-fn verify(key: &[u8], msg: &[u8], sig: &[u8]) -> Result<(), Error> {
+pub(crate) fn verify(key: &[u8], msg: &[u8], sig: &[u8]) -> Result<(), Error> {
     let vk = VerificationKey::try_from(key).map_err(|_| Error::PublicKey)?;
     let sig = Signature::try_from(sig).map_err(|_| Error::Signature)?;
     vk.verify(&sig, msg).map_err(|_| Error::Signature)
