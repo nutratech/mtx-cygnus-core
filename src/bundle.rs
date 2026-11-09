@@ -15,6 +15,172 @@ use std::collections::BTreeMap;
 /// Unstable room-version identifier used by the current MSC00FC vectors.
 pub const ROOM_VERSION: &str = "tk.nutra.cygnus.1";
 
+/// A full client-server tip bundle as delivered by sync or the tip-bundle API.
+/// Event IDs are separate because Matrix reference IDs are not part of the
+/// signed event object.
+#[derive(Debug, Clone)]
+pub struct TipBundle {
+    /// Room identifier expected for all room events in the bundle.
+    pub room_id: String,
+    /// Current forward extremity event IDs.
+    pub forward_extremities: Vec<String>,
+    /// Full events paired with their supplied event IDs.
+    pub events: Vec<(String, rezzy_json::Value)>,
+}
+
+/// Tip-bundle events whose IDs, room binding, and create event were checked.
+/// This does not replace room state resolution or verify arbitrary event auth.
+#[derive(Debug, Clone)]
+pub struct VerifiedTipBundle {
+    room_id: String,
+    forward_extremities: Vec<String>,
+    events: BTreeMap<String, rezzy_json::Value>,
+    create: VerifiedCreate,
+}
+
+impl TipBundle {
+    /// Verify event reference IDs, room IDs, the create event, and extremity
+    /// membership for a complete, non-delta bundle.
+    ///
+    /// Event signatures and the server's selection of auth state remain the
+    /// caller's responsibility. `VerifiedCreate` does verify the required
+    /// create signatures and creator chains.
+    ///
+    /// # Errors
+    /// Returns [`Error::Bundle`] for inconsistent bundle structure and the
+    /// underlying create, envelope, or signature error for invalid events.
+    pub fn verify(&self) -> Result<VerifiedTipBundle, Error> {
+        if self.forward_extremities.is_empty() {
+            return Err(Error::Bundle("bundle has no forward extremities"));
+        }
+        if self.events.is_empty() {
+            return Err(Error::Bundle("bundle has no events"));
+        }
+
+        let mut events = BTreeMap::new();
+        let mut create_id = None;
+        let mut create = None;
+        for (event_id, event) in &self.events {
+            if computed_event_id(event).map_err(|_| Error::CanonicalJson)? != *event_id {
+                return Err(Error::Bundle(
+                    "event ID does not match event reference hash",
+                ));
+            }
+            if events.insert(event_id.clone(), event.clone()).is_some() {
+                return Err(Error::Bundle("duplicate event ID"));
+            }
+            let object = event
+                .as_object()
+                .ok_or(Error::Bundle("event must be an object"))?;
+            match string(object.get("type"))? {
+                "m.room.create" => {
+                    if create.is_some() {
+                        return Err(Error::Bundle("bundle contains multiple create events"));
+                    }
+                    let verified = VerifiedCreate::verify(event, event_id)?;
+                    if verified.room_id != self.room_id {
+                        return Err(Error::Bundle("create event derives a different room ID"));
+                    }
+                    create_id = Some(event_id.clone());
+                    create = Some(verified);
+                }
+                _ => {
+                    if string(object.get("room_id"))? != self.room_id {
+                        return Err(Error::Bundle("event belongs to another room"));
+                    }
+                }
+            }
+            validate_event_references(object)?;
+        }
+
+        let create = create.ok_or(Error::Bundle("bundle is missing its create event"))?;
+        if !events.contains_key(
+            create_id
+                .as_deref()
+                .expect("create set with verified value"),
+        ) {
+            return Err(Error::Bundle("bundle is missing its create event"));
+        }
+        let mut unique_extremities = std::collections::BTreeSet::new();
+        for event_id in &self.forward_extremities {
+            if !unique_extremities.insert(event_id) {
+                return Err(Error::Bundle("duplicate forward extremity"));
+            }
+            if !events.contains_key(event_id) {
+                return Err(Error::Bundle("forward extremity is absent from bundle"));
+            }
+        }
+        Ok(VerifiedTipBundle {
+            room_id: self.room_id.clone(),
+            forward_extremities: self.forward_extremities.clone(),
+            events,
+            create,
+        })
+    }
+}
+
+impl VerifiedTipBundle {
+    /// Room ID established by the verified create event.
+    #[must_use]
+    pub fn room_id(&self) -> &str {
+        &self.room_id
+    }
+
+    /// Current forward extremities in the bundle.
+    #[must_use]
+    pub fn forward_extremities(&self) -> &[String] {
+        &self.forward_extremities
+    }
+
+    /// The verified create event identity and creator chains.
+    #[must_use]
+    pub fn create(&self) -> &VerifiedCreate {
+        &self.create
+    }
+
+    /// Look up a full verified-ID event from the bundle.
+    #[must_use]
+    pub fn event(&self, event_id: &str) -> Option<&rezzy_json::Value> {
+        self.events.get(event_id)
+    }
+
+    /// Resolve a list of event IDs a client intends to cite as auth or prev
+    /// events. Every cited ID must be present in the locally verified bundle.
+    ///
+    /// # Errors
+    /// Returns [`Error::Bundle`] if any cited event is missing.
+    pub fn require_events<'a>(
+        &'a self,
+        event_ids: &[String],
+    ) -> Result<Vec<&'a rezzy_json::Value>, Error> {
+        event_ids
+            .iter()
+            .map(|event_id| {
+                self.events
+                    .get(event_id)
+                    .ok_or(Error::Bundle("cited event is absent from verified bundle"))
+            })
+            .collect()
+    }
+}
+
+fn validate_event_references(object: &rezzy_json::Object) -> Result<(), Error> {
+    for field in ["prev_events", "auth_events"] {
+        if let Some(value) = object.get(field) {
+            let references = value
+                .as_array()
+                .ok_or(Error::Bundle("event references must be arrays"))?;
+            if references
+                .iter()
+                .any(|reference| reference.as_str().is_none())
+            {
+                return Err(Error::Bundle("event reference must be a string ID"));
+            }
+        }
+    }
+    Ok(())
+}
+
 /// A verified create event and the two identity chains it establishes.
 #[derive(Debug, Clone)]
 pub struct VerifiedCreate {

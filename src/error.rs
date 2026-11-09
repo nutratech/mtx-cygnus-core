@@ -46,6 +46,10 @@ pub enum Error {
     Create(&'static str),
     /// Epoch-event validation failed.
     Epoch(&'static str),
+    /// Tip-bundle validation failed.
+    Bundle(&'static str),
+    /// Server-seal parsing or resolution failed.
+    Seal(&'static str),
 }
 
 impl fmt::Display for Error {
@@ -71,6 +75,8 @@ impl fmt::Display for Error {
             Self::CanonicalJson => f.write_str("event is not valid Matrix canonical JSON"),
             Self::Create(what) => write!(f, "invalid Cygnus create event: {what}"),
             Self::Epoch(what) => write!(f, "invalid Cygnus epoch event: {what}"),
+            Self::Seal(what) => write!(f, "invalid Cygnus server seal: {what}"),
+            Self::Bundle(what) => write!(f, "invalid Cygnus tip bundle: {what}"),
         }
     }
 }

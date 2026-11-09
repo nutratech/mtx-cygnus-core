@@ -12,6 +12,7 @@ pub mod envelope;
 pub mod error;
 pub mod link;
 pub mod principal;
+pub mod seal;
 
 pub use cert::DeviceCertificate;
 pub use error::Error;
