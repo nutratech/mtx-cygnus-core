@@ -9,6 +9,7 @@ on:
 
 env:
   RUST_BACKTRACE: "1"
+  CARGO_TERM_COLOR: always
 
 jobs:
   check:
@@ -23,9 +24,17 @@ jobs:
         with:
           toolchain: "1.89.0"
           components: clippy, rustfmt
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
       - run: python3 -m venv .venv-reference-models
       - run: .venv-reference-models/bin/python -m pip install -r tools/reference_models/requirements.txt
       - run: .venv-reference-models/bin/python tools/reference_models/check.py
+      # check.py rewrites vector files; a dirty tree means they are not
+      # reproducible from the vendored models.
+      - run: git diff --exit-code -- tests/vectors
       - run: cargo fmt --check
-      - run: cargo clippy --workspace --all-targets --all-features -- -D warnings
-      - run: cargo test --workspace --all-features
+      - run: cargo clippy --workspace --all-targets --all-features --locked -- -D warnings
+      # Default features are what clients build; state-res is optional.
+      - run: cargo test --workspace --locked
+      - run: cargo test --workspace --all-features --locked
+      - run: cargo build -p cygnus-wasm --target wasm32-unknown-unknown --release --locked
