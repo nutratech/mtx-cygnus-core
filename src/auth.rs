@@ -10,6 +10,7 @@ use crate::{
     cert::DeviceCertificate,
     envelope::{content_hash_b64, verify_custodian_signature, verify_device_signature},
     link::{Kind, Link, Payload},
+    seal::ServerSeal,
     Error, Principal,
 };
 use std::collections::{BTreeMap, BTreeSet};
@@ -192,6 +193,57 @@ pub fn authorize_burn(
         ))?;
     verify_server_signature(event, &custodian, &server.links)?;
     Ok(epoch)
+}
+
+/// Verify the §7 authorization requirements for an `m.room.server_seal`.
+///
+/// The subject server must have an active epoch, the sender must have an
+/// active user epoch custodied by that server and be joined, the seal height
+/// may not exceed the signing epoch's height, and the event must carry the
+/// subject server's signature under its current tip key.
+///
+/// # Errors
+/// Returns an authorization, seal, or signature error when a requirement
+/// fails.
+pub fn authorize_seal(
+    event: &rezzy_json::Value,
+    context: &AuthContext,
+) -> Result<ServerSeal, Error> {
+    verify_content_hash(event)?;
+    let seal = ServerSeal::parse(event)?;
+    let server = seal.server.to_id();
+
+    let epoch = context
+        .server_epochs
+        .get(&server)
+        .filter(|epoch| epoch.status == EpochStatus::Active)
+        .ok_or(Error::Authorization("seal subject has no active epoch"))?;
+
+    let sender = string(event.get("sender"))?;
+    let user = context
+        .user_epochs
+        .get(sender)
+        .filter(|user| user.status == EpochStatus::Active)
+        .ok_or(Error::Authorization("seal sender has no active user epoch"))?;
+    if user_custodian(user).as_deref() != Some(server.as_str()) {
+        return Err(Error::Authorization(
+            "seal sender is not custodied by the subject server",
+        ));
+    }
+    if context
+        .members
+        .get(sender)
+        .is_none_or(|member| member.membership != "join")
+    {
+        return Err(Error::Authorization("seal sender is not joined"));
+    }
+    if epoch.tip().body.height < seal.sealed_height {
+        return Err(Error::Authorization(
+            "seal height exceeds its signing epoch",
+        ));
+    }
+    verify_server_signature(event, &server, &epoch.links)?;
+    Ok(seal)
 }
 
 /// Verify the §5.5 active-epoch, membership-custodian, device-certificate,

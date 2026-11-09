@@ -66,10 +66,13 @@ small stable API with shared JSON fixtures:
 ## Current coverage
 
 The crate implements principal IDs, link encoding/verification and bootstrap
-(rotation keys, commitments, genesis/successor builders), device-certificate
-verification, the event envelope (redaction, hashes, event IDs, device and
-custodian signatures), epoch/burn/tip-bundle verification, Pass 0 resolution,
-and the Cygnus authorization overlay. It does not yet provide certificate
-creation, private-key storage/backup, state resolution, HTTP-flow, SDK
-binding, or client UI APIs above. Keeping this gap explicit prevents an SDK
-from treating ordinary room-v12 behavior as full Cygnus support.
+(caller-CSPRNG rotation keys, commitments, genesis/successor builders),
+device-certificate verification, the event envelope (redaction, hashes, event
+IDs, device and custodian signatures), epoch/burn/seal/tip-bundle verification,
+Pass 0 resolution, and the Cygnus authorization overlay. With `state-res`, it
+delegates Matrix v12 base authorization/state resolution to Rezzy. It does not
+yet provide certificate creation, private-key storage/backup, HTTP flows, SDK
+bindings, or client UI APIs above. The bootstrap API never derives identity
+material from Olm or Megolm keys; secret storage and recovery remain client
+responsibilities. Keeping this gap explicit prevents an SDK from treating
+ordinary room-v12 behavior as full Cygnus support.
