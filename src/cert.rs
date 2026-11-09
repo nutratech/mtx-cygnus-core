@@ -206,6 +206,13 @@ mod tests {
     }
 
     #[test]
+    fn rejects_unsupported_integer_version() {
+        let (sender, master_key, mut value) = signed_certificate();
+        value["version"] = json!(2);
+        assert!(DeviceCertificate::parse_and_verify(&value, &sender, &master_key).is_err());
+    }
+
+    #[test]
     fn rejects_non_integer_version_spellings() {
         let (sender, master_key, mut value) = signed_certificate();
 

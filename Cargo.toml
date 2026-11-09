@@ -17,13 +17,6 @@ sha2 = "0.10"
 # Tracks the `dev` branch of rezzy, which carries the strict `Value` canonical
 # writer. Pinned by branch (not rev), so `cargo update -p rezzy-json` moves it.
 rezzy-json = { git = "https://gitlab.com/wombat-foundation/rezzy.git", branch = "dev" }
-rezzy = { git = "https://gitlab.com/wombat-foundation/rezzy.git", branch = "dev", default-features = false, optional = true }
-
-[features]
-default = []
-# Matrix v12 auth and state-resolution integration for server builds.
-rezzy-auth = ["dep:rezzy"]
-
 # Matrix v12 auth and state resolution for the P2-P5 checks. Optional so
 # client and wasm builds do not compile the state engine.
 rezzy = { git = "https://gitlab.com/wombat-foundation/rezzy.git", branch = "dev", optional = true }

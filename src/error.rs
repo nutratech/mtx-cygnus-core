@@ -50,6 +50,8 @@ pub enum Error {
     Bundle(&'static str),
     /// Server-seal parsing or resolution failed.
     Seal(&'static str),
+    /// Room authorization failed.
+    Authorization(&'static str),
 }
 
 impl fmt::Display for Error {
@@ -76,6 +78,7 @@ impl fmt::Display for Error {
             Self::Create(what) => write!(f, "invalid Cygnus create event: {what}"),
             Self::Epoch(what) => write!(f, "invalid Cygnus epoch event: {what}"),
             Self::Seal(what) => write!(f, "invalid Cygnus server seal: {what}"),
+            Self::Authorization(what) => write!(f, "Cygnus authorization failed: {what}"),
             Self::Bundle(what) => write!(f, "invalid Cygnus tip bundle: {what}"),
         }
     }

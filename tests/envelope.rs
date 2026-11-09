@@ -77,6 +77,28 @@ fn epoch_events_keep_full_content_and_ordinary_events_are_redacted() {
 }
 
 #[test]
+fn redacted_server_acl_keeps_allow_deny_and_ip_literal_policy() {
+    let event = json!({
+        "type": "m.room.server_acl",
+        "content": {
+            "allow": ["*.example.org"],
+            "deny": ["evil.example.org"],
+            "allow_ip_literals": false,
+            "irrelevant": "removed"
+        }
+    });
+    let redacted = redact_event(&event).unwrap();
+    assert_eq!(
+        redacted.get("content").unwrap(),
+        &json!({
+            "allow": ["*.example.org"],
+            "deny": ["evil.example.org"],
+            "allow_ip_literals": false
+        })
+    );
+}
+
+#[test]
 fn device_signing_object_excludes_event_id() {
     let without = json!({
         "type": "m.room.message",

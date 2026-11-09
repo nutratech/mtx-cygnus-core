@@ -5,6 +5,7 @@
 //! its verification rules (spec §2). Later layers (device certificates, event
 //! envelopes, tip bundles) build on these primitives.
 
+pub mod auth;
 pub mod binding;
 pub mod bundle;
 pub mod cert;
@@ -12,6 +13,8 @@ pub mod envelope;
 pub mod error;
 pub mod link;
 pub mod principal;
+#[cfg(feature = "state-res")]
+pub mod rezzy_integration;
 pub mod seal;
 
 pub use cert::DeviceCertificate;
