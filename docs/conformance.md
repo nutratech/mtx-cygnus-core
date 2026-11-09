@@ -54,32 +54,32 @@ Status:
 
 ### P4 — relays (7)
 
-| #   | Check                                                          | Status  | Rust evidence / gap                                                                             |
-| --- | -------------------------------------------------------------- | ------- | ----------------------------------------------------------------------------------------------- |
-| 15  | Ex-custodian introduces the h=0 prefix                         | partial | `authorize_active_epoch` handles introductions; no P4 relay fixture exercises this sender path. |
-| 16  | Ex-custodian cannot forge a join without the device signature  | partial | `authorize_user_event` checks certified device signatures; no P4 negative fixture exercises it. |
-| 17  | Ex-custodian cannot post as Alice without the device signature | partial | Same device-signature path; no P4 negative fixture exercises it.                                |
-| 18  | Non-member cannot relay                                        | partial | `authorize_active_epoch` requires a joined relay sender; no P4 scenario test yet.               |
-| 19  | Bob's server relays Alice's newer link                         | partial | Relay signer selection exists in `authorize_active_epoch`; no P4 positive scenario test yet.    |
-| 20  | After the relay, A cannot send as Alice                        | partial | Current custodian binding is enforced; relay-to-message state transition lacks a test.          |
-| 21  | Citing pre-relay state is stale                                | partial | Rezzy rejects stale auth citations, but the P4 pre-relay state scenario is not ported.          |
+| #   | Check                                                          | Status  | Rust evidence / gap                                                                                                              |
+| --- | -------------------------------------------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| 15  | Ex-custodian introduces the h=0 prefix                         | done    | `auth_p4_p5` introduces Alice's genesis in a room that has never seen her, carrying A's signer chain.                            |
+| 16  | Ex-custodian cannot forge a join without the device signature  | done    | `auth_p4_p5` rejects the ex-custodian's join with no device certificate.                                                         |
+| 17  | Ex-custodian cannot post as Alice without the device signature | done    | `auth_p4_p5` rejects the ex-custodian's message with no device certificate.                                                      |
+| 18  | Non-member cannot relay                                        | done    | `auth_p4_p5` rejects an outsider relaying Alice's newer link because the relay sender is not joined.                             |
+| 19  | Bob's server relays Alice's newer link                         | done    | `auth_p4_p5` accepts the relay signed by Bob's custodian and advances Alice's epoch.                                             |
+| 20  | After the relay, A cannot send as Alice                        | done    | `auth_p4_p5` rejects the ex-custodian's device-signed message after the relay.                                                   |
+| 21  | Citing pre-relay state is stale                                | partial | State-before is the base-auth/state-selection layer's rule; the overlay receives current state, so the citation is not modelled. |
 
 ### P5 — retired keys (6)
 
-| #   | Check                                                      | Status  | Rust evidence / gap                                                            |
-| --- | ---------------------------------------------------------- | ------- | ------------------------------------------------------------------------------ |
-| 22  | Retired key useless at the room's current tip              | partial | Current-tip signature verification exists; P5 room scenario is not ported.     |
-| 23  | Thief introduces a user under the h=0 prefix               | partial | Genesis introduction path exists; P5 sender/room-state scenario is not ported. |
-| 24  | Thief cannot join Mallory without her device signature     | partial | Device verification exists; P5 negative scenario is not ported.                |
-| 25  | Thief cannot post for Mallory without her device signature | partial | Device verification exists; P5 negative scenario is not ported.                |
-| 26  | Bob's server relays A's newer link                         | partial | Relay authorization path exists; P5 positive scenario is not ported.           |
-| 27  | After the relay, the retired key no longer verifies        | partial | Current-tip verification exists; P5 state transition is not ported.            |
+| #   | Check                                                      | Status | Rust evidence / gap                                                                                              |
+| --- | ---------------------------------------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------- |
+| 22  | Retired key useless at the room's current tip              | done   | `auth_p4_p5` rejects the retired h=0 key once the room knows A's current tip.                                    |
+| 23  | Thief introduces a user under the h=0 prefix               | done   | `auth_p4_p5` accepts Mallory's genesis introduction signed only by the retired key in a room unaware of A's tip. |
+| 24  | Thief cannot join Mallory without her device signature     | done   | `auth_p4_p5` rejects the retired key's join with no device certificate.                                          |
+| 25  | Thief cannot post for Mallory without her device signature | done   | `auth_p4_p5` rejects the retired key's message with no device certificate.                                       |
+| 26  | Bob's server relays A's newer link                         | done   | `auth_p4_p5` accepts Bob's relay of A's successor link.                                                          |
+| 27  | After the relay, the retired key no longer verifies        | done   | `auth_p4_p5` rejects a fully device-signed message under the retired key after the relay (`Error::Signature`).   |
 
 ### G1 and G7 (10)
 
 | #   | Check                                                          | Status       | Rust evidence / gap                                                                                          |
 | --- | -------------------------------------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------ |
-| 28  | G1 control: retired key refused at the current tip             | partial      | Same components as #22; scenario not modelled.                                                               |
+| 28  | G1 control: retired key refused at the current tip             | done         | `auth_p4_p5` rejects the retired h=0 key at A's current tip (same scenario as #22).                          |
 | 29  | Create and `signer_links` use the actual server signing height | partial      | `bundle::signer_chain` and `verify_epoch_custodian_signature` resolve the signing height; no merge scenario. |
 | 30  | Creator and signer chains bound to the subject server          | partial      | `VerifiedCreate::verify` binds custodian, display domain, and sender; no merge scenario.                     |
 | 31  | Seal signature verifies under the active epoch                 | partial      | `seal::seal_auth_ok` enforces the height rule; signature/auth-state verification is absent.                  |
@@ -131,18 +131,19 @@ no-padding alphabet, canonical trailing bits, and a 32-byte payload.
 | P1 founding     |      4 |      0 |       4 |            0 |
 | P2 migration    |      9 |      9 |       0 |            0 |
 | P3 rebinding    |      2 |      2 |       0 |            0 |
-| P4 relays       |      7 |      0 |       7 |            0 |
-| P5 retired keys |      6 |      0 |       6 |            0 |
-| G1/G7           |     10 |      3 |       4 |            3 |
+| P4 relays       |      7 |      6 |       1 |            0 |
+| P5 retired keys |      6 |      6 |       0 |            0 |
+| G1/G7           |     10 |      4 |       3 |            3 |
 | P6 redaction    |      3 |      3 |       0 |            0 |
 | P7 certificates |      3 |      3 |       0 |            0 |
 | P8 encodings    |      9 |      8 |       1 |            0 |
-| **Total**       | **53** | **28** |  **22** |        **3** |
+| **Total**       | **53** | **41** |   **9** |        **3** |
 
-P2 and P3 now have vector-driven Cygnus authorization tests. P4 and P5 paths
-exist in `auth.rs`, but the relay and retired-key scenarios still need focused
-tests. G7 seal authorization (checks 32–34) needs a seal-specific auth entry
-point; the causal filtering predicates are already covered separately.
+P2–P5 now have vector- or scenario-driven Cygnus authorization tests. The one
+remaining P4 gap is check 21, which is a state-before (`auth_events` citation)
+rule owned by the base-auth/state-selection layer rather than the overlay. G7
+seal authorization (checks 32–34) needs a seal-specific auth entry point; the
+causal filtering predicates are already covered separately.
 
 The regenerated PDU fixtures now omit `m.room.create` from `auth_events`, as
 required by room v12. The proposal model and vector source should stay in sync
