@@ -1,9 +1,8 @@
 //! Client bootstrap: fresh rotation keys, commitments, and genesis links.
 //!
-//! The core is I/O-free, so this module never draws randomness. Callers pass
-//! 32 bytes from their platform CSPRNG and keep the resulting private key;
-//! only [`RotationKey::commitment`] is sent to the custodian (§4,
-//! "Client-supplied genesis commitment").
+//! The core is I/O-free, so callers provide a platform CSPRNG. The client
+//! keeps the resulting private key; only [`RotationKey::commitment`] is sent
+//! to the custodian (§4, "Client-supplied genesis commitment").
 //!
 //! Cygnus identity keys are always generated fresh. They are never derived
 //! from Olm or Megolm session keys: those are shared with room participants,
@@ -19,6 +18,7 @@ use crate::{
     Error,
 };
 use ed25519_consensus::SigningKey;
+use rand_core::{CryptoRng, RngCore};
 
 /// A private rotation key the client keeps until it signs the next link.
 ///
@@ -28,6 +28,17 @@ pub struct RotationKey {
 }
 
 impl RotationKey {
+    /// Generate a rotation key using a caller-provided cryptographic RNG.
+    ///
+    /// Use an operating-system-backed CSPRNG supplied by the client platform;
+    /// deterministic or shared room keys such as Megolm keys are not suitable.
+    #[must_use]
+    pub fn generate(rng: &mut (impl RngCore + CryptoRng)) -> Self {
+        let mut seed = [0; 32];
+        rng.fill_bytes(&mut seed);
+        Self::from_seed(seed)
+    }
+
     /// Wrap 32 bytes of caller-supplied CSPRNG output.
     ///
     /// The bytes are the Ed25519 private seed. Callers MUST use a

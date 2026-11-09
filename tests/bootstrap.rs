@@ -7,6 +7,7 @@ use cygnus_core::{
     Error,
 };
 use ed25519_consensus::SigningKey;
+use rand_core::{CryptoRng, Error as RandError, RngCore};
 
 fn key(seed: u8) -> SigningKey {
     SigningKey::from([seed; 32])
@@ -14,6 +15,37 @@ fn key(seed: u8) -> SigningKey {
 
 fn rotation(seed: u8) -> RotationKey {
     RotationKey::from_seed([seed; 32])
+}
+
+struct TestRng(u8);
+
+impl RngCore for TestRng {
+    fn next_u32(&mut self) -> u32 {
+        u32::from(self.0)
+    }
+
+    fn next_u64(&mut self) -> u64 {
+        u64::from(self.0)
+    }
+
+    fn fill_bytes(&mut self, dest: &mut [u8]) {
+        dest.fill(self.0);
+    }
+
+    fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), RandError> {
+        self.fill_bytes(dest);
+        Ok(())
+    }
+}
+
+impl CryptoRng for TestRng {}
+
+#[test]
+fn rotation_key_generation_uses_the_callers_rng() {
+    let generated = RotationKey::generate(&mut TestRng(0x21));
+    let from_seed = rotation(0x21);
+    assert_eq!(generated.public_key(), from_seed.public_key());
+    assert_eq!(generated.commitment(), from_seed.commitment());
 }
 
 #[test]

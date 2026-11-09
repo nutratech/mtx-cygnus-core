@@ -151,6 +151,7 @@ dependencies = [
  "base64 0.22.1",
  "ed25519-consensus",
  "hex",
+ "rand_core",
  "rezzy",
  "rezzy-json",
  "sha2 0.10.9",
