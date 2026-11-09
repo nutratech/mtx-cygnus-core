@@ -7,6 +7,7 @@
 
 pub mod auth;
 pub mod binding;
+pub mod bootstrap;
 pub mod bundle;
 pub mod cert;
 pub mod envelope;

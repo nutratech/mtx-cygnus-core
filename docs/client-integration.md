@@ -38,9 +38,11 @@ small stable API with shared JSON fixtures:
    current link and certificate modules.
 4. **Epoch and bundle operations**: parse and verify epoch/burn events, resolve
    link tips and authorization state, and validate supplied link bundles.
-5. **Client flow data**: typed inputs/outputs for account creation, device
-   certification, custodian migration/rebinding, room creation/upgrade, and
-   relay/ingress decisions. HTTP itself remains in each SDK.
+5. **Client flow data**: bootstrap link construction (fresh rotation key,
+   commitment C₀, user/server genesis and successors) is in `bootstrap`;
+   higher-level typed flows for device certification, revocation, custodian
+   migration/rebinding, room creation/upgrade, and relay/ingress decisions
+   remain. HTTP itself stays in each SDK.
 6. **Bindings**: `wasm-bindgen` for the JS SDK, UniFFI for Element X, and a Dart
    bridge or Dart SDK integration for FluffyChat. Keep these as thin wrappers
    over the same Rust behavior.
@@ -63,8 +65,11 @@ small stable API with shared JSON fixtures:
 
 ## Current coverage
 
-The crate currently implements principal IDs, link encoding/verification, and
-device-certificate verification. It does not yet provide the envelope, epoch,
-state-resolution, HTTP-flow, SDK binding, or client UI APIs above. Keeping this
-gap explicit prevents an SDK from treating ordinary room-v12 behavior as full
-Cygnus support.
+The crate implements principal IDs, link encoding/verification and bootstrap
+(rotation keys, commitments, genesis/successor builders), device-certificate
+verification, the event envelope (redaction, hashes, event IDs, device and
+custodian signatures), epoch/burn/tip-bundle verification, Pass 0 resolution,
+and the Cygnus authorization overlay. It does not yet provide certificate
+creation, private-key storage/backup, state resolution, HTTP-flow, SDK
+binding, or client UI APIs above. Keeping this gap explicit prevents an SDK
+from treating ordinary room-v12 behavior as full Cygnus support.

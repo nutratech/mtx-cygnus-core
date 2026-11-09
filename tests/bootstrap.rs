@@ -1,0 +1,198 @@
+//! Client bootstrap: fresh rotation keys, commitments, and link building.
+
+use cygnus_core::{
+    bootstrap::{server_genesis, server_successor, user_genesis, user_successor, RotationKey},
+    commitment,
+    link::{verify_slice, Body, Kind, Link, Payload},
+    Error,
+};
+use ed25519_consensus::SigningKey;
+
+fn key(seed: u8) -> SigningKey {
+    SigningKey::from([seed; 32])
+}
+
+fn rotation(seed: u8) -> RotationKey {
+    RotationKey::from_seed([seed; 32])
+}
+
+#[test]
+fn user_genesis_commits_the_next_rotation_key_and_stays_unsigned() {
+    let rotation = rotation(0x21);
+    let custodian = [0x11; 32];
+    let master = key(0x2F).verification_key().to_bytes();
+    let link = user_genesis(&rotation, custodian, master, "@alice:chat.example.org").unwrap();
+
+    link.verify_genesis().unwrap();
+    assert!(link.trailer.is_empty());
+    assert_eq!(link.body.root, [0; 32]);
+    assert_eq!(link.body.height, 0);
+    assert_eq!(link.body.prev, [0; 32]);
+    assert_eq!(link.body.next_commit, rotation.commitment());
+    assert_ne!(rotation.commitment(), rotation.public_key());
+    assert_eq!(link.body.next_commit, commitment(&rotation.public_key()));
+
+    let Payload::User {
+        custodian: actual_custodian,
+        master_key,
+        display_user_id,
+    } = &link.body.payload
+    else {
+        panic!("expected a user payload");
+    };
+    assert_eq!(*actual_custodian, custodian);
+    assert_eq!(*master_key, Some(master));
+    assert_eq!(display_user_id, "@alice:chat.example.org");
+    assert_eq!(link.principal().kind, Kind::User);
+}
+
+#[test]
+fn server_genesis_proves_possession_of_the_online_key() {
+    let rotation = rotation(0x02);
+    let online = key(0x01);
+    let link = server_genesis(&rotation, &online, "chat.example.org").unwrap();
+
+    link.verify_genesis().unwrap();
+    assert_eq!(link.body.next_commit, rotation.commitment());
+    let Payload::Server {
+        online_key,
+        server_name,
+    } = &link.body.payload
+    else {
+        panic!("expected a server payload");
+    };
+    assert_eq!(*online_key, online.verification_key().to_bytes());
+    assert_eq!(server_name, "chat.example.org");
+    assert_eq!(link.principal().kind, Kind::Server);
+
+    // A genesis signed by a different key does not prove possession.
+    let body = Body {
+        root: [0; 32],
+        height: 0,
+        prev: [0; 32],
+        next_commit: rotation.commitment(),
+        payload: Payload::Server {
+            online_key: online.verification_key().to_bytes(),
+            server_name: "chat.example.org".to_owned(),
+        },
+    };
+    let forged = Link::sign_server_genesis(body, &key(0x03)).unwrap();
+    assert_eq!(forged.verify_genesis(), Err(Error::Signature));
+}
+
+#[test]
+fn client_extends_the_chain_after_a_handover() {
+    let custodian = [0x11; 32];
+    let master = key(0x2F).verification_key().to_bytes();
+    let first = rotation(0x21);
+    let second = rotation(0x22);
+    let third = rotation(0x23);
+
+    let genesis = user_genesis(&first, custodian, master, "@alice:chat.example.org").unwrap();
+    let h1 = user_successor(
+        &genesis,
+        &first,
+        &second,
+        custodian,
+        master,
+        "@alice:chat.example.org",
+    )
+    .unwrap();
+    h1.verify_successor(&genesis).unwrap();
+    assert_eq!(h1.body.next_commit, second.commitment());
+
+    // The client immediately signs the next link with the key it held.
+    let h2 = user_successor(
+        &h1,
+        &second,
+        &third,
+        custodian,
+        master,
+        "@alice:chat.example.org",
+    )
+    .unwrap();
+    let slice = [h1, h2];
+    let tip = verify_slice(&genesis, &slice).unwrap();
+    assert_eq!(tip.body.height, 2);
+    assert_eq!(tip.principal(), genesis.principal());
+}
+
+#[test]
+fn successor_rejects_a_key_that_does_not_match_the_parent_commitment() {
+    let custodian = [0x11; 32];
+    let master = key(0x2F).verification_key().to_bytes();
+    let first = rotation(0x21);
+    let genesis = user_genesis(&first, custodian, master, "@alice:chat.example.org").unwrap();
+
+    let error = user_successor(
+        &genesis,
+        &rotation(0x99),
+        &rotation(0x22),
+        custodian,
+        master,
+        "@alice:chat.example.org",
+    )
+    .unwrap_err();
+    assert_eq!(error, Error::Commitment);
+}
+
+#[test]
+fn user_successor_refuses_to_change_the_master_key() {
+    let custodian = [0x11; 32];
+    let master = key(0x2F).verification_key().to_bytes();
+    let other_master = key(0x30).verification_key().to_bytes();
+    let first = rotation(0x21);
+    let genesis = user_genesis(&first, custodian, master, "@alice:chat.example.org").unwrap();
+
+    let error = user_successor(
+        &genesis,
+        &first,
+        &rotation(0x22),
+        custodian,
+        other_master,
+        "@alice:chat.example.org",
+    )
+    .unwrap_err();
+    assert_eq!(error, Error::Successor("master_key"));
+}
+
+#[test]
+fn server_successor_rotates_the_online_key_and_commitment() {
+    let first = rotation(0x02);
+    let second = rotation(0x04);
+    let fresh_online = key(0x05);
+    let genesis = server_genesis(&first, &key(0x01), "chat.example.org").unwrap();
+
+    let h1 =
+        server_successor(&genesis, &first, &second, &fresh_online, "chat.example.org").unwrap();
+    h1.verify_successor(&genesis).unwrap();
+    assert_eq!(h1.body.next_commit, second.commitment());
+
+    let Payload::Server { online_key, .. } = &h1.body.payload else {
+        panic!("expected a server payload");
+    };
+    assert_eq!(*online_key, fresh_online.verification_key().to_bytes());
+}
+
+#[test]
+fn successor_helpers_enforce_the_parent_kind() {
+    let user = rotation(0x21);
+    let genesis = user_genesis(
+        &user,
+        [0x11; 32],
+        key(0x2F).verification_key().to_bytes(),
+        "@alice:chat.example.org",
+    )
+    .unwrap();
+
+    assert_eq!(
+        server_successor(
+            &genesis,
+            &user,
+            &rotation(0x22),
+            &key(0x01),
+            "chat.example.org"
+        ),
+        Err(Error::Successor("kind"))
+    );
+}
