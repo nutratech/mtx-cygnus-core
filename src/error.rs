@@ -42,6 +42,10 @@ pub enum Error {
     Envelope(&'static str),
     /// Event data is not valid Matrix canonical JSON.
     CanonicalJson,
+    /// Create-event validation failed.
+    Create(&'static str),
+    /// Epoch-event validation failed.
+    Epoch(&'static str),
 }
 
 impl fmt::Display for Error {
@@ -65,6 +69,8 @@ impl fmt::Display for Error {
             Self::Certificate(what) => write!(f, "invalid device certificate: {what}"),
             Self::Envelope(what) => write!(f, "invalid event envelope: {what}"),
             Self::CanonicalJson => f.write_str("event is not valid Matrix canonical JSON"),
+            Self::Create(what) => write!(f, "invalid Cygnus create event: {what}"),
+            Self::Epoch(what) => write!(f, "invalid Cygnus epoch event: {what}"),
         }
     }
 }

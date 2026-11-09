@@ -5,6 +5,8 @@
 //! its verification rules (spec §2). Later layers (device certificates, event
 //! envelopes, tip bundles) build on these primitives.
 
+pub mod binding;
+pub mod bundle;
 pub mod cert;
 pub mod envelope;
 pub mod error;

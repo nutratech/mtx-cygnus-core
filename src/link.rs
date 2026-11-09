@@ -68,6 +68,22 @@ impl Payload {
 }
 
 impl Body {
+    /// Parse exactly one body without a signature trailer.
+    ///
+    /// This is used by burn proofs, whose `parent` field contains only the
+    /// predecessor body.
+    ///
+    /// # Errors
+    /// Returns the same structural errors as [`Link::parse`], and rejects
+    /// trailing bytes after the body.
+    pub fn parse_exact(bytes: &[u8]) -> Result<Self, Error> {
+        let (body, consumed) = Self::parse(bytes)?;
+        if consumed != bytes.len() {
+            return Err(Error::Field("trailing bytes after link body"));
+        }
+        Ok(body)
+    }
+
     /// Canonical wire encoding (§2.1–2.3).
     ///
     /// # Errors
