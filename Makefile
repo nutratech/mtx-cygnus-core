@@ -47,3 +47,7 @@ clean: ##H Remove build artifacts
 .PHONY: extras/cloc
 extras/cloc: ##H Count lines of code (excludes vendored vectors and reference models)
 	cloc HEAD --fmt=2 --exclude-dir=vectors,reference_models
+
+.PHONY: wasm
+wasm: ##H Build the browser verifier (needs wasm-pack)
+	wasm-pack build cygnus-wasm --release --target web --out-dir pkg

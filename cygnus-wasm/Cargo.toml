@@ -1,0 +1,22 @@
+[package]
+name = "cygnus-wasm"
+version = "0.0.1"
+edition = "2021"
+rust-version = "1.89"
+authors = ["Shane Jaroch <chown_tee@proton.me>"]
+license = "MIT OR Apache-2.0"
+description = "WebAssembly bindings for cygnus-core: verify-only API for browser clients."
+publish = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+base64 = "0.22"
+cygnus-core = { path = ".." }
+rezzy-json = { git = "https://gitlab.com/wombat-foundation/rezzy.git", branch = "dev" }
+wasm-bindgen = "0.2"
+
+[lints.rust]
+unsafe_code = "forbid"
+missing_docs = "warn"
