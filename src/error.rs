@@ -44,6 +44,8 @@ pub enum Error {
     CanonicalJson,
     /// Create-event validation failed.
     Create(&'static str),
+    /// Client identity bootstrap response failed validation.
+    Bootstrap(&'static str),
     /// Epoch-event validation failed.
     Epoch(&'static str),
     /// Tip-bundle validation failed.
@@ -76,6 +78,7 @@ impl fmt::Display for Error {
             Self::Envelope(what) => write!(f, "invalid event envelope: {what}"),
             Self::CanonicalJson => f.write_str("event is not valid Matrix canonical JSON"),
             Self::Create(what) => write!(f, "invalid Cygnus create event: {what}"),
+            Self::Bootstrap(what) => write!(f, "invalid Cygnus bootstrap response: {what}"),
             Self::Epoch(what) => write!(f, "invalid Cygnus epoch event: {what}"),
             Self::Seal(what) => write!(f, "invalid Cygnus server seal: {what}"),
             Self::Authorization(what) => write!(f, "Cygnus authorization failed: {what}"),

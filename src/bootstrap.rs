@@ -15,16 +15,38 @@
 use crate::{
     commitment,
     link::{Body, Link, Payload},
-    Error,
+    Error, Kind, Principal,
 };
+use base64::{engine::general_purpose::URL_SAFE_NO_PAD as B64, Engine};
 use ed25519_consensus::SigningKey;
 use rand_core::{CryptoRng, RngCore};
+use rezzy_json::{Object, Value};
 
 /// A private rotation key the client keeps until it signs the next link.
 ///
 /// The custodian receives only `SHA-256(ROT_TAG ‖ public_key)`.
 pub struct RotationKey {
     key: SigningKey,
+}
+
+/// JSON request body for `POST /_matrix/client/unstable/tk.nutra.cygnus/principal`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct UserPrincipalRequest {
+    /// Base64url Ed25519 master public key.
+    pub master_key: String,
+    /// Base64url commitment to the client's first rotation key.
+    pub next_commit: String,
+}
+
+impl UserPrincipalRequest {
+    /// Convert to the shared JSON value used by the client codec.
+    #[must_use]
+    pub fn to_value(&self) -> Value {
+        let mut object = Object::new();
+        object.insert("master_key".into(), self.master_key.clone().into());
+        object.insert("next_commit".into(), self.next_commit.clone().into());
+        Value::Object(object)
+    }
 }
 
 impl RotationKey {
@@ -63,11 +85,66 @@ impl RotationKey {
         commitment(&self.public_key())
     }
 
+    /// Build the public request sent to the custodian. The private rotation
+    /// key is never included.
+    #[must_use]
+    pub fn principal_request(&self, master_key: &[u8; 32]) -> UserPrincipalRequest {
+        UserPrincipalRequest {
+            master_key: B64.encode(master_key),
+            next_commit: B64.encode(self.commitment()),
+        }
+    }
+
     /// Borrow the underlying key for [`Link::sign_successor`].
     #[must_use]
     pub fn signing_key(&self) -> &SigningKey {
         &self.key
     }
+}
+
+/// Validate the response to `POST /principal` before the client accepts it.
+///
+/// Per §7 the response has a principal and a `links` array containing the
+/// user-genesis link. The link must commit to the request's master key and
+/// caller-held rotation key, and its digest must be the returned principal.
+///
+/// # Errors
+/// Returns an error for malformed IDs/links, extra links, or any mismatch with
+/// the requested master key or commitment.
+pub fn verify_user_principal_response(
+    rotation: &RotationKey,
+    master_key: &[u8; 32],
+    principal_id: &str,
+    links: &[String],
+) -> Result<Link, Error> {
+    let principal = Principal::parse(principal_id)?;
+    if principal.kind != Kind::User || principal.to_id() != principal_id {
+        return Err(Error::Bootstrap("principal is not a canonical user ID"));
+    }
+    let [link_b64] = links else {
+        return Err(Error::Bootstrap(
+            "response must contain exactly one genesis link",
+        ));
+    };
+    let link = Link::from_b64(link_b64)?;
+    link.verify_genesis()?;
+    if link.body.payload.kind() != Kind::User || link.principal() != principal {
+        return Err(Error::Bootstrap("principal does not match user genesis"));
+    }
+    let Payload::User {
+        master_key: committed_master,
+        ..
+    } = &link.body.payload
+    else {
+        return Err(Error::Bootstrap("response link is not a user genesis"));
+    };
+    if *committed_master != Some(*master_key) {
+        return Err(Error::Bootstrap("genesis master key differs from request"));
+    }
+    if link.body.next_commit != rotation.commitment() {
+        return Err(Error::Bootstrap("genesis commitment differs from request"));
+    }
+    Ok(link)
 }
 
 /// Build an unsigned user genesis link around the next rotation commitment.

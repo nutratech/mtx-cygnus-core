@@ -1,7 +1,10 @@
 //! Client bootstrap: fresh rotation keys, commitments, and link building.
 
 use cygnus_core::{
-    bootstrap::{server_genesis, server_successor, user_genesis, user_successor, RotationKey},
+    bootstrap::{
+        server_genesis, server_successor, user_genesis, user_successor,
+        verify_user_principal_response, RotationKey,
+    },
     commitment,
     link::{verify_slice, Body, Kind, Link, Payload},
     Error,
@@ -76,6 +79,56 @@ fn user_genesis_commits_the_next_rotation_key_and_stays_unsigned() {
     assert_eq!(*master_key, Some(master));
     assert_eq!(display_user_id, "@alice:chat.example.org");
     assert_eq!(link.principal().kind, Kind::User);
+}
+
+#[test]
+fn principal_request_contains_only_public_key_and_commitment_and_verifies_response() {
+    let rotation_key = rotation(0x21);
+    let master = key(0x2F).verification_key().to_bytes();
+    let request = rotation_key.principal_request(&master);
+    let request_value = request.to_value();
+    assert_eq!(request_value.as_object().unwrap().len(), 2);
+    assert_eq!(
+        request_value["master_key"].as_str().unwrap(),
+        request.master_key
+    );
+    assert_eq!(
+        request_value["next_commit"].as_str().unwrap(),
+        request.next_commit
+    );
+
+    // The custodian returns the genesis link; the client checks its digest,
+    // master-key binding and commitment before accepting the new principal.
+    let genesis =
+        user_genesis(&rotation_key, [0x11; 32], master, "@alice:chat.example.org").unwrap();
+    let principal = genesis.principal().to_id();
+    let returned =
+        verify_user_principal_response(&rotation_key, &master, &principal, &[genesis.to_b64()])
+            .unwrap();
+    assert_eq!(returned, genesis);
+
+    let other_master = key(0x30).verification_key().to_bytes();
+    assert!(verify_user_principal_response(
+        &rotation_key,
+        &other_master,
+        &principal,
+        &[genesis.to_b64()]
+    )
+    .is_err());
+    assert!(verify_user_principal_response(
+        &rotation(0x22),
+        &master,
+        &principal,
+        &[genesis.to_b64()]
+    )
+    .is_err());
+    assert!(verify_user_principal_response(
+        &rotation_key,
+        &master,
+        "@AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        &[genesis.to_b64()]
+    )
+    .is_err());
 }
 
 #[test]
