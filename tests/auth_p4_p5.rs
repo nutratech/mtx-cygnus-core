@@ -304,8 +304,6 @@ struct BobsRoom {
     server_b: String,
 }
 
-#[allow(clippy::too_many_lines)]
-#[allow(clippy::too_many_lines)]
 fn bobs_room(a0: &Link, b0: &Link, u0: &Link, server_b: &SigningKey) -> BobsRoom {
     let bob_rotation = key(0x31);
     let bob_master = key(0x53);
@@ -437,8 +435,6 @@ fn bobs_room(a0: &Link, b0: &Link, u0: &Link, server_b: &SigningKey) -> BobsRoom
 // ---------------------------------------------------------------------------
 
 #[test]
-#[allow(clippy::too_many_lines)]
-#[allow(clippy::too_many_lines)]
 fn p4_ex_custodian_prefix_replay_and_relay() {
     let (a0, a1, b0, u0, u1) = fixture_links();
     let server_a_retired = key(0x01);
