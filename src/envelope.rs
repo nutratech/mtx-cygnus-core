@@ -92,7 +92,8 @@ pub fn redact_event(event: &Value) -> Result<Value, Error> {
 /// Returns an error for an invalid event shape or non-canonical JSON value.
 pub fn signing_bytes(event: &Value) -> Result<Vec<u8>, Error> {
     let mut object = redact_event(event)?;
-    remove_fields(&mut object, &["signatures", "unsigned"])?;
+    // `event_id` is not part of the signed room-v12 event.
+    remove_fields(&mut object, &["event_id", "signatures", "unsigned"])?;
     rezzy_json::to_canonical_bytes(&object).map_err(|_| Error::CanonicalJson)
 }
 
@@ -118,7 +119,11 @@ pub fn device_signing_bytes(event: &Value) -> Result<Vec<u8>, Error> {
 /// [`Error::CanonicalJson`] when canonical JSON validation fails.
 pub fn content_hash(event: &Value) -> Result<[u8; 32], Error> {
     let mut object = event.clone();
-    remove_fields(&mut object, &["unsigned", "signatures", "hashes"])?;
+    // `event_id` is not part of a room v12 PDU, but a caller may have attached it.
+    remove_fields(
+        &mut object,
+        &["event_id", "unsigned", "signatures", "hashes"],
+    )?;
     let bytes = rezzy_json::to_canonical_bytes(&object).map_err(|_| Error::CanonicalJson)?;
     Ok(Sha256::digest(bytes).into())
 }

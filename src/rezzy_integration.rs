@@ -64,6 +64,7 @@ impl RoomAuthState {
         I: IntoIterator<Item = (String, Value)>,
     {
         let mut state = RoomState::new();
+        let mut originals: BTreeMap<(String, String), Value> = BTreeMap::new();
         for (event_id, event) in events {
             let Some(state_key) = event.get("state_key").and_then(Value::as_str) else {
                 continue;
@@ -74,12 +75,22 @@ impl RoomAuthState {
                 .ok_or_else(|| RezzyError::Parse("state event has no type".to_owned()))?
                 .to_owned();
             let lean = adapter_event(&event)?;
+            if lean.event_id != event_id {
+                return Err(RezzyError::Parse(format!(
+                    "event ID {event_id} does not match the PDU's {}",
+                    lean.event_id
+                )));
+            }
             let key = (event_type, state_key.to_owned());
-            if let Some(existing) = state.get(&key) {
-                if existing.event_id != event_id {
+            if let Some(existing) = originals.get(&key) {
+                // The same event supplied twice is idempotent; anything else
+                // would let input order pick the selected state.
+                if existing != &event {
                     return Err(RezzyError::Parse(format!("conflicting state for {key:?}")));
                 }
+                continue;
             }
+            originals.insert(key.clone(), event);
             state.insert(key, lean);
         }
         Ok(Self { state })

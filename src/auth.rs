@@ -5,7 +5,7 @@
 //! relay rules against state selected from the event's auth events.
 
 use crate::{
-    binding::{validate_server_acl_content, Acl},
+    binding::{acl_denies, validate_server_acl_content, Acl},
     bundle::{signer_chain, EpochStatus, VerifiedEpoch},
     cert::DeviceCertificate,
     envelope::{content_hash_b64, verify_custodian_signature, verify_device_signature},
@@ -132,7 +132,13 @@ pub fn authorize_active_epoch(
         permitted.push(own_signer);
     }
     if relay {
-        if let Some(custodian) = context.user_epochs.get(sender).and_then(user_custodian) {
+        // A burned epoch no longer vouches for its former custodian.
+        if let Some(custodian) = context
+            .user_epochs
+            .get(sender)
+            .filter(|user| user.status == EpochStatus::Active)
+            .and_then(user_custodian)
+        {
             permitted.push(custodian);
         }
     }
@@ -417,42 +423,11 @@ fn acl_denies_old_custodian(member: &MemberState, context: &AuthContext) -> bool
             names.push(server_name.clone());
         }
     }
-    context.server_acl.as_ref().is_some_and(|acl| {
-        acl.deny.iter().any(|pattern| {
-            if pattern.starts_with('~') {
-                pattern == old
-            } else {
-                names.iter().any(|name| wildcard(pattern, name))
-            }
-        })
-    })
-}
-
-fn wildcard(pattern: &str, text: &str) -> bool {
-    let (pattern, text): (Vec<char>, Vec<char>) =
-        (pattern.chars().collect(), text.chars().collect());
-    let (mut p, mut t) = (0, 0);
-    let (mut star, mut mark) = (None, 0);
-    while t < text.len() {
-        if p < pattern.len() && (pattern[p] == '?' || pattern[p] == text[t]) {
-            p += 1;
-            t += 1;
-        } else if p < pattern.len() && pattern[p] == '*' {
-            star = Some(p);
-            p += 1;
-            mark = t;
-        } else if let Some(star) = star {
-            p = star + 1;
-            mark += 1;
-            t = mark;
-        } else {
-            return false;
-        }
-    }
-    while p < pattern.len() && pattern[p] == '*' {
-        p += 1;
-    }
-    p == pattern.len()
+    let names: Vec<&str> = names.iter().map(String::as_str).collect();
+    context
+        .server_acl
+        .as_ref()
+        .is_some_and(|acl| acl_denies(acl, old, &names))
 }
 
 fn string(value: Option<&rezzy_json::Value>) -> Result<&str, Error> {

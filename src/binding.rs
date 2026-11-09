@@ -254,6 +254,24 @@ fn matches_entry(entry: &str, principal_id: &str, names: &[&str]) -> bool {
     names.iter().any(|name| glob_match(entry, name))
 }
 
+/// Whether an ACL excludes `principal_id` at any of `names`.
+///
+/// Matches the reference model: an explicit deny wins, and otherwise the
+/// principal is excluded unless at least one `allow` entry matches. An empty
+/// `allow` list therefore denies everyone.
+pub(crate) fn acl_denies(acl: &Acl, principal_id: &str, names: &[&str]) -> bool {
+    if acl
+        .deny
+        .iter()
+        .any(|entry| matches_entry(entry, principal_id, names))
+    {
+        return true;
+    }
+    !acl.allow
+        .iter()
+        .any(|entry| matches_entry(entry, principal_id, names))
+}
+
 /// Whole-string wildcard match supporting `*` (any run) and `?` (one char).
 fn glob_match(pattern: &str, text: &str) -> bool {
     let pattern: Vec<char> = pattern.chars().collect();

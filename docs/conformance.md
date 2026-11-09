@@ -111,6 +111,8 @@ Status:
 `Principal::parse` enforces the sigil, exactly 43 base64url characters, the
 no-padding alphabet, canonical trailing bits, and a 32-byte payload.
 `validate_server_acl_content` applies that parser to `~` entries in ACLs.
+Check 44 is labelled `P1` in the vendored vectors but belongs with these
+encoding rules, so it is listed here.
 
 | #   | Check                                      | Status  | Rust evidence / gap                                                         |
 | --- | ------------------------------------------ | ------- | --------------------------------------------------------------------------- |
@@ -163,5 +165,18 @@ admission, signature, and chain rules; `src/auth.rs` owns those checks. All
 other events run base auth and then the Cygnus overlay. Cygnus event hashing
 and signatures stay in `envelope.rs`; Rezzy's redaction table is not used for
 Cygnus event IDs.
+
+Limits of the overlay, which callers must account for:
+
+- `base_auth_applies` is the caller's routing decision. Seal events skip base
+  auth only because `auth::authorize_seal` replaces it; epoch events are
+  checked by `authorize_active_epoch`/`authorize_burn`. A caller that skips
+  base auth without running those has no authorization at all.
+- Neither overlay function validates an event's `auth_events` citations. Stale
+  citations (P4 check 21) are the state-selection layer's job, and `AuthContext`
+  is assumed to be the state-before for the event being checked.
+- `AuthContext` trusts the `VerifiedEpoch` values placed in it. Build them only
+  through the verification functions; the maps are public for convenience, not
+  as a trust boundary.
 
 G3–G7 in `known_gaps` are SPEC and intentionally not implemented.

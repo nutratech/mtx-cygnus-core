@@ -5,6 +5,7 @@ use cygnus_core::{
         authorize_active_epoch, authorize_create, authorize_user_event, AuthContext, MemberState,
     },
     bundle::EpochStatus,
+    Error,
 };
 use rezzy_json::Value;
 
@@ -95,7 +96,16 @@ fn ordinary_user_event_rejects_a_modified_device_signature() {
         .as_str()
         .unwrap()
         .to_owned();
-    message["signatures"][alice.as_str()]["ed25519:TEST51"] =
-        Value::String(format!("A{signature}"));
-    assert!(authorize_user_event(&message, &auth).is_err());
+    // Change one character in place: the signature stays well-formed (86
+    // base64url characters, 64 bytes), so rejection must come from verification.
+    let mut chars: Vec<char> = signature.chars().collect();
+    chars[10] = if chars[10] == 'A' { 'B' } else { 'A' };
+    let tampered: String = chars.into_iter().collect();
+    assert_eq!(tampered.len(), signature.len());
+    message["signatures"][alice.as_str()]["ed25519:TEST51"] = Value::String(tampered);
+    assert_eq!(
+        authorize_user_event(&message, &auth),
+        Err(Error::Signature),
+        "a well-formed but altered device signature must fail verification"
+    );
 }

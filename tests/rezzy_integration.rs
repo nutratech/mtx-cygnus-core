@@ -151,6 +151,7 @@ fn p1_fixture_events_pass_rezzy_base_authorization() {
     let mut state_events: std::collections::BTreeMap<(String, String), (String, Value)> =
         std::collections::BTreeMap::new();
     let mut known = EventMap::new();
+    let mut checked = 0;
 
     for (index, entry) in events.iter().enumerate() {
         let event_id = entry
@@ -167,6 +168,7 @@ fn p1_fixture_events_pass_rezzy_base_authorization() {
         if base_auth_applies(&pdu) {
             check_base_auth(&pdu, &state, Some(&known))
                 .unwrap_or_else(|error| panic!("event {index} ({event_id}): {error}"));
+            checked += 1;
         }
 
         known.insert(event_id.clone(), adapter_event(&pdu).unwrap());
@@ -177,4 +179,13 @@ fn p1_fixture_events_pass_rezzy_base_authorization() {
     }
 
     assert_eq!(known.len(), events.len());
+    // Epoch and seal events are skipped by design; the rest must be checked.
+    assert!(checked > 0, "no fixture event reached base authorization");
+    assert_eq!(
+        checked,
+        events
+            .iter()
+            .filter(|e| base_auth_applies(e.get("pdu").unwrap()))
+            .count()
+    );
 }

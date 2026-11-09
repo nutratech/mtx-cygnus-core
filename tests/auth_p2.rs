@@ -4,7 +4,8 @@ use cygnus_core::{
     auth::{
         authorize_active_epoch, authorize_create, authorize_user_event, AuthContext, MemberState,
     },
-    binding::validate_server_acl_content,
+    binding::{validate_server_acl_content, Acl},
+    Error,
 };
 use rezzy_json::Value;
 
@@ -98,12 +99,37 @@ fn authorizes_user_move_new_server_introduction_rebind_and_message() {
 
     // Once B is introduced, the old custodian's signature remains invalid.
     assert!(authorize_user_event(pdu(&events, 7), &context).is_err());
+    // Rebound to B, so the membership check passes and the A-signed message is
+    // rejected on its server signature rather than on the stale binding.
+    let mut bound_to_b = context.clone();
+    bound_to_b.members.insert(
+        alice.clone(),
+        MemberState {
+            membership: "join".to_owned(),
+            custodian: Some(server_b_id.clone()),
+        },
+    );
+    assert_eq!(
+        authorize_user_event(pdu(&events, 7), &bound_to_b),
+        Err(Error::Signature),
+    );
 
     let mut acl_denied = context.clone();
     acl_denied.server_acl.as_mut().unwrap().deny = vec![old_custodian_id];
     assert!(authorize_user_event(pdu(&events, 10), &acl_denied).is_err());
     acl_denied.join_rule = Some("public".to_owned());
     authorize_user_event(pdu(&events, 10), &acl_denied).unwrap();
+
+    // An allow list that omits the old custodian excludes it just as a deny
+    // entry would, even with an empty deny list.
+    let mut allow_excludes = context.clone();
+    allow_excludes.server_acl = Some(Acl {
+        allow: vec![server_b_id.clone()],
+        deny: Vec::new(),
+    });
+    assert!(authorize_user_event(pdu(&events, 10), &allow_excludes).is_err());
+    allow_excludes.join_rule = Some("public".to_owned());
+    authorize_user_event(pdu(&events, 10), &allow_excludes).unwrap();
 
     // Before the membership event binds Alice to B, ordinary events are
     // rejected even though both epochs and the new custodian are valid.

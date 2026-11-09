@@ -15,7 +15,7 @@ fn err(e: impl std::fmt::Display) -> JsError {
 }
 
 fn event(json: &str) -> Result<Value, JsError> {
-    Value::parse(json).map_err(err)
+    Value::parse_strict(json).map_err(err)
 }
 
 fn key(b64: &str) -> Result<[u8; 32], JsError> {
@@ -87,19 +87,24 @@ pub fn verify_device_signature(
 
 /// Verify a custodian (server) signature over an event at a chain height.
 ///
+/// `height` is a decimal string, since protocol heights are `u64` and exceed
+/// what a JS number represents exactly.
+///
 /// # Errors
 /// Throws if the signature entry is missing, malformed or invalid.
 #[wasm_bindgen(js_name = verifyCustodianSignature)]
 pub fn verify_custodian_signature(
     event_json: &str,
     custodian: &str,
-    height: u32,
+    height: &str,
     public_key: &str,
 ) -> Result<(), JsError> {
     envelope::verify_custodian_signature(
         &event(event_json)?,
         custodian,
-        u64::from(height),
+        height
+            .parse::<u64>()
+            .map_err(|_| JsError::new("height must be a decimal u64"))?,
         &key(public_key)?,
     )
     .map_err(err)
