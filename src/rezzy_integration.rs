@@ -9,19 +9,16 @@
 //! Enabled by the `state-res` feature so client and wasm builds do not compile
 //! the state engine.
 //!
-//! `tk.nutra.cygnus.1` is a v12-derived room version. Rezzy does not know that
-//! identifier, so the adapter presents the create event to Rezzy as v12 while
-//! keeping the original event bytes untouched. Cygnus content hashing and
-//! signatures never go through this mapping.
+//! `tk.nutra.cygnus.1` is registered in Rezzy as a v12-derived room version
+//! (`StateResVersion::V2_1`), so events pass through unchanged. Rezzy only
+//! knows the v12 redaction keys; Cygnus content hashing and signatures must go
+//! through [`crate::envelope`] via a Cygnus `EventVerifier`.
 
 use rezzy::auth::{check_auth_with_context, RoomState, StateProvider};
 use rezzy::basespec::rezzy_types::{EventProvider, LeanEvent, StateResVersion};
-use rezzy_json::Value;
+use rezzy::JsonValue as Value;
 use std::collections::BTreeMap;
 use std::fmt;
-
-/// Base room version presented to Rezzy for `tk.nutra.cygnus.1`.
-pub const BASE_ROOM_VERSION: &str = "12";
 
 /// Events keyed by event ID, for `auth_events` citation checks.
 pub type EventMap = BTreeMap<String, LeanEvent<String, Value, String>>;
@@ -112,22 +109,21 @@ impl RoomAuthState {
 /// # Errors
 /// [`RezzyError::Parse`] when required Matrix fields are missing or malformed.
 pub fn adapter_event(event: &Value) -> Result<LeanEvent<String, Value, String>, RezzyError> {
-    let mut lean =
-        LeanEvent::from_value(event, Some(BASE_ROOM_VERSION)).map_err(RezzyError::Parse)?;
-    if lean.event_type == "m.room.create"
-        && lean.content.get("room_version").and_then(Value::as_str)
-            == Some(crate::bundle::ROOM_VERSION)
-    {
-        let object = lean
-            .content
-            .as_object_mut()
-            .ok_or_else(|| RezzyError::Parse("create content is not an object".to_owned()))?;
-        object.insert(
-            "room_version".to_owned(),
-            Value::String(BASE_ROOM_VERSION.to_owned()),
-        );
-    }
-    Ok(lean)
+    LeanEvent::from_value(event, Some(crate::bundle::ROOM_VERSION)).map_err(RezzyError::Parse)
+}
+
+/// Whether Rezzy's base membership and power-level rules apply to an event.
+///
+/// Epoch and seal events are fully authorized by [`crate::auth`] (§5.3/§5.6):
+/// their sender, admission, signature, and chain rules replace the v12 member
+/// and power-level checks, and no power level is required. Ordinary events
+/// still use base v12 authorization plus the Cygnus overlay.
+#[must_use]
+pub fn base_auth_applies(event: &Value) -> bool {
+    !matches!(
+        event.get("type").and_then(Value::as_str),
+        Some("m.room.user_epoch" | "m.room.server_epoch" | "m.room.server_seal")
+    )
 }
 
 /// Run Rezzy's base Matrix v12 authorization for one Cygnus PDU.

@@ -26,7 +26,7 @@ fn p1_events() -> Vec<(String, Value)> {
 fn bundle() -> TipBundle {
     TipBundle {
         room_id: "!30zU4L44nR8z-TbH4R7So2CfI9UJzMYnMhzY9NKHXgY".to_owned(),
-        forward_extremities: vec!["$BXkrdLiSP578J-TcBTJKLVTHoYgEhN33tOiDFORGzMo".to_owned()],
+        forward_extremities: vec!["$aX2cjmHLZONPhX1XmsB5mvLMze1PppFBgHxVXgIBRfQ".to_owned()],
         events: p1_events(),
     }
 }
@@ -38,7 +38,7 @@ fn verifies_p1_bundle_ids_room_create_and_extremity() {
     assert_eq!(verified.forward_extremities().len(), 1);
     assert_eq!(verified.create().room_id, verified.room_id());
     assert!(verified
-        .event("$C8i5Ge_hS22gMYJ787v2i-SpIKe2xT5-YrXrLhJVCVQ")
+        .event("$DNJ9GvLgLQUyECgnw7jhmC4sAu6oLhhd4vEiYzrkewE")
         .is_some());
 }
 
@@ -47,7 +47,7 @@ fn client_can_resolve_each_event_id_it_intends_to_cite() {
     let verified = bundle().verify().unwrap();
     let cited = vec![
         "$30zU4L44nR8z-TbH4R7So2CfI9UJzMYnMhzY9NKHXgY".to_owned(),
-        "$fi3T31nHNiiYBgbqjRI6dSCQvMYG6gBQTYxFVoOFJLY".to_owned(),
+        "$0Yk4d78nlrC065UF6dii00dggsfEILffMUWJzqNPJaQ".to_owned(),
     ];
     assert_eq!(verified.require_events(&cited).unwrap().len(), 2);
     assert!(verified.require_events(&["$missing".to_owned()]).is_err());

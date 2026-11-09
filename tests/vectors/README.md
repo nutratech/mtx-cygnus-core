@@ -6,11 +6,11 @@ conformance tests do not depend on a sibling checkout or on the network.
 | File                   | Source path                      | SHA-256                                                            |
 | ---------------------- | -------------------------------- | ------------------------------------------------------------------ |
 | `pid_vectors.json`     | `proposals/pid_vectors.json`     | `d8a66c5fbd28607a58e997ee8203a4bb402f75d71d5d2dbbe1db1b2f63451dbf` |
-| `pid_pdu_vectors.json` | `proposals/pid_pdu_vectors.json` | `a17c3ababc1716f6cba61f3e7a3648aa927082f75228c6587fd86a843360a93a` |
+| `pid_pdu_vectors.json` | `proposals/pid_pdu_vectors.json` | `7f71294f687605d3147d742f07f1bd525b12ca8213668a1f92e70e0354955297` |
 | `pid_known_gaps.json`  | `proposals/pid_known_gaps.json`  | `61159a3aac4536fc85d62c86a5acbda0d438c05920b5d60ee2a678d42c9cc9cb` |
 
 - Source: `https://gitlab.com/wombat-foundation/proposals` (or the
-  `../proposals` checkout), commit `d85eafda527a89c021103f44814d7e57513a0192`.
+  `../proposals` checkout), commit `c26d7c7779ea97cc1ac174d33aa8dcf05dc3e234`.
 - License: Apache License 2.0. See `LICENSE-APACHE`, copied from the source
   repository's `LICENSE`.
 - Regenerating: the vectors are produced by `proposals/pid_ref.py` and

@@ -3,9 +3,9 @@
 #![cfg(feature = "state-res")]
 
 use cygnus_core::rezzy_integration::{
-    adapter_event, check_base_auth, EventMap, RezzyError, RoomAuthState, BASE_ROOM_VERSION,
+    adapter_event, base_auth_applies, check_base_auth, EventMap, RezzyError, RoomAuthState,
 };
-use rezzy_json::{json, Value};
+use rezzy::{json, JsonValue as Value};
 
 const CREATE_ID: &str = "$create";
 const MEMBER_ID: &str = "$member";
@@ -80,18 +80,16 @@ fn event_map() -> EventMap {
 }
 
 #[test]
-fn maps_the_cygnus_create_version_to_v12_without_touching_the_event() {
+fn cygnus_room_version_is_native_to_rezzy_and_the_event_is_untouched() {
+    use rezzy::basespec::rezzy_types::StateResVersion;
+    assert_eq!(
+        StateResVersion::from_room_version("tk.nutra.cygnus.1"),
+        Some(StateResVersion::V2_1)
+    );
     let create = create_event();
     let lean = adapter_event(&create).unwrap();
     assert_eq!(
         lean.content.get("room_version").and_then(Value::as_str),
-        Some(BASE_ROOM_VERSION)
-    );
-    assert_eq!(
-        create
-            .get("content")
-            .and_then(|c| c.get("room_version"))
-            .and_then(Value::as_str),
         Some("tk.nutra.cygnus.1")
     );
 }
@@ -144,4 +142,39 @@ fn duplicate_state_pairs_are_rejected() {
     ])
     .unwrap_err();
     assert!(matches!(error, RezzyError::Parse(_)), "{error}");
+}
+
+#[test]
+fn p1_fixture_events_pass_rezzy_base_authorization() {
+    let fixture = Value::parse(include_str!("vectors/pid_pdu_vectors.json")).unwrap();
+    let events = fixture.get("events").and_then(Value::as_array).unwrap();
+    let mut state_events: std::collections::BTreeMap<(String, String), (String, Value)> =
+        std::collections::BTreeMap::new();
+    let mut known = EventMap::new();
+
+    for (index, entry) in events.iter().enumerate() {
+        let event_id = entry
+            .get("event_id")
+            .and_then(Value::as_str)
+            .unwrap()
+            .to_owned();
+        let mut pdu = entry.get("pdu").unwrap().clone();
+        pdu.as_object_mut()
+            .unwrap()
+            .insert("event_id".to_owned(), Value::String(event_id.clone()));
+
+        let state = RoomAuthState::from_state_events(state_events.values().cloned()).unwrap();
+        if base_auth_applies(&pdu) {
+            check_base_auth(&pdu, &state, Some(&known))
+                .unwrap_or_else(|error| panic!("event {index} ({event_id}): {error}"));
+        }
+
+        known.insert(event_id.clone(), adapter_event(&pdu).unwrap());
+        if let Some(state_key) = pdu.get("state_key").and_then(Value::as_str) {
+            let event_type = pdu.get("type").and_then(Value::as_str).unwrap().to_owned();
+            state_events.insert((event_type, state_key.to_owned()), (event_id, pdu));
+        }
+    }
+
+    assert_eq!(known.len(), events.len());
 }

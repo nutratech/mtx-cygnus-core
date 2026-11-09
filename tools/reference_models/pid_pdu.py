@@ -645,7 +645,6 @@ class Room:
         self, t: str, sender: str, sk: Optional[str], content: dict
     ) -> List[str]:
         keys = [
-            ("m.room.create", ""),
             ("m.room.join_rules", ""),
             ("m.room.power_levels", ""),
             ("m.room.member", sender),

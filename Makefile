@@ -43,3 +43,7 @@ typos: ##H Spell-check
 .PHONY: clean
 clean: ##H Remove build artifacts
 	$(CARGO) clean
+
+.PHONY: extras/cloc
+extras/cloc: ##H Count lines of code (excludes vendored vectors and reference models)
+	cloc HEAD --fmt=2 --exclude-dir=vectors,reference_models
