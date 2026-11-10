@@ -14,6 +14,7 @@
 //! knows the v12 redaction keys; Cygnus content hashing and signatures must go
 //! through [`crate::envelope`] via a Cygnus `EventVerifier`.
 
+use crate::{auth, bundle::VerifiedEpoch, seal::ServerSeal, Error};
 use rezzy::auth::{check_auth_with_context, RoomState, StateProvider};
 use rezzy::basespec::rezzy_types::{EventProvider, LeanEvent, StateResVersion};
 use rezzy::JsonValue as Value;
@@ -30,6 +31,8 @@ pub enum RezzyError {
     Parse(String),
     /// Rezzy's base authorization rejected the event.
     Auth(String),
+    /// A Cygnus-specific authorization check rejected the event.
+    Cygnus(String),
 }
 
 impl fmt::Display for RezzyError {
@@ -37,6 +40,7 @@ impl fmt::Display for RezzyError {
         match self {
             Self::Parse(what) => write!(f, "rezzy adapter parse error: {what}"),
             Self::Auth(what) => write!(f, "rezzy base authorization failed: {what}"),
+            Self::Cygnus(what) => write!(f, "Cygnus authorization failed: {what}"),
         }
     }
 }
@@ -135,6 +139,112 @@ pub fn base_auth_applies(event: &Value) -> bool {
         event.get("type").and_then(Value::as_str),
         Some("m.room.user_epoch" | "m.room.server_epoch" | "m.room.server_seal")
     )
+}
+
+/// Validate that every cited auth event is a state event and is still the
+/// selected value for its `(type, state_key)` in the supplied state-before.
+///
+/// Use this for Cygnus epoch and seal events, whose Cygnus authorization
+/// replaces Rezzy's base membership and power-level checks. Ordinary events
+/// get the same citation validation from [`check_base_auth`]. This validates
+/// cited entries; callers must also select the complete required auth-event
+/// set for the event according to room v12 and 00FC §5.1.
+///
+/// # Errors
+/// [`RezzyError::Auth`] if a citation is missing, duplicated, non-state, or
+/// stale; [`RezzyError::Parse`] for malformed `auth_events`.
+pub fn validate_auth_event_citations(
+    event: &Value,
+    state: &RoomAuthState,
+    events: &EventMap,
+) -> Result<(), RezzyError> {
+    let citations = event
+        .get("auth_events")
+        .and_then(Value::as_array)
+        .ok_or_else(|| RezzyError::Parse("auth_events must be an array".to_owned()))?;
+    let mut seen = std::collections::BTreeSet::new();
+    for citation in citations {
+        let id = citation
+            .as_str()
+            .ok_or_else(|| RezzyError::Parse("auth event ID must be a string".to_owned()))?;
+        if !seen.insert(id) {
+            return Err(RezzyError::Parse(format!("duplicate auth event {id}")));
+        }
+        let cited = events
+            .get(id)
+            .ok_or_else(|| RezzyError::Auth(format!("auth event {id} is unavailable")))?;
+        let state_key = cited
+            .state_key
+            .as_deref()
+            .ok_or_else(|| RezzyError::Auth(format!("auth event {id} is not a state event")))?;
+        let current = state
+            .state
+            .get_event(&cited.event_type, state_key)
+            .ok_or_else(|| RezzyError::Auth(format!("auth event {id} is not current state")))?;
+        if current.event_id != id {
+            return Err(RezzyError::Auth(format!(
+                "auth event {id} is stale; current state is {}",
+                current.event_id
+            )));
+        }
+    }
+    Ok(())
+}
+
+/// Check state-before citations and authorize an active epoch event.
+///
+/// # Errors
+/// [`RezzyError::Parse`] when `auth_events` is malformed or repeats a
+/// citation, [`RezzyError::Auth`] when a citation is unavailable, is not a
+/// state event, or is not the selected state-before event, and
+/// [`RezzyError::Cygnus`] when the Cygnus authorization check fails.
+pub fn authorize_active_epoch_with_citations(
+    event: &Value,
+    event_id: &str,
+    context: &auth::AuthContext,
+    state: &RoomAuthState,
+    events: &EventMap,
+) -> Result<VerifiedEpoch, RezzyError> {
+    validate_auth_event_citations(event, state, events)?;
+    auth::authorize_active_epoch(event, event_id, context)
+        .map_err(|error: Error| RezzyError::Cygnus(error.to_string()))
+}
+
+/// Check state-before citations and authorize a burn event.
+///
+/// # Errors
+/// [`RezzyError::Parse`] when `auth_events` is malformed or repeats a
+/// citation, [`RezzyError::Auth`] when a citation is unavailable, is not a
+/// state event, or is not the selected state-before event, and
+/// [`RezzyError::Cygnus`] when the Cygnus authorization check fails.
+pub fn authorize_burn_with_citations(
+    event: &Value,
+    event_id: &str,
+    context: &auth::AuthContext,
+    state: &RoomAuthState,
+    events: &EventMap,
+) -> Result<VerifiedEpoch, RezzyError> {
+    validate_auth_event_citations(event, state, events)?;
+    auth::authorize_burn(event, event_id, context)
+        .map_err(|error: Error| RezzyError::Cygnus(error.to_string()))
+}
+
+/// Check state-before citations and authorize a server seal.
+///
+/// # Errors
+/// [`RezzyError::Parse`] when `auth_events` is malformed or repeats a
+/// citation, [`RezzyError::Auth`] when a citation is unavailable, is not a
+/// state event, or is not the selected state-before event, and
+/// [`RezzyError::Cygnus`] when the Cygnus authorization check fails.
+pub fn authorize_seal_with_citations(
+    event: &Value,
+    context: &auth::AuthContext,
+    state: &RoomAuthState,
+    events: &EventMap,
+) -> Result<ServerSeal, RezzyError> {
+    validate_auth_event_citations(event, state, events)?;
+    auth::authorize_seal(event, context)
+        .map_err(|error: Error| RezzyError::Cygnus(error.to_string()))
 }
 
 /// Run Rezzy's base Matrix v12 authorization for one Cygnus PDU.

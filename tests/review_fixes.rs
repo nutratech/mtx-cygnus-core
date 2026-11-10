@@ -136,7 +136,7 @@ fn burned_user_cannot_supply_the_relay_custodian() {
 
     assert_eq!(
         authorize_active_epoch(&event, &envelope::event_id(&event).unwrap(), &context).unwrap_err(),
-        Error::Authorization("not signed by a permitted server")
+        Error::Authorization("epoch event has no permitted signer")
     );
 }
 

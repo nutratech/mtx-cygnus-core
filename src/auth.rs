@@ -142,15 +142,16 @@ pub fn authorize_active_epoch(
             permitted.push(custodian);
         }
     }
-    let signed = permitted.iter().any(|signer| {
-        signer_chain_for(event, signer, &epoch, previous, context)
+    let mut last_signature_error = None;
+    for signer in &permitted {
+        match signer_chain_for(event, signer, &epoch, previous, context)
             .and_then(|links| verify_server_signature(event, signer, &links))
-            .is_ok()
-    });
-    if !signed {
-        return Err(Error::Authorization("not signed by a permitted server"));
+        {
+            Ok(()) => return Ok(epoch),
+            Err(error) => last_signature_error = Some(error),
+        }
     }
-    Ok(epoch)
+    Err(last_signature_error.unwrap_or(Error::Authorization("epoch event has no permitted signer")))
 }
 
 /// Verify a burn proof and require a joined sender with a valid custodian

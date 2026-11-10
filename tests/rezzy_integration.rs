@@ -3,7 +3,8 @@
 #![cfg(feature = "state-res")]
 
 use cygnus_core::rezzy_integration::{
-    adapter_event, base_auth_applies, check_base_auth, EventMap, RezzyError, RoomAuthState,
+    adapter_event, base_auth_applies, check_base_auth, validate_auth_event_citations, EventMap,
+    RezzyError, RoomAuthState,
 };
 use rezzy::{json, JsonValue as Value};
 
@@ -145,6 +146,43 @@ fn duplicate_state_pairs_are_rejected() {
 }
 
 #[test]
+fn state_event_pair_must_match_its_embedded_event_id() {
+    let mut member = member_event();
+    member["event_id"] = json!("$embedded");
+    let error = RoomAuthState::from_state_events([("$supplied".to_owned(), member)]).unwrap_err();
+    assert!(matches!(error, RezzyError::Parse(_)), "{error}");
+}
+
+#[test]
+fn conflicting_pdus_with_the_same_state_event_id_are_rejected() {
+    let first = member_event();
+    let mut second = first.clone();
+    second["content"]["custodian"] = json!("~other");
+    let error = RoomAuthState::from_state_events([
+        (MEMBER_ID.to_owned(), first),
+        (MEMBER_ID.to_owned(), second),
+    ])
+    .unwrap_err();
+    assert!(matches!(error, RezzyError::Parse(_)), "{error}");
+}
+
+#[test]
+fn stale_epoch_auth_event_citation_is_rejected() {
+    let state = room_state();
+    let mut events = event_map();
+    let mut stale_member = adapter_event(&member_event()).unwrap();
+    stale_member.event_id = "$stale-member".to_owned();
+    events.insert(stale_member.event_id.clone(), stale_member);
+    let epoch = json!({
+        "type": "m.room.user_epoch",
+        "event_id": "$epoch",
+        "auth_events": ["$stale-member"]
+    });
+    let error = validate_auth_event_citations(&epoch, &state, &events).unwrap_err();
+    assert!(matches!(error, RezzyError::Auth(_)), "{error}");
+}
+
+#[test]
 fn p1_fixture_events_pass_rezzy_base_authorization() {
     let fixture = Value::parse(include_str!("vectors/pid_pdu_vectors.json")).unwrap();
     let events = fixture.get("events").and_then(Value::as_array).unwrap();
@@ -180,12 +218,5 @@ fn p1_fixture_events_pass_rezzy_base_authorization() {
 
     assert_eq!(known.len(), events.len());
     // Epoch and seal events are skipped by design; the rest must be checked.
-    assert!(checked > 0, "no fixture event reached base authorization");
-    assert_eq!(
-        checked,
-        events
-            .iter()
-            .filter(|e| base_auth_applies(e.get("pdu").unwrap()))
-            .count()
-    );
+    assert_eq!(checked, 7, "unexpected number of P1 events base-authorized");
 }

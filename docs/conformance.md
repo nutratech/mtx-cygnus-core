@@ -139,7 +139,7 @@ encoding rules, so it is listed here.
 | P6 redaction    |      3 |      3 |       0 |            0 |
 | P7 certificates |      3 |      3 |       0 |            0 |
 | P8 encodings    |      9 |      8 |       1 |            0 |
-| **Total**       | **53** | **45** |   **5** |        **0** |
+| **Total**       | **53** | **45** |   **8** |        **0** |
 
 P2–P5 now have vector- or scenario-driven Cygnus authorization tests. The one
 remaining P4 gap is check 21, which is a state-before (`auth_events` citation)
@@ -170,11 +170,16 @@ Limits of the overlay, which callers must account for:
 
 - `base_auth_applies` is the caller's routing decision. Seal events skip base
   auth only because `auth::authorize_seal` replaces it; epoch events are
-  checked by `authorize_active_epoch`/`authorize_burn`. A caller that skips
-  base auth without running those has no authorization at all.
-- Neither overlay function validates an event's `auth_events` citations. Stale
-  citations (P4 check 21) are the state-selection layer's job, and `AuthContext`
-  is assumed to be the state-before for the event being checked.
+  checked by `authorize_active_epoch`/`authorize_burn`. Prefer the
+  `*_with_citations` wrappers in `rezzy_integration`, which validate the
+  event's cited auth state before calling these checks. A caller that skips
+  base auth without running the corresponding Cygnus check has no
+  authorization at all.
+- The raw overlay functions do not validate `auth_events` citations. Callers
+  must use the `*_with_citations` wrappers (or perform the same state-before
+  validation themselves). `validate_auth_event_citations` rejects stale,
+  missing, duplicate, and non-state citations. The caller still selects the
+  complete required auth-event set under room v12 and §5.1.
 - `AuthContext` trusts the `VerifiedEpoch` values placed in it. Build them only
   through the verification functions; the maps are public for convenience, not
   as a trust boundary.
