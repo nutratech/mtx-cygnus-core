@@ -22,7 +22,6 @@ fn hex32(value: &str) -> [u8; 32] {
 }
 
 #[test]
-#[ignore = "vendored vectors carry Ed25519 signatures; regenerate for the WOTS+ format"]
 fn parses_and_verifies_every_appendix_a_link_vector() {
     let vectors = vectors();
     let links = vectors.get("links").and_then(Value::as_object).unwrap();

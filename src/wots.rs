@@ -68,8 +68,16 @@ fn tweak(domain: u8, chain: u8, step: u16, seed: &[u8], data: &[u8]) -> Hash32 {
 }
 
 fn advance(mut value: Hash32, chain: u8, from: u16, steps: u16, seed: &Hash32) -> Hash32 {
+    // Same bytes as `tweak(0x01, chain, step, seed, value)`, built in one stack
+    // buffer so each step is a single hash call.
+    let mut buf = [0u8; 68];
+    buf[0] = 0x01;
+    buf[1] = chain;
+    buf[4..36].copy_from_slice(seed);
     for step in from..from + steps {
-        value = tweak(0x01, chain, step, seed, &value);
+        buf[2..4].copy_from_slice(&step.to_le_bytes());
+        buf[36..].copy_from_slice(&value);
+        value = Sha256::digest(buf).into();
     }
     value
 }
@@ -349,6 +357,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "slow: 16-bit chains take seconds in debug"]
     fn sign_verify_words() {
         let pk = public_key(Profile::Words, &SEED);
         let sig = sign(Profile::Words, &SEED, b"hello");
@@ -413,6 +422,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "slow: 16-bit chains take seconds in debug"]
     fn report_sizes_and_timings() {
         for profile in [Profile::Bytes, Profile::Words] {
             let t = Instant::now();

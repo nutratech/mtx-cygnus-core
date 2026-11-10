@@ -26,20 +26,18 @@ fn pdu(events: &[Value], index: usize) -> &Value {
 }
 
 #[test]
-#[ignore = "vendored vectors carry Ed25519 signatures; regenerate for the WOTS+ format"]
 fn p1_create_validates_room_id_both_chains_and_both_signatures() {
     let events = vectors();
     let created = VerifiedCreate::verify(pdu(&events, 0), event_id(&events, 0)).unwrap();
     assert_eq!(
         created.room_id,
-        "!30zU4L44nR8z-TbH4R7So2CfI9UJzMYnMhzY9NKHXgY"
+        "!53tnrM_aNeNA39k1jTFAlx_OwWdq2t5MtZEoKERB4WE"
     );
     assert_eq!(created.user_links.len(), 1);
     assert_eq!(created.server_links.len(), 2);
 }
 
 #[test]
-#[ignore = "vendored vectors carry Ed25519 signatures; regenerate for the WOTS+ format"]
 fn p1_genesis_epochs_and_server_rotation_verify_against_link_state() {
     let events = vectors();
     let user = VerifiedEpoch::active(pdu(&events, 1), event_id(&events, 1), None).unwrap();
@@ -73,12 +71,15 @@ fn p1_create_rejects_a_modified_required_signature() {
     let server_signer = signatures
         .as_object_mut()
         .unwrap()
-        .get_mut("~soEUx9hiteZoLx9OwBJ94-GCuVrDksXROkIYuLn8Lb0")
+        .get_mut("~CM1u95QHafQfFW6nrQ0T--AP1ovvab7NTTniwta_dE4")
         .unwrap();
     let signature = server_signer
         .as_object_mut()
         .unwrap()
-        .get_mut("ed25519:1")
+        .get_mut(&format!(
+            "wots-sha256-160-8-mt{}:1",
+            cygnus_core::sig::TREE_DEPTH
+        ))
         .unwrap();
     *signature = Value::String(
         "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"

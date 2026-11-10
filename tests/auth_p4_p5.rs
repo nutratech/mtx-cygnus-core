@@ -435,7 +435,6 @@ fn bobs_room(a0: &Link, b0: &Link, u0: &Link, server_b: &SigningKey) -> BobsRoom
 // ---------------------------------------------------------------------------
 
 #[test]
-#[ignore = "vendored vectors carry Ed25519 signatures; regenerate for the WOTS+ format"]
 fn p4_ex_custodian_prefix_replay_and_relay() {
     let (a0, a1, b0, u0, u1) = fixture_links();
     let server_a_retired = key(0x01);
@@ -586,7 +585,6 @@ fn p4_ex_custodian_prefix_replay_and_relay() {
 }
 
 #[test]
-#[ignore = "vendored vectors carry Ed25519 signatures; regenerate for the WOTS+ format"]
 fn p5_retired_key_replay_and_relay() {
     let (a0, a1, b0, u0, _u1) = fixture_links();
     let server_a_retired = key(0x01);

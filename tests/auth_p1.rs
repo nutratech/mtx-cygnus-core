@@ -30,7 +30,6 @@ fn pdu(events: &[Value], index: usize) -> &Value {
 }
 
 #[test]
-#[ignore = "vendored vectors carry Ed25519 signatures; regenerate for the WOTS+ format"]
 fn authorizes_create_epoch_introductions_advancement_join_and_message() {
     let events = events();
     let create = authorize_create(pdu(&events, 0), event_id(&events, 0)).unwrap();
@@ -65,7 +64,6 @@ fn authorizes_create_epoch_introductions_advancement_join_and_message() {
 }
 
 #[test]
-#[ignore = "vendored vectors carry Ed25519 signatures; regenerate for the WOTS+ format"]
 fn ordinary_user_event_rejects_a_modified_device_signature() {
     let events = events();
     let create = authorize_create(pdu(&events, 0), event_id(&events, 0)).unwrap();
@@ -94,7 +92,11 @@ fn ordinary_user_event_rejects_a_modified_device_signature() {
     );
 
     let mut message = pdu(&events, 7).clone();
-    let signature = message["signatures"][alice.as_str()]["ed25519:TEST51"]
+    let key_id = format!(
+        "wots-sha256-160-8-mt{}:TEST51",
+        cygnus_core::sig::TREE_DEPTH
+    );
+    let signature = message["signatures"][alice.as_str()][key_id.as_str()]
         .as_str()
         .unwrap()
         .to_owned();
@@ -104,7 +106,7 @@ fn ordinary_user_event_rejects_a_modified_device_signature() {
     chars[10] = if chars[10] == 'A' { 'B' } else { 'A' };
     let tampered: String = chars.into_iter().collect();
     assert_eq!(tampered.len(), signature.len());
-    message["signatures"][alice.as_str()]["ed25519:TEST51"] = Value::String(tampered);
+    message["signatures"][alice.as_str()][key_id.as_str()] = Value::String(tampered);
     assert_eq!(
         authorize_user_event(&message, &auth),
         Err(Error::Signature),

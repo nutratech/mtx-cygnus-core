@@ -36,9 +36,9 @@ DEVICE_EVENT_TAG = b"matrix-cygnus-device-event-v1\x00"
 
 
 class DeviceCredentials(TypedDict):
-    master: p.Ed25519PrivateKey
-    self_signing: p.Ed25519PrivateKey
-    device: p.Ed25519PrivateKey
+    master: p.SigningKey
+    self_signing: p.SigningKey
+    device: p.SigningKey
     device_id: str
 
 
@@ -152,7 +152,7 @@ def sign(ev: dict, server: str, height: int, sk) -> dict:
     e.pop("unsigned", None)
     e["hashes"] = {"sha256": content_hash(e)}
     sigs = e.setdefault("signatures", {})
-    sigs[server] = {f"ed25519:{height}": p.b64u(sk.sign(signing_input(e)))}
+    sigs[server] = {f"{p.pid_sig.KEY_ALGORITHM}:{height}": p.b64u(sk.sign(signing_input(e)))}
     return e
 
 
@@ -249,7 +249,7 @@ def add_device_signature(ev: dict, principal: str, credentials: dict) -> dict:
     sig = credentials["device"].sign(DEVICE_EVENT_TAG + signing_input(e))
     e["signatures"] = {
         principal: {
-            f"ed25519:{credentials['device_id']}": p.b64u(sig),
+            f"{p.pid_sig.KEY_ALGORITHM}:{credentials['device_id']}": p.b64u(sig),
         }
     }
     return e
@@ -457,7 +457,7 @@ class Room:
             raise Invalid("missing or malformed device certificate")
         device_key = verify_device_certificate(cert, principal, master_key)
         device_id = cert["device_id"]
-        sig = ev.get("signatures", {}).get(principal, {}).get(f"ed25519:{device_id}")
+        sig = ev.get("signatures", {}).get(principal, {}).get(f"{p.pid_sig.KEY_ALGORITHM}:{device_id}")
         if sig is None or not p.verify_sig(
             device_key,
             DEVICE_EVENT_TAG + signing_input(ev),
@@ -1971,7 +1971,7 @@ def run():
         creds = DEVICE_CREDENTIALS[principal]
         ev["hashes"] = {"sha256": content_hash(ev)}
         ev["signatures"][principal] = {
-            f"ed25519:{creds['device_id']}": p.b64u(
+            f"{p.pid_sig.KEY_ALGORITHM}:{creds['device_id']}": p.b64u(
                 creds["device"].sign(DEVICE_EVENT_TAG + signing_input(ev))
             )
         }

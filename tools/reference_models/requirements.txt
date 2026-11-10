@@ -1,2 +1,0 @@
-# Needed by the upstream MSC00FC Python reference models.
-cryptography==48.0.1

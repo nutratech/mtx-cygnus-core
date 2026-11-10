@@ -9,10 +9,16 @@ use crate::{
     wots::{self, Hash32, Profile, Signature as Wots, Tree, HASH_LEN, SALT_LEN},
     Error,
 };
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::{
+    collections::HashMap,
+    sync::{
+        atomic::{AtomicUsize, Ordering},
+        Mutex, OnceLock,
+    },
+};
 
 /// Merkle depth: each key signs `2^TREE_DEPTH` messages.
-pub const TREE_DEPTH: usize = 4;
+pub const TREE_DEPTH: usize = 6;
 const PROFILE: Profile = Profile::Bytes;
 /// Length of every signature in bytes.
 pub const SIGNATURE_LEN: usize = 4 + PROFILE.signature_len() + TREE_DEPTH * HASH_LEN;
@@ -71,10 +77,25 @@ impl Clone for SigningKey {
     }
 }
 
+/// Deriving a tree costs about 90,000 hashes and is a pure function of the
+/// seed, so identical seeds share one derivation. Each [`SigningKey`] still
+/// has its own leaf counter.
+fn tree_for(seed: [u8; 32]) -> Tree {
+    static TREES: OnceLock<Mutex<HashMap<[u8; 32], Tree>>> = OnceLock::new();
+    let mut trees = TREES
+        .get_or_init(Mutex::default)
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
+    trees
+        .entry(seed)
+        .or_insert_with(|| Tree::new(PROFILE, seed, TREE_DEPTH))
+        .clone()
+}
+
 impl From<[u8; 32]> for SigningKey {
     fn from(seed: [u8; 32]) -> Self {
         Self {
-            tree: Tree::new(PROFILE, seed, TREE_DEPTH),
+            tree: tree_for(seed),
             next: AtomicUsize::new(0),
         }
     }

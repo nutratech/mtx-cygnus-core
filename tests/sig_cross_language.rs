@@ -1,0 +1,23 @@
+//! The Rust signer must agree with the Python reference model byte for byte.
+//! Fixture produced by `tools/reference_models/pid_sig.py` (seed `[0x31; 32]`,
+//! message `cygnus`, first leaf).
+
+use cygnus_core::sig::{verify, SigningKey};
+
+const ROOT: &str = "956f0d8f97a8850c9f2cb11e5f093490873f301395ec1ede484b0c6235606896";
+const SIGNATURE: &str = "00000000075a9b7f1ca5d406adc057ac265d94096784c427475fc537816164e31fe5c97c9c4e5030f9c981cb8ba379e7e63c9d6039da37ef87fbfb76ff9809b0ffc9579f80cca7d23199be30082689ca9c88abd765e5f9a6715f8f4fb853be06bf1709955949c3b4133cd4fae958d6ff80d84ca975c16b1062e138ab002c3b4bb4bf342d9c78c496b54ebc451a1c8a962013fe39d81d0ce30292f5ad783e4c486cfea32e19033c06fa4b1bb2f9ea87ab592fcb32e49a3d08b40159e88a11693379214bd53f8af7c164d46594d116c0d31d8df96e27aa2c2aeacf2e49cf2efc5162021268dfa6211aa9cd7a2fac93d5f5c983693ea767f661d8d134c4c0deb9c8654d3fba74923d4ff03baf1352d713ec5df414c0a9b0a54732cc7c699820c48de5bc49b16ce206ca1a30c2eaf96b5dbe0056a90228e063cc59ee48408c1581c1381fef6b851f547cb0252bb8a1a0d94b01453fdff922ed12d74f674555a7399fe7c0d6771ffd24861f5b74097a88bea8cad52f8c42a7e5f8f52d5a38ebaafb87cb1519e0369b105c771ae579f83879e4c53d5292c15b334b0d7718365db01a93260d2390600eba460b0c2a612143b6b977ac4227ec0b3126325223b5a48bce0f02a8405aafc71846923ef8ce20beaa15f9a11507c141603db7d32f0a6392afd55805aaa868fb5f1d15b484633aa0ba8afe24b1b5d95f13de3ddd83992b66ada7dd4abdba076e017c1a7f9b089ac90b6b0a6c95a527e91129342fc162fe6ce50038230a2057b3dbcef984fc18e9686d5b899e2c65457e190a098e2479ff07213c434f704d312e7aabf08282b5fe8e0ac2e8f64e50b69269a95c20b45bcc6468a90e8a5a1c553269a88706d2edd0bb5287abb48f2f50f443e6ecb4a33171bc3a84d20aa674a1fefa2beb6140d3e5ca302f9d3ec4bc0add2ed25309db676bc72006ac55495b118ac74ca8c21f775b138cdb702506f068400522d71e76326b7938349a4a746806f4e1dafa173549f920a895cc7a0c39bf0616c0453160f7767abb88bad1c16c62d27c316efa6230043310eca7506a8b0cb94271446a6972df6ce635d20d6a67c4d396daa5cd34b649d4254fcbe669c2a559556491bc354b35204161471b4d87c6a7b68ec563b582f393e7ddcdc38f652bb04b85d95fcad457fed33f2805e6b2c7ed78121f5404748d07a4c2ef08d0f1cf9c863a4ada3b1004e7f2d19a7b77e9eaec761a398ed5f19bf7dc39802ae6dc64e55d0add12105f3b92af7edddd962b749da508c7d27bd7c982a8ca624aa68c3d78328b1cfe31c7b8977e1703656c769d4737beaf9a8d4a45f8c61394130b0f";
+
+#[test]
+fn rust_public_key_and_signature_match_python() {
+    let key = SigningKey::from([0x31; 32]);
+    assert_eq!(hex::encode(key.verification_key().to_bytes()), ROOT);
+    assert_eq!(hex::encode(key.sign(b"cygnus").to_bytes()), SIGNATURE);
+}
+
+#[test]
+fn rust_verifies_the_python_signature() {
+    let root = hex::decode(ROOT).unwrap();
+    let signature = hex::decode(SIGNATURE).unwrap();
+    assert!(verify(&root, b"cygnus", &signature).is_ok());
+    assert!(verify(&root, b"cygnuS", &signature).is_err());
+}

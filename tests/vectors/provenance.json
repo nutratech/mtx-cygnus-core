@@ -3,13 +3,14 @@
   "tests/vectors/dmls/dmls_tree_math_vectors.json": "c19ebe0957f03b447c5d133feffcdcd42e2f84a9bc1dd800e61deb41208c240f",
   "tests/vectors/dmls/dmls_vectors.json": "eb0039e22b61b96c64691c7382c19f0ba3ed28a67324d9847b08228a34c7ed79",
   "tests/vectors/pid_known_gaps.json": "61159a3aac4536fc85d62c86a5acbda0d438c05920b5d60ee2a678d42c9cc9cb",
-  "tests/vectors/pid_pdu_vectors.json": "7f71294f687605d3147d742f07f1bd525b12ca8213668a1f92e70e0354955297",
-  "tests/vectors/pid_vectors.json": "d8a66c5fbd28607a58e997ee8203a4bb402f75d71d5d2dbbe1db1b2f63451dbf",
+  "tests/vectors/pid_pdu_vectors.json": "ef09553563b737a5ac2158ebbd7b757558d1340a968adab79521ac199677a4ec",
+  "tests/vectors/pid_vectors.json": "2b143f3413eacbbbd7439200616bed94100ef425f26590969462ca906461840e",
   "tools/reference_models/dmls_00fc.py": "b542167492888d163fae37afa99444cac2796bab4594572b97b48484ac9d357d",
   "tools/reference_models/dmls_merge.py": "c30efdbc7336d0ab40de0542e15f7b4d426957a50a3f3342b16131cbba871bf6",
   "tools/reference_models/dmls_tree.py": "64a02455151ceecfa9b1fcea8cccb2756a86cae16e165cb076ca9017da4fb7d3",
   "tools/reference_models/pid_cutover.py": "1b6dfbdb2c5443e6c563185bd5e03a0deb2b78221538046c2a30b09808df59af",
-  "tools/reference_models/pid_pdu.py": "c80b4cb68645f042adad65445f9f799ec6ae84bfda3e40938710566dbba5a7cb",
-  "tools/reference_models/pid_ref.py": "1f2fb7ce6a3b54b7bca4f12b9e07024caf205bcf7ed754298d6724dbc62fdc75",
+  "tools/reference_models/pid_pdu.py": "25a9954951616eac57019835f3c304999a5785b8d513976854787417cc79faa6",
+  "tools/reference_models/pid_ref.py": "3b431725b9338a7fb1048d121b70935d99e2f2cd1a6facb1369397bd772bf932",
+  "tools/reference_models/pid_sig.py": "5651e4572dc680f9bc4465492ea1e94cf6080ff5abaee874abf08eb1c905811b",
   "tools/reference_models/test_dmls.py": "69798a415fb325f84839d9866c18e450abdb60a21d5042c5bb61853e21f59f46"
 }

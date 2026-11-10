@@ -2,7 +2,13 @@
 
 I/O-free core for [MSC00FC](../proposals/proposals/00FC-self-certifying-identities.md)
 (room version "Cygnus"): self-certifying server and user principals built from
-pre-rotated Ed25519 link chains.
+pre-rotated WOTS+ hash-signature link chains.
+
+The current signature format is the experimental SHA-256 WOTS+ Merkle profile.
+Signing keys are stateful: each tree leaf must be used at most once, and the
+client must persist its next-leaf position safely across restarts and backups.
+This custom profile has not had an independent cryptographic review and should
+not be treated as a standardized post-quantum signature scheme.
 
 Layering (see the spec sections in parentheses):
 

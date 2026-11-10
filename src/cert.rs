@@ -9,9 +9,9 @@ use rezzy_json::Value;
 pub struct DeviceCertificate {
     /// ASCII device identifier.
     pub device_id: String,
-    /// Device Ed25519 public key.
+    /// Device WOTS+ Merkle-root verification key.
     pub device_key: [u8; 32],
-    /// Certified self-signing Ed25519 public key.
+    /// Certified self-signing WOTS+ Merkle-root verification key.
     pub self_signing_key: [u8; 32],
 }
 
@@ -20,8 +20,8 @@ impl DeviceCertificate {
     /// sender's active user epoch (or create event).
     ///
     /// The input is the JSON value of `device_certificate`. Verification uses
-    /// canonical JSON for the two signed certificate statements and ZIP-215
-    /// hash-signature rules ([`crate::sig`]).
+    /// canonical JSON for the two signed certificate statements and the
+    /// configured hash-signature profile ([`crate::sig`]).
     ///
     /// # Errors
     /// Returns [`Error::Certificate`] for malformed fields or invalid chain

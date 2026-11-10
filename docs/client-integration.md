@@ -46,6 +46,16 @@ small stable API with shared JSON fixtures:
    bridge or Dart SDK integration for FluffyChat. Keep these as thin wrappers
    over the same Rust behavior.
 
+### Hash-signature profile
+
+The current wire format uses the versioned key algorithm
+`wots-sha256-160-8-mtN`, where `N` is the configured Merkle-tree depth. The
+WASM API exposes the active algorithm name and encoded signature length so a
+client can construct matching event signature key IDs. Signing keys are
+stateful one-time-leaf trees; a client must persist leaf consumption without
+rollback or concurrent reuse. The implementation is experimental and has not
+received independent cryptographic review.
+
 ## Required cross-SDK tests
 
 - Run Appendix A/B/C models and vectors from `../proposals` in CI; preserve
