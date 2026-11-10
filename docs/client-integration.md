@@ -34,8 +34,7 @@ small stable API with shared JSON fixtures:
    checks.
 3. **Event envelope operations**: room-v12/Cygnus redaction, canonical bytes,
    content/reference hashes, signing-object construction, device/custodian
-   signatures, and PDU verification. This is the next protocol gate after the
-   current link and certificate modules.
+   signatures, and PDU verification. Implemented in `envelope`.
 4. **Epoch and bundle operations**: parse and verify epoch/burn events, resolve
    link tips and authorization state, and validate supplied link bundles.
 5. **Client flow data**: bootstrap link construction (fresh rotation key,
@@ -70,7 +69,8 @@ The crate implements principal IDs, link encoding/verification and bootstrap
 device-certificate verification, the event envelope (redaction, hashes, event
 IDs, device and custodian signatures), epoch/burn/seal/tip-bundle verification,
 Pass 0 resolution, and the Cygnus authorization overlay. With `state-res`, it
-delegates Matrix v12 base authorization/state resolution to Rezzy. It does not
+can run Rezzy's Matrix v12 base authorization on caller-selected state; state
+selection and resolution remain the caller's responsibility. It does not
 yet provide certificate creation, private-key storage/backup, HTTP flows, SDK
 bindings, or client UI APIs above. The bootstrap API never derives identity
 material from Olm or Megolm keys; secret storage and recovery remain client

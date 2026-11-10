@@ -86,7 +86,8 @@ pub fn redact_event(event: &Value) -> Result<Value, Error> {
 }
 
 /// Canonical JSON bytes used for ordinary room-v12 event signing and reference
-/// hashing: redacted event with `signatures` and `unsigned` removed.
+/// hashing: redacted event with `signatures`, `unsigned`, and any attached
+/// `event_id` removed.
 ///
 /// # Errors
 /// Returns an error for an invalid event shape or non-canonical JSON value.
@@ -112,7 +113,8 @@ pub fn device_signing_bytes(event: &Value) -> Result<Vec<u8>, Error> {
 }
 
 /// Matrix content hash: SHA-256 over canonical JSON after removing
-/// `unsigned`, `signatures`, and `hashes`.
+/// `unsigned`, `signatures`, and `hashes`, and any attached `event_id` (a room
+/// v12 PDU has none, but callers often add it).
 ///
 /// # Errors
 /// Returns [`Error::Envelope`] when the event is not an object, or

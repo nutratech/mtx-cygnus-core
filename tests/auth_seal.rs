@@ -232,7 +232,7 @@ fn rejects_a_seal_whose_subject_is_not_a_server_principal() {
 #[test]
 fn rejects_a_forged_seal_signature() {
     let fixture = fixture("join");
-    let event = seal_event(&fixture.alice, &fixture.server, 1, 0, &key(0x66));
+    let event = seal_event(&fixture.alice, &fixture.server, 1, 1, &key(0x66));
     assert_eq!(
         authorize_seal(&event, &fixture.context),
         Err(Error::Signature)
