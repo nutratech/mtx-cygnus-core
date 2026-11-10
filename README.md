@@ -23,11 +23,11 @@ fixtures are vendored under `tests/vectors/` and `tools/reference_models/`;
 `tools/reference_models/check.py` runs the upstream oracles. P1–P5 auth,
 including the relay and retired-key scenarios, is covered. All 53 PDU checks
 are covered (see [`docs/conformance.md`](docs/conformance.md)). See
-[`docs/client-integration.md`](docs/client-integration.md) for the SDK and
-client API gaps. Bindings live in sibling workspace crates: `cygnus-wasm`
-exposes verification plus the client-side signing steps (identity bootstrap,
-device certificates, event signing, user-chain rotation). It takes seeds from
-the caller and never generates or stores keys; uniffi bindings and a prototype
-CLI are planned.
+[`docs/client-integration.md`](docs/client-integration.md) for the split
+between core APIs, existing `cygnus-wasm` exports, and remaining SDK
+integration work. The wasm crate exposes verification and client-side signing
+steps (identity bootstrap response checks, device certificates, event signing,
+and user-chain rotation). It takes seeds from the caller and never generates
+or stores keys; UniFFI bindings and a prototype CLI are planned.
 
 Setup: `pre-commit install` and `git config --local include.path ../.gitconfig`.

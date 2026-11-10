@@ -26,6 +26,14 @@ fn event(json: &str) -> Result<Value, JsError> {
     Value::parse_strict(json).map_err(err)
 }
 
+fn require_device_certificate(event: &Value) -> Result<(), &'static str> {
+    if matches!(event.get("device_certificate"), Some(Value::Object(_))) {
+        Ok(())
+    } else {
+        Err("event must carry a device_certificate object")
+    }
+}
+
 fn key(b64: &str) -> Result<[u8; 32], JsError> {
     let bytes = B64.decode(b64).map_err(err)?;
     <[u8; 32]>::try_from(bytes.as_slice()).map_err(|_| JsError::new("key must be 32 bytes"))
@@ -197,7 +205,8 @@ pub fn create_device_certificate(
 /// The custodian signature is added by the server.
 ///
 /// # Errors
-/// Throws if the event is not valid JSON or a seed is malformed.
+/// Throws if the event is not valid JSON, lacks an object-valued
+/// `device_certificate`, or a seed is malformed.
 #[wasm_bindgen(js_name = signEvent)]
 pub fn sign_event(
     event_json: &str,
@@ -206,9 +215,7 @@ pub fn sign_event(
     device_seed: &str,
 ) -> Result<String, JsError> {
     let mut event = event(event_json)?;
-    if event.get("device_certificate").is_none() {
-        return Err(JsError::new("event must carry its device_certificate"));
-    }
+    require_device_certificate(&event).map_err(JsError::new)?;
     envelope::set_content_hash(&mut event).map_err(err)?;
     envelope::sign_device(&mut event, sender, device_id, &signing_key(device_seed)?)
         .map_err(err)?;
@@ -303,4 +310,25 @@ pub fn parse_link(link_b64: &str) -> Result<String, JsError> {
         object.insert(field.into(), value.map_or(Value::Null, string));
     }
     rezzy_json::to_canonical_string(&Value::Object(object)).map_err(err)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn device_certificate_must_be_present_and_be_an_object() {
+        for json in [
+            "{}",
+            r#"{"device_certificate":null}"#,
+            r#"{"device_certificate":"certificate"}"#,
+            r#"{"device_certificate":[]}"#,
+            r#"{"device_certificate":1}"#,
+        ] {
+            let event = Value::parse_strict(json).unwrap();
+            assert!(require_device_certificate(&event).is_err(), "{json}");
+        }
+        let event = Value::parse_strict(r#"{"device_certificate":{}}"#).unwrap();
+        assert!(require_device_certificate(&event).is_ok());
+    }
 }

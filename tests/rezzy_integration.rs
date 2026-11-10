@@ -355,6 +355,34 @@ fn combined_entry_point_rejects_a_mismatched_event_id() {
     );
 }
 
+#[test]
+fn combined_entry_point_rejects_a_seal_under_a_mismatched_event_id() {
+    let mut seal = json!({
+        "type": "m.room.server_seal",
+        "sender": "~server",
+        "state_key": "~server",
+        "content": {"sealed_height": 1},
+        "auth_events": []
+    });
+    cygnus_core::envelope::set_content_hash(&mut seal).unwrap();
+    let seal_id = cygnus_core::envelope::event_id(&seal).unwrap();
+    let context = AuthContext::default();
+    let state = RoomAuthState::default();
+    let events = EventMap::new();
+    // With its computed ID, the event reaches seal authorization.
+    assert!(matches!(
+        authorize_pdu(&seal, &seal_id, &context, &state, &events),
+        Err(RezzyError::Cygnus(_))
+    ));
+    let other_id = "$different-id";
+    assert_eq!(
+        authorize_pdu(&seal, other_id, &context, &state, &events).unwrap_err(),
+        RezzyError::Cygnus(format!(
+            "event ID {other_id} does not match the event's reference hash {seal_id}"
+        ))
+    );
+}
+
 /// A cited event must be stored under its own ID; otherwise a citation of
 /// one event could be checked against another with the same state key.
 #[test]
@@ -366,10 +394,10 @@ fn citation_filed_under_another_id_is_rejected() {
         .as_str()
         .unwrap()
         .to_owned();
-    let (other_id, other) = pdus.iter().find(|(id, _)| *id != cited).unwrap();
-    replay
-        .known
-        .insert(cited.clone(), adapter_event(other).unwrap());
+    let other_id = "$different-event";
+    let mut other = adapter_event(&member_event()).unwrap();
+    other.event_id = other_id.to_owned();
+    replay.known.insert(cited.clone(), other);
     assert_eq!(
         replay.authorize(message_id, message).unwrap_err(),
         RezzyError::Auth(format!(
