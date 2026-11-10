@@ -4,6 +4,7 @@
 
 use cygnus_core::{
     auth::{AuthContext, MemberState},
+    binding::validate_server_acl_content,
     rezzy_integration::{
         adapter_event, authorize_pdu, base_auth_applies, check_base_auth,
         validate_auth_event_citations, Authorized, EventMap, RezzyError, RoomAuthState,
@@ -267,15 +268,25 @@ impl Replay {
             }
             Authorized::Seal(_) => {}
             Authorized::Event => {
-                if pdu["type"].as_str() == Some("m.room.member") {
-                    let content = &pdu["content"];
-                    self.context.members.insert(
-                        pdu["state_key"].as_str().unwrap().to_owned(),
-                        MemberState {
-                            membership: content["membership"].as_str().unwrap().to_owned(),
-                            custodian: content["custodian"].as_str().map(str::to_owned),
-                        },
-                    );
+                let content = &pdu["content"];
+                match pdu["type"].as_str() {
+                    Some("m.room.member") => {
+                        self.context.members.insert(
+                            pdu["state_key"].as_str().unwrap().to_owned(),
+                            MemberState {
+                                membership: content["membership"].as_str().unwrap().to_owned(),
+                                custodian: content["custodian"].as_str().map(str::to_owned),
+                            },
+                        );
+                    }
+                    Some("m.room.join_rules") => {
+                        self.context.join_rule = content["join_rule"].as_str().map(str::to_owned);
+                    }
+                    Some("m.room.server_acl") => {
+                        self.context.server_acl =
+                            Some(validate_server_acl_content(content).unwrap());
+                    }
+                    _ => {}
                 }
             }
         }
@@ -310,6 +321,61 @@ fn p1_founding_flow_passes_the_combined_entry_point() {
     let replay = Replay::run(&pdus);
     assert_eq!(replay.known.len(), pdus.len());
     assert_eq!(replay.context.creators.len(), 1);
+    // The context tracks the same join rule and ACL as the selected state.
+    let current =
+        |event_type: &str| &replay.state_events[&(event_type.to_owned(), String::new())].1;
+    assert_eq!(
+        replay.context.join_rule.as_deref(),
+        current("m.room.join_rules")["content"]["join_rule"].as_str()
+    );
+    assert_eq!(
+        replay.context.server_acl,
+        Some(validate_server_acl_content(&current("m.room.server_acl")["content"]).unwrap())
+    );
+}
+
+/// The combined entry point recomputes the event ID before routing by type,
+/// so no accepted event (epoch, seal or other) can be applied under another
+/// ID. Event 8 is Alice's user epoch advancing to server B.
+#[test]
+fn combined_entry_point_rejects_a_mismatched_event_id() {
+    let pdus = fixture_pdus();
+    let replay = Replay::run(&pdus[..8]);
+    let (epoch_id, epoch) = &pdus[8];
+    assert!(matches!(
+        replay.authorize(epoch_id, epoch),
+        Ok(Authorized::Epoch(_))
+    ));
+    let (other_id, _) = &pdus[0];
+    assert_eq!(
+        replay.authorize(other_id, epoch).unwrap_err(),
+        RezzyError::Cygnus(format!(
+            "event ID {other_id} does not match the event's reference hash {epoch_id}"
+        ))
+    );
+}
+
+/// A cited event must be stored under its own ID; otherwise a citation of
+/// one event could be checked against another with the same state key.
+#[test]
+fn citation_filed_under_another_id_is_rejected() {
+    let pdus = fixture_pdus();
+    let (message_id, message) = &pdus[7];
+    let mut replay = Replay::run(&pdus[..7]);
+    let cited = message["auth_events"].as_array().unwrap()[0]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    let (other_id, other) = pdus.iter().find(|(id, _)| *id != cited).unwrap();
+    replay
+        .known
+        .insert(cited.clone(), adapter_event(other).unwrap());
+    assert_eq!(
+        replay.authorize(message_id, message).unwrap_err(),
+        RezzyError::Auth(format!(
+            "auth event {cited} is filed under a different event ({other_id})"
+        ))
+    );
 }
 
 /// P4 check 21: once Alice's user epoch has been superseded, an event that

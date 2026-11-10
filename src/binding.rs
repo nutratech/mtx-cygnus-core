@@ -118,7 +118,7 @@ pub enum Ingress {
 
 /// A minimal name/principal ACL. Entries are glob patterns over server names,
 /// or `~<principal>` to match a principal directly.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct Acl {
     /// Allowed entries.
     pub allow: Vec<String>,
