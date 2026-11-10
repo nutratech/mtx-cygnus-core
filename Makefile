@@ -57,3 +57,16 @@ extras/cloc: ##H Count lines of code (excludes vendored vectors and reference mo
 .PHONY: wasm
 wasm: ##H Build the browser verifier (needs wasm-pack)
 	wasm-pack build cygnus-wasm --release --target web --out-dir pkg
+
+# DIHYDROGEN_PATH is the Hydrogen checkout, set in .env (gitignored) or the
+# environment; WASM_DEST can still be overridden on the command line.
+-include .env
+DIHYDROGEN_PATH ?= ../hydrogen
+WASM_DEST ?= $(DIHYDROGEN_PATH)/src/matrix/cygnus/wasm
+WASM_FILES := cygnus_wasm.js cygnus_wasm.d.ts cygnus_wasm_bg.wasm
+
+.PHONY: install
+install: wasm ##H Build the wasm package and copy it into $DIHYDROGEN_PATH (from .env)
+	@test -d "$(WASM_DEST)" || { echo "WASM_DEST=$(WASM_DEST) does not exist; set DIHYDROGEN_PATH in .env"; exit 1; }
+	cp $(addprefix cygnus-wasm/pkg/,$(WASM_FILES)) "$(WASM_DEST)/"
+	@echo "Installed cygnus-wasm $$(git rev-parse --short HEAD)$$(git diff --quiet HEAD || echo -dirty) into $(WASM_DEST)"
