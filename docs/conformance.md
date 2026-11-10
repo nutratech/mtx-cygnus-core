@@ -27,9 +27,9 @@ Status:
 | #   | Check                                       | Status  | Rust evidence / gap                                                                                                                                                                                                            |
 | --- | ------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | 0   | Founding flow accepted                      | partial | `auth_p1` covers Cygnus create/epoch/join/message checks; `rezzy_integration::p1_fixture_events_pass_rezzy_base_authorization` runs the regenerated P1 PDUs through v12 base auth. The two layers are not yet one entry point. |
-| 1   | Create signed with the retired key rejected | partial | `VerifiedCreate::verify` uses the current server-chain tip key; no fixture drives a retired-key create.                                                                                                                        |
-| 2   | Second genesis introduction rejected        | partial | `VerifiedEpoch::active(None)` requires a genesis-only slice; rejecting a second introduction against selected room state is not yet tested.                                                                                    |
-| 3   | Malformed device certificate rejected       | partial | `cert` rejects bad versions, non-canonical base64, and modified fields. No test uses a malformed-certificate fixture.                                                                                                          |
+| 1   | Create signed with the retired key rejected | done    | `p1_g7_fixtures` re-signs the P1 create with the retired h=0 key (as h=0 and as h=1): `Error::Signature`; the current key is accepted.                                                                                         |
+| 2   | Second genesis introduction rejected        | done    | `p1_g7_fixtures` re-introduces A from genesis after A reached h=1: `Error::Successor("height")`.                                                                                                                               |
+| 3   | Malformed device certificate rejected       | done    | `p1_g7_fixtures` sets the P1 message certificate's `device_key` to `!`: `Error::Certificate("invalid base64url key")`.                                                                                                         |
 
 ### P2 — custodian migration (9)
 
@@ -77,18 +77,18 @@ Status:
 
 ### G1 and G7 (10)
 
-| #   | Check                                                          | Status  | Rust evidence / gap                                                                                          |
-| --- | -------------------------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------ |
-| 28  | G1 control: retired key refused at the current tip             | done    | `auth_p4_p5` rejects the retired h=0 key at A's current tip (same scenario as #22).                          |
-| 29  | Create and `signer_links` use the actual server signing height | partial | `bundle::signer_chain` and `verify_epoch_custodian_signature` resolve the signing height; no merge scenario. |
-| 30  | Creator and signer chains bound to the subject server          | partial | `VerifiedCreate::verify` binds custodian, display domain, and sender; no merge scenario.                     |
-| 31  | Seal signature verifies under the active epoch                 | done    | `auth::authorize_seal` verifies the subject server's current tip key and the epoch height.                   |
-| 32  | Seal sender must be custodied by the subject server            | done    | `auth_seal` accepts a joined sender whose active user epoch names the subject server.                        |
-| 33  | Sender custodied by another server rejected                    | done    | `auth_seal` rejects a sender whose user epoch names a different custodian.                                   |
-| 34  | Non-joined seal sender rejected                                | done    | `auth_seal` rejects a sender whose membership is not `join`.                                                 |
-| 35  | Honest old-height ancestor survives                            | done    | `seal::cutover_filter_keeps_only_the_seal_causal_past`.                                                      |
-| 36  | Historical-branch message excluded by the resolved seal        | done    | `seal::a_higher_seals_ancestry_decides_which_old_events_survive`.                                            |
-| 37  | Historical-branch state event excluded before state resolution | done    | Same predicate; the filter is event-type agnostic.                                                           |
+| #   | Check                                                          | Status | Rust evidence / gap                                                                                                                                                                        |
+| --- | -------------------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 28  | G1 control: retired key refused at the current tip             | done   | `auth_p4_p5` rejects the retired h=0 key at A's current tip (same scenario as #22).                                                                                                        |
+| 29  | Create and `signer_links` use the actual server signing height | done   | `p1_g7_fixtures`: the create is signed at A's creator-chain tip (h=1); A's genesis epoch (`links` [A0]) and Alice's epoch verify through `signer_links` at h=1, not at the subject height. |
+| 30  | Creator and signer chains bound to the subject server          | done   | `p1_g7_fixtures`: A's create signature moved under B fails; A's and B's epochs reject each other's signer chains.                                                                          |
+| 31  | Seal signature verifies under the active epoch                 | done   | `auth::authorize_seal` verifies the subject server's current tip key and the epoch height.                                                                                                 |
+| 32  | Seal sender must be custodied by the subject server            | done   | `auth_seal` accepts a joined sender whose active user epoch names the subject server.                                                                                                      |
+| 33  | Sender custodied by another server rejected                    | done   | `auth_seal` rejects a sender whose user epoch names a different custodian.                                                                                                                 |
+| 34  | Non-joined seal sender rejected                                | done   | `auth_seal` rejects a sender whose membership is not `join`.                                                                                                                               |
+| 35  | Honest old-height ancestor survives                            | done   | `seal::cutover_filter_keeps_only_the_seal_causal_past`.                                                                                                                                    |
+| 36  | Historical-branch message excluded by the resolved seal        | done   | `seal::a_higher_seals_ancestry_decides_which_old_events_survive`.                                                                                                                          |
+| 37  | Historical-branch state event excluded before state resolution | done   | Same predicate; the filter is event-type agnostic.                                                                                                                                         |
 
 ### P6 — redaction (3)
 
@@ -130,23 +130,25 @@ encoding rules, so it is listed here.
 
 | Group           | Checks |   done | partial | needs module |
 | --------------- | -----: | -----: | ------: | -----------: |
-| P1 founding     |      4 |      0 |       4 |            0 |
+| P1 founding     |      4 |      3 |       1 |            0 |
 | P2 migration    |      9 |      9 |       0 |            0 |
 | P3 rebinding    |      2 |      2 |       0 |            0 |
 | P4 relays       |      7 |      6 |       1 |            0 |
 | P5 retired keys |      6 |      6 |       0 |            0 |
-| G1/G7           |     10 |      8 |       2 |            0 |
+| G1/G7           |     10 |     10 |       0 |            0 |
 | P6 redaction    |      3 |      3 |       0 |            0 |
 | P7 certificates |      3 |      3 |       0 |            0 |
 | P8 encodings    |      9 |      8 |       1 |            0 |
-| **Total**       | **53** | **45** |   **8** |        **0** |
+| **Total**       | **53** | **50** |   **3** |        **0** |
 
 P2–P5 now have vector- or scenario-driven Cygnus authorization tests. The one
 remaining P4 gap is check 21, which is a state-before (`auth_events` citation)
 rule owned by the base-auth/state-selection layer rather than the overlay. G7
-seal authorization (checks 31–34) now runs through `auth::authorize_seal`; the
-two remaining G7 gaps (29–30) are merge scenarios for signing-height and chain
-binding. The causal filtering predicates remain covered separately.
+seal authorization (checks 31–34) runs through `auth::authorize_seal`, and the
+merge signing-height and chain-binding checks (29–30) are driven from the P1
+PDUs in `p1_g7_fixtures`. P1 check 0 stays partial until the Cygnus overlay and
+Rezzy base auth run as one entry point. The causal filtering predicates remain
+covered separately.
 
 The regenerated PDU fixtures now omit `m.room.create` from `auth_events`, as
 required by room v12. The proposal model and vector source should stay in sync
