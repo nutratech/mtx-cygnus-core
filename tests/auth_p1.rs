@@ -40,7 +40,7 @@ fn authorizes_create_epoch_introductions_advancement_join_and_message() {
     auth.creators.insert(alice.clone());
 
     let user_epoch = authorize_active_epoch(pdu(&events, 1), event_id(&events, 1), &auth).unwrap();
-    assert_eq!(user_epoch.status, EpochStatus::Active);
+    assert_eq!(user_epoch.status(), EpochStatus::Active);
     auth.user_epochs.insert(alice.clone(), user_epoch);
 
     let server_epoch =

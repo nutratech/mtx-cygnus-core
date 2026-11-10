@@ -28,8 +28,11 @@ rezzy = { git = "https://gitlab.com/wombat-foundation/rezzy.git", branch = "dev"
 [features]
 default = []
 state-res = ["dep:rezzy"]
+# Exposes unchecked epoch constructors for tests. Never enable in production.
+test-support = []
 
 [dev-dependencies]
+cygnus-core = { path = ".", features = ["test-support"] }
 hex = "0.4"
 
 [lints.rust]

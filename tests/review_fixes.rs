@@ -5,7 +5,7 @@ use base64::{engine::general_purpose::URL_SAFE_NO_PAD as B64, Engine};
 use cygnus_core::{
     auth::{authorize_active_epoch, AuthContext, MemberState},
     bootstrap::{server_genesis, user_genesis, user_successor, RotationKey},
-    bundle::{EpochStatus, VerifiedEpoch},
+    bundle::{EpochParts, EpochStatus, VerifiedEpoch},
     envelope,
     link::{Link, Payload},
     Error,
@@ -26,7 +26,7 @@ fn b64(bytes: &[u8]) -> String {
 }
 
 fn active(event_id: &str, links: Vec<Link>) -> VerifiedEpoch {
-    VerifiedEpoch {
+    VerifiedEpoch::from_parts_unchecked(EpochParts {
         event_id: event_id.to_owned(),
         principal: links[0].principal(),
         status: EpochStatus::Active,
@@ -35,7 +35,7 @@ fn active(event_id: &str, links: Vec<Link>) -> VerifiedEpoch {
         claim: vec![],
         branches: None,
         ancestors: vec![],
-    }
+    })
 }
 
 #[test]
@@ -108,8 +108,9 @@ fn burned_user_cannot_supply_the_relay_custodian() {
     context
         .user_epochs
         .insert(alice.clone(), active("$alice", vec![alice_genesis]));
-    let mut burned = active("$bob", vec![bob_genesis]);
-    burned.status = EpochStatus::Burned;
+    let mut parts = active("$bob", vec![bob_genesis]).into_parts();
+    parts.status = EpochStatus::Burned;
+    let burned = VerifiedEpoch::from_parts_unchecked(parts);
     context.user_epochs.insert(bob.clone(), burned);
     for user in [&alice, &bob] {
         context.members.insert(

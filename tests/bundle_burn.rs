@@ -2,7 +2,7 @@
 
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD as B64, Engine};
 use cygnus_core::{
-    bundle::{EpochStatus, VerifiedEpoch},
+    bundle::{EpochParts, EpochStatus, VerifiedEpoch},
     commitment, envelope,
     link::{Body, Kind, Link, Payload},
     Principal,
@@ -96,7 +96,7 @@ fn sibling(parent: &Link, signer: &SigningKey, nonce: u8) -> Link {
 }
 
 fn active(id: &str, links: Vec<Link>) -> VerifiedEpoch {
-    VerifiedEpoch {
+    VerifiedEpoch::from_parts_unchecked(EpochParts {
         event_id: id.to_owned(),
         principal: links[0].principal(),
         status: EpochStatus::Active,
@@ -105,7 +105,7 @@ fn active(id: &str, links: Vec<Link>) -> VerifiedEpoch {
         claim: vec![],
         branches: None,
         ancestors: vec![],
-    }
+    })
 }
 
 fn burn_event(
@@ -129,7 +129,7 @@ fn burn_event(
     };
     Value::parse(&format!(
         "{{\"type\":\"m.room.user_epoch\",\"state_key\":\"{}\",\"sender\":\"@bob:chat.example.org\",\"content\":{{\"status\":\"burned\",\"fork_height\":{fork_height},\"parent\":\"{}\",\"bridge\":[{bridge_json}],\"branch_a\":\"{}\",\"branch_b\":\"{}\"}}}}",
-        anchor.principal.to_id(), B64.encode(&parent_bytes), a.to_b64(), b.to_b64()
+        anchor.principal().to_id(), B64.encode(&parent_bytes), a.to_b64(), b.to_b64()
     ))
     .unwrap()
 }
@@ -146,16 +146,13 @@ fn burn_parser_accepts_current_tip_fork_proof_and_derives_claim() {
     let event = burn_event(&anchor, 1, &links[0], &[], &links[1], &alternate);
 
     let burn = verify_burn(&event, &anchor).unwrap();
-    assert_eq!(burn.status, EpochStatus::Burned);
-    assert_eq!(burn.fork_height, Some(1));
+    assert_eq!(burn.status(), EpochStatus::Burned);
+    assert_eq!(burn.fork_height(), Some(1));
     assert_eq!(
-        burn.claim.iter().map(Link::digest).collect::<Vec<_>>(),
+        burn.claim().iter().map(Link::digest).collect::<Vec<_>>(),
         vec![links[0].digest()]
     );
-    assert_eq!(
-        burn.branches.as_ref().unwrap().0.digest(),
-        links[1].digest()
-    );
+    assert_eq!(burn.branches().unwrap().0.digest(), links[1].digest());
 }
 
 #[test]
@@ -167,9 +164,9 @@ fn burn_parser_accepts_a_bridge_from_the_room_tip_to_a_future_fork() {
     let event = burn_event(&anchor, 2, &links[1], &[links[1].clone()], &a, &b);
 
     let burn = verify_burn(&event, &anchor).unwrap();
-    assert_eq!(burn.fork_height, Some(2));
+    assert_eq!(burn.fork_height(), Some(2));
     assert_eq!(
-        burn.claim.iter().map(Link::digest).collect::<Vec<_>>(),
+        burn.claim().iter().map(Link::digest).collect::<Vec<_>>(),
         vec![links[0].digest(), links[1].digest()]
     );
 }
@@ -181,11 +178,12 @@ fn burn_parser_rejects_wrong_anchor_and_malformed_branch_proofs() {
     let a = links[1].clone();
     let b = sibling(&links[0], &keys[0], 5);
     let event = burn_event(&anchor, 1, &links[0], &[], &a, &b);
-    let mut wrong_anchor = anchor.clone();
-    wrong_anchor.principal = Principal {
+    let mut parts = anchor.clone().into_parts();
+    parts.principal = Principal {
         kind: Kind::Server,
-        root: anchor.principal.root,
+        root: anchor.principal().root,
     };
+    let wrong_anchor = VerifiedEpoch::from_parts_unchecked(parts);
     assert!(verify_burn(&event, &wrong_anchor).is_err());
 
     let duplicate = burn_event(&anchor, 1, &links[0], &[], &a, &a);

@@ -336,24 +336,112 @@ pub struct ActiveAncestor {
 }
 
 /// A structurally and cryptographically verified identity epoch.
+///
+/// Fields are private: values come only from [`VerifiedEpoch::active`] and
+/// [`VerifiedEpoch::burned`], so a caller cannot fabricate a verified chain.
 #[derive(Debug, Clone)]
 pub struct VerifiedEpoch {
-    /// Event ID used only for deterministic tie-breaking.
+    event_id: String,
+    principal: Principal,
+    status: EpochStatus,
+    links: Vec<Link>,
+    fork_height: Option<u64>,
+    claim: Vec<Link>,
+    branches: Option<(Link, Link)>,
+    ancestors: Vec<ActiveAncestor>,
+}
+
+/// Raw epoch fields for tests that need states the verifiers cannot reach.
+/// Only built with the `test-support` feature; never enable it in production.
+#[cfg(feature = "test-support")]
+#[derive(Debug, Clone)]
+#[allow(missing_docs)]
+pub struct EpochParts {
     pub event_id: String,
-    /// Principal whose epoch is being advanced or burned.
     pub principal: Principal,
-    /// Active or burned event form.
     pub status: EpochStatus,
-    /// Full active chain, or the burn's anchored active chain.
     pub links: Vec<Link>,
-    /// Burn fork height; absent for active epochs.
     pub fork_height: Option<u64>,
-    /// The chain claim through height `fork_height - 1` for burns.
     pub claim: Vec<Link>,
-    /// The two conflicting links for burns.
     pub branches: Option<(Link, Link)>,
-    /// Prior active events on the auth chain, oldest first.
     pub ancestors: Vec<ActiveAncestor>,
+}
+
+#[cfg(feature = "test-support")]
+impl VerifiedEpoch {
+    /// Build an epoch without verifying anything. Test use only.
+    #[must_use]
+    pub fn from_parts_unchecked(parts: EpochParts) -> Self {
+        Self {
+            event_id: parts.event_id,
+            principal: parts.principal,
+            status: parts.status,
+            links: parts.links,
+            fork_height: parts.fork_height,
+            claim: parts.claim,
+            branches: parts.branches,
+            ancestors: parts.ancestors,
+        }
+    }
+
+    /// Take the fields back out. Test use only.
+    #[must_use]
+    pub fn into_parts(self) -> EpochParts {
+        EpochParts {
+            event_id: self.event_id,
+            principal: self.principal,
+            status: self.status,
+            links: self.links,
+            fork_height: self.fork_height,
+            claim: self.claim,
+            branches: self.branches,
+            ancestors: self.ancestors,
+        }
+    }
+}
+
+impl VerifiedEpoch {
+    /// Event ID of the epoch event.
+    #[must_use]
+    pub fn event_id(&self) -> &str {
+        &self.event_id
+    }
+
+    /// Principal whose epoch is advanced or burned.
+    #[must_use]
+    pub fn principal(&self) -> Principal {
+        self.principal
+    }
+
+    /// Active or burned form.
+    #[must_use]
+    pub fn status(&self) -> EpochStatus {
+        self.status
+    }
+
+    /// Full active chain, or the burn's anchored active chain.
+    #[must_use]
+    pub fn links(&self) -> &[Link] {
+        &self.links
+    }
+
+    /// Burn fork height; `None` for active epochs.
+    #[must_use]
+    pub fn fork_height(&self) -> Option<u64> {
+        self.fork_height
+    }
+
+    /// Chain claim through height `fork_height - 1` for burns.
+    #[must_use]
+    pub fn claim(&self) -> &[Link] {
+        &self.claim
+    }
+
+    /// The two conflicting links of a burn.
+    #[must_use]
+    pub fn branches(&self) -> Option<&(Link, Link)> {
+        self.branches.as_ref()
+    }
 }
 
 /// Owned result of Pass 0. A freeze may select an auth-chain ancestor that is

@@ -79,7 +79,7 @@ pub fn authorize_active_epoch(
     };
     let epoch = VerifiedEpoch::active(event, event_id, previous)?;
     if kind == Kind::User
-        && epoch.links.iter().any(|link| {
+        && epoch.links().iter().any(|link| {
             !matches!(
                 &link.body.payload,
                 Payload::User {
@@ -109,7 +109,7 @@ pub fn authorize_active_epoch(
             context
                 .user_epochs
                 .get(sender)
-                .filter(|user| user.status == EpochStatus::Active)
+                .filter(|user| user.status() == EpochStatus::Active)
                 .and_then(user_custodian)
                 .as_deref()
                 == Some(state_key)
@@ -136,7 +136,7 @@ pub fn authorize_active_epoch(
         if let Some(custodian) = context
             .user_epochs
             .get(sender)
-            .filter(|user| user.status == EpochStatus::Active)
+            .filter(|user| user.status() == EpochStatus::Active)
             .and_then(user_custodian)
         {
             permitted.push(custodian);
@@ -172,7 +172,7 @@ pub fn authorize_burn(
         _ => return Err(Error::Authorization("not an epoch event")),
     }
     .ok_or(Error::Authorization("burn has no active anchor"))?;
-    if previous.status != EpochStatus::Active {
+    if previous.status() != EpochStatus::Active {
         return Err(Error::Authorization("burn anchor is not active"));
     }
     let epoch = VerifiedEpoch::burned(event, event_id, previous)?;
@@ -187,18 +187,18 @@ pub fn authorize_burn(
     let user = context
         .user_epochs
         .get(sender)
-        .filter(|user| user.status == EpochStatus::Active)
+        .filter(|user| user.status() == EpochStatus::Active)
         .ok_or(Error::Authorization("burn sender has no active user epoch"))?;
     let custodian =
         user_custodian(user).ok_or(Error::Authorization("burn sender has no custodian"))?;
     let server = context
         .server_epochs
         .get(&custodian)
-        .filter(|server| server.status == EpochStatus::Active)
+        .filter(|server| server.status() == EpochStatus::Active)
         .ok_or(Error::Authorization(
             "burn custodian has no active server epoch",
         ))?;
-    verify_server_signature(event, &custodian, &server.links)?;
+    verify_server_signature(event, &custodian, server.links())?;
     Ok(epoch)
 }
 
@@ -223,14 +223,14 @@ pub fn authorize_seal(
     let epoch = context
         .server_epochs
         .get(&server)
-        .filter(|epoch| epoch.status == EpochStatus::Active)
+        .filter(|epoch| epoch.status() == EpochStatus::Active)
         .ok_or(Error::Authorization("seal subject has no active epoch"))?;
 
     let sender = string(event.get("sender"))?;
     let user = context
         .user_epochs
         .get(sender)
-        .filter(|user| user.status == EpochStatus::Active)
+        .filter(|user| user.status() == EpochStatus::Active)
         .ok_or(Error::Authorization("seal sender has no active user epoch"))?;
     if user_custodian(user).as_deref() != Some(server.as_str()) {
         return Err(Error::Authorization(
@@ -249,7 +249,7 @@ pub fn authorize_seal(
             "seal height exceeds its signing epoch",
         ));
     }
-    verify_server_signature(event, &server, &epoch.links)?;
+    verify_server_signature(event, &server, epoch.links())?;
     Ok(seal)
 }
 
@@ -276,14 +276,14 @@ pub fn authorize_user_event(event: &rezzy_json::Value, context: &AuthContext) ->
     let user = context
         .user_epochs
         .get(sender)
-        .filter(|user| user.status == EpochStatus::Active)
+        .filter(|user| user.status() == EpochStatus::Active)
         .ok_or(Error::Authorization("sender has no active user epoch"))?;
     let custodian =
         user_custodian(user).ok_or(Error::Authorization("sender epoch has no custodian"))?;
     let server = context
         .server_epochs
         .get(&custodian)
-        .filter(|server| server.status == EpochStatus::Active)
+        .filter(|server| server.status() == EpochStatus::Active)
         .ok_or(Error::Authorization("custodian has no active server epoch"))?;
     let is_self_member = string(event.get("type"))? == "m.room.member"
         && event.get("state_key").and_then(rezzy_json::Value::as_str) == Some(sender);
@@ -337,7 +337,7 @@ pub fn authorize_user_event(event: &rezzy_json::Value, context: &AuthContext) ->
         &certificate.device_id,
         &certificate.device_key,
     )?;
-    verify_server_signature(event, &custodian, &server.links)
+    verify_server_signature(event, &custodian, server.links())
 }
 
 fn signer_chain_for(
@@ -352,13 +352,13 @@ fn signer_chain_for(
         && event.get("state_key").and_then(rezzy_json::Value::as_str) == Some(signer)
         && previous.is_some();
     if self_advance {
-        return Ok(event_epoch.links.clone());
+        return Ok(event_epoch.links().to_vec());
     }
     if let Some(epoch) = context.server_epochs.get(signer) {
-        if epoch.status != EpochStatus::Active {
+        if epoch.status() != EpochStatus::Active {
             return Err(Error::Authorization("signer server epoch is burned"));
         }
-        return Ok(epoch.links.clone());
+        return Ok(epoch.links().to_vec());
     }
     signer_chain(event)
 }

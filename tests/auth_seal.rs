@@ -3,7 +3,7 @@
 use cygnus_core::{
     auth::{authorize_seal, AuthContext, MemberState},
     bootstrap::{server_genesis, server_successor, user_genesis, RotationKey},
-    bundle::{EpochStatus, VerifiedEpoch},
+    bundle::{EpochParts, EpochStatus, VerifiedEpoch},
     envelope,
     link::{Kind, Link},
     Error, Principal,
@@ -24,7 +24,7 @@ fn rotation(seed: u8) -> RotationKey {
 }
 
 fn active(event_id: &str, links: Vec<Link>) -> VerifiedEpoch {
-    VerifiedEpoch {
+    VerifiedEpoch::from_parts_unchecked(EpochParts {
         event_id: event_id.to_owned(),
         principal: links[0].principal(),
         status: EpochStatus::Active,
@@ -33,7 +33,7 @@ fn active(event_id: &str, links: Vec<Link>) -> VerifiedEpoch {
         claim: vec![],
         branches: None,
         ancestors: vec![],
-    }
+    })
 }
 
 fn seal_event(

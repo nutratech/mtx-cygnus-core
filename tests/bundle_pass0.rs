@@ -6,7 +6,7 @@
 //! semantics (the reference model's `EpochEvent`) without re-deriving event
 //! JSON. Event-level `VerifiedEpoch::burned` parsing is covered separately.
 
-use cygnus_core::bundle::{resolve_pass0, ActiveAncestor, EpochStatus, VerifiedEpoch};
+use cygnus_core::bundle::{resolve_pass0, ActiveAncestor, EpochParts, EpochStatus, VerifiedEpoch};
 use cygnus_core::commitment;
 use cygnus_core::link::{Body, Link, Payload};
 use ed25519_consensus::SigningKey;
@@ -102,14 +102,14 @@ fn attacker_link(
 }
 
 fn active(id: &str, links: Vec<Link>, previous: Option<&VerifiedEpoch>) -> VerifiedEpoch {
-    let mut ancestors = previous.map_or_else(Vec::new, |p| p.ancestors.clone());
+    let mut ancestors = previous.map_or_else(Vec::new, |p| p.clone().into_parts().ancestors);
     if let Some(previous) = previous {
         ancestors.push(ActiveAncestor {
-            event_id: previous.event_id.clone(),
-            links: previous.links.clone(),
+            event_id: previous.event_id().to_owned(),
+            links: previous.links().to_vec(),
         });
     }
-    VerifiedEpoch {
+    VerifiedEpoch::from_parts_unchecked(EpochParts {
         event_id: id.to_owned(),
         principal: links[0].principal(),
         status: EpochStatus::Active,
@@ -118,7 +118,7 @@ fn active(id: &str, links: Vec<Link>, previous: Option<&VerifiedEpoch>) -> Verif
         claim: Vec::new(),
         branches: None,
         ancestors,
-    }
+    })
 }
 
 fn burned(
@@ -129,21 +129,21 @@ fn burned(
     branch_a: Link,
     branch_b: Link,
 ) -> VerifiedEpoch {
-    let mut ancestors = anchor.ancestors.clone();
+    let mut ancestors = anchor.clone().into_parts().ancestors;
     ancestors.push(ActiveAncestor {
-        event_id: anchor.event_id.clone(),
-        links: anchor.links.clone(),
+        event_id: anchor.event_id().to_owned(),
+        links: anchor.links().to_vec(),
     });
-    VerifiedEpoch {
+    VerifiedEpoch::from_parts_unchecked(EpochParts {
         event_id: id.to_owned(),
-        principal: anchor.principal,
+        principal: anchor.principal(),
         status: EpochStatus::Burned,
-        links: anchor.links.clone(),
+        links: anchor.links().to_vec(),
         fork_height: Some(fork_height),
         claim,
         branches: Some((branch_a, branch_b)),
         ancestors,
-    }
+    })
 }
 
 fn resolved(candidates: &[VerifiedEpoch]) -> String {
@@ -349,10 +349,10 @@ fn t7_freeze_is_order_independent_across_heights() {
         );
 
         let candidates = [y1, y2, x1, x2];
-        assert_eq!(resolved(&candidates), parent.event_id);
+        assert_eq!(resolved(&candidates), parent.event_id());
         let reversed: Vec<_> = candidates.into_iter().rev().collect();
-        assert_eq!(resolved(&reversed), parent.event_id);
+        assert_eq!(resolved(&reversed), parent.event_id());
         let rotated: Vec<_> = reversed.into_iter().cycle().skip(2).take(4).collect();
-        assert_eq!(resolved(&rotated), parent.event_id);
+        assert_eq!(resolved(&rotated), parent.event_id());
     }
 }

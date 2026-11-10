@@ -94,7 +94,7 @@ fn authorizes_user_move_new_server_introduction_rebind_and_message() {
     assert!(authorize_user_event(pdu(&events, 11), &context).is_err());
 
     let server_b = authorize_active_epoch(pdu(&events, 9), event_id(&events, 9), &context).unwrap();
-    let server_b_id = server_b.principal.to_id();
+    let server_b_id = server_b.principal().to_id();
     context.server_epochs.insert(server_b_id.clone(), server_b);
 
     // Once B is introduced, the old custodian's signature remains invalid.

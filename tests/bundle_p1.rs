@@ -50,10 +50,10 @@ fn p1_genesis_epochs_and_server_rotation_verify_against_link_state() {
     verify_epoch_custodian_signature(pdu(&events, 2), &signer_links).unwrap();
     verify_epoch_custodian_signature(pdu(&events, 3), &created_server_links(&events)).unwrap();
 
-    assert_eq!(user.status, cygnus_core::bundle::EpochStatus::Active);
-    assert_eq!(user.links.len(), 1);
-    assert_eq!(server.links.len(), 1);
-    assert_eq!(advanced.links.len(), 2);
+    assert_eq!(user.status(), cygnus_core::bundle::EpochStatus::Active);
+    assert_eq!(user.links().len(), 1);
+    assert_eq!(server.links().len(), 1);
+    assert_eq!(advanced.links().len(), 2);
     assert_eq!(advanced.tip().body.height, 1);
 }
 
