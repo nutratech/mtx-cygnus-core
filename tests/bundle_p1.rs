@@ -31,7 +31,7 @@ fn p1_create_validates_room_id_both_chains_and_both_signatures() {
     let created = VerifiedCreate::verify(pdu(&events, 0), event_id(&events, 0)).unwrap();
     assert_eq!(
         created.room_id,
-        "!53tnrM_aNeNA39k1jTFAlx_OwWdq2t5MtZEoKERB4WE"
+        "!30zU4L44nR8z-TbH4R7So2CfI9UJzMYnMhzY9NKHXgY"
     );
     assert_eq!(created.user_links.len(), 1);
     assert_eq!(created.server_links.len(), 2);
@@ -71,15 +71,12 @@ fn p1_create_rejects_a_modified_required_signature() {
     let server_signer = signatures
         .as_object_mut()
         .unwrap()
-        .get_mut("~CM1u95QHafQfFW6nrQ0T--AP1ovvab7NTTniwta_dE4")
+        .get_mut("~soEUx9hiteZoLx9OwBJ94-GCuVrDksXROkIYuLn8Lb0")
         .unwrap();
     let signature = server_signer
         .as_object_mut()
         .unwrap()
-        .get_mut(&format!(
-            "wots-sha256-160-8-mt{}:1",
-            cygnus_core::sig::TREE_DEPTH
-        ))
+        .get_mut("ed25519:1")
         .unwrap();
     *signature = Value::String(
         "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"

@@ -12,13 +12,13 @@
 //! caller's responsibility. A client keeps exactly one rotation private key at
 //! a time: the next one.
 
-use crate::sig::SigningKey;
 use crate::{
     commitment,
     link::{Body, Link, Payload},
     Error, Kind, Principal,
 };
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD as B64, Engine};
+use ed25519_consensus::SigningKey;
 use rand_core::{CryptoRng, RngCore};
 use rezzy_json::{Object, Value};
 
@@ -32,7 +32,7 @@ pub struct RotationKey {
 /// JSON request body for `POST /_matrix/client/unstable/tk.nutra.cygnus/principal`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct UserPrincipalRequest {
-    /// Base64url master verification key (WOTS+ Merkle root).
+    /// Base64url Ed25519 master public key.
     pub master_key: String,
     /// Base64url commitment to the client's first rotation key.
     pub next_commit: String,
@@ -63,7 +63,7 @@ impl RotationKey {
 
     /// Wrap 32 bytes of caller-supplied CSPRNG output.
     ///
-    /// The bytes are the WOTS+ tree seed. Callers MUST use a
+    /// The bytes are the Ed25519 private seed. Callers MUST use a
     /// cryptographically secure source and should destroy the key once its
     /// link is signed (§4, "Key destruction").
     #[must_use]
@@ -73,7 +73,7 @@ impl RotationKey {
         }
     }
 
-    /// The WOTS+ Merkle root revealed when this key signs its link.
+    /// The Ed25519 public key revealed when this key signs its link.
     #[must_use]
     pub fn public_key(&self) -> [u8; 32] {
         self.key.verification_key().to_bytes()

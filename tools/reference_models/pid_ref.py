@@ -11,8 +11,9 @@ scenarios, including two attacks that succeed against the previous draft's rules
 Out of scope: PDU hashing/redaction, Passes 1-2, federation. Those are unchanged
 v2.1 machinery plus the small consultation rules described in the MSC.
 
-Signatures are hash-based (WOTS+ in a Merkle tree, see `pid_sig.py`), so the
-model needs nothing beyond `hashlib`.
+Signature verification uses OpenSSL via `cryptography`. The MSC mandates ZIP-215
+verification; the two agree on every canonical signature, and all vectors here
+are canonical.
 """
 
 import base64
@@ -28,8 +29,12 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, TypedDict
 
-import pid_sig
-from pid_sig import SigningKey
+from cryptography.exceptions import InvalidSignature
+from cryptography.hazmat.primitives.asymmetric.ed25519 import (
+    Ed25519PrivateKey,
+    Ed25519PublicKey,
+)
+from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 
 VERSION = 1
 KIND_SERVER = 1
@@ -95,12 +100,12 @@ def write_json(filename: str, value: object) -> None:
         pass
 
 
-def sk_from_seed(seed: bytes) -> SigningKey:
-    return SigningKey(seed)
+def sk_from_seed(seed: bytes) -> Ed25519PrivateKey:
+    return Ed25519PrivateKey.from_private_bytes(seed)
 
 
-def pub(sk: SigningKey) -> bytes:
-    return sk.public_bytes()
+def pub(sk: Ed25519PrivateKey) -> bytes:
+    return sk.public_key().public_bytes(Encoding.Raw, PublicFormat.Raw)
 
 
 def commitment(rot_pub: bytes) -> bytes:
@@ -108,7 +113,11 @@ def commitment(rot_pub: bytes) -> bytes:
 
 
 def verify_sig(pk: bytes, msg: bytes, sig: bytes) -> bool:
-    return pid_sig.verify(pk, msg, sig)
+    try:
+        Ed25519PublicKey.from_public_bytes(pk).verify(sig, msg)
+        return True
+    except InvalidSignature:
+        return False
 
 
 # --------------------------------------------------------------------------- links
@@ -239,8 +248,8 @@ def parse_body(raw: bytes):
 
 def trailer_len(kind: int, height: int) -> int:
     if height > 0:
-        return 32 + pid_sig.SIGNATURE_LEN
-    return pid_sig.SIGNATURE_LEN if kind == KIND_SERVER else 0
+        return 96
+    return 64 if kind == KIND_SERVER else 0
 
 
 def parse_link(raw: bytes) -> Link:
@@ -859,7 +868,7 @@ def user_chain(
 
 def attacker_link(
     parent: Link, rot_sk, custodian: bytes, mxid: str, nonce: int
-) -> Tuple[Link, SigningKey]:
+) -> Tuple[Link, Ed25519PrivateKey]:
     """A forged successor; the attacker commits to a key of its own choosing (varied by nonce)."""
     nxt = sk_from_seed(sha256(b"attacker" + nonce.to_bytes(8, "big")))
     return (

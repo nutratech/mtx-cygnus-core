@@ -3,8 +3,7 @@
 //! Every function takes and returns plain strings so it works from any JS
 //! environment without extra glue. Events are passed as JSON text. Keys are
 //! unpadded base64url. Errors are thrown as JS `Error`s carrying the
-//! `cygnus-core` message. Signature verification uses Cygnus's configured
-//! SHA-256/WOTS+ Merkle-tree profile; event key IDs encode that profile.
+//! `cygnus-core` message.
 
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD as B64, Engine};
 use cygnus_core::{envelope, link, Link, Principal};
@@ -22,18 +21,6 @@ fn event(json: &str) -> Result<Value, JsError> {
 fn key(b64: &str) -> Result<[u8; 32], JsError> {
     let bytes = B64.decode(b64).map_err(err)?;
     <[u8; 32]>::try_from(bytes.as_slice()).map_err(|_| JsError::new("key must be 32 bytes"))
-}
-
-/// Return the active signature algorithm identifier used for event key IDs.
-#[wasm_bindgen(js_name = signatureAlgorithm)]
-pub fn signature_algorithm() -> String {
-    format!("wots-sha256-160-8-mt{}", cygnus_core::sig::TREE_DEPTH)
-}
-
-/// Return the encoded signature size in bytes for the active profile.
-#[wasm_bindgen(js_name = signatureLength)]
-pub fn signature_length() -> usize {
-    cygnus_core::sig::SIGNATURE_LEN
 }
 
 /// Parse a principal (`~server` or `@user`) and return its canonical form.
@@ -83,8 +70,7 @@ pub fn content_hash(event_json: &str) -> Result<String, JsError> {
     envelope::content_hash_b64(&event(event_json)?).map_err(err)
 }
 
-/// Verify a device's WOTS+ signature over an event against its certified
-/// 32-byte Merkle-root key.
+/// Verify a device's signature over an event against its certified key.
 ///
 /// # Errors
 /// Throws if the signature entry is missing, malformed or invalid.
@@ -99,8 +85,7 @@ pub fn verify_device_signature(
         .map_err(err)
 }
 
-/// Verify a custodian (server) WOTS+ signature over an event at a chain
-/// height, using its certified 32-byte Merkle-root key.
+/// Verify a custodian (server) signature over an event at a chain height.
 ///
 /// `height` is a decimal string, since protocol heights are `u64` and exceed
 /// what a JS number represents exactly.

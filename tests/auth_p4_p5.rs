@@ -17,7 +17,6 @@
 )]
 
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD as B64, Engine};
-use cygnus_core::sig::SigningKey;
 use cygnus_core::{
     auth::{
         authorize_active_epoch, authorize_create, authorize_user_event, AuthContext, MemberState,
@@ -27,6 +26,7 @@ use cygnus_core::{
     link::{Body, Kind, Link, Payload},
     Error, Principal, DEVICE_CERT_TAG,
 };
+use ed25519_consensus::SigningKey;
 use rezzy_json::{Object, Value};
 
 const ROOM_VERSION: &str = "tk.nutra.cygnus.1";

@@ -28,7 +28,7 @@ pub enum Error {
     Principal,
     /// Base64url decoding failed.
     Base64,
-    /// A verification key does not have the required hash-signature encoding.
+    /// A public key is not a valid Ed25519 point encoding.
     PublicKey,
     /// A signature did not verify.
     Signature,

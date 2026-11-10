@@ -3,15 +3,11 @@
 //! This is the client-side serialization boundary: SDKs should construct and
 //! sign event objects here so Rust, wasm, `UniFFI`, and Dart use identical bytes.
 
-use crate::sig::SigningKey;
 use crate::Error;
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD as B64, Engine};
+use ed25519_consensus::SigningKey;
 use rezzy_json::{Object, Value};
 use sha2::{Digest, Sha256};
-
-fn signature_key_id(id: &str) -> String {
-    format!("wots-sha256-160-8-mt{}:{id}", crate::sig::TREE_DEPTH)
-}
 
 /// Domain tag for a certified device's event signature, including trailing NUL.
 pub const DEVICE_EVENT_TAG: &[u8] = b"matrix-cygnus-device-event-v1\0";
@@ -177,8 +173,7 @@ pub fn set_content_hash(event: &mut Value) -> Result<(), Error> {
 }
 
 /// Add the certified device signature at
-/// `signatures[sender]["wots-sha256-160-8-mtN:<device_id>"]`, where `N` is
-/// the configured Merkle-tree depth.
+/// `signatures[sender]["ed25519:<device_id>"]`.
 ///
 /// The caller must add the in-band `device_certificate` and content hash first.
 ///
@@ -194,14 +189,13 @@ pub fn sign_device(
     insert_signature(
         event,
         sender,
-        &signature_key_id(device_id),
+        &format!("ed25519:{device_id}"),
         &signature.to_bytes(),
     )
 }
 
 /// Add the custodian/server signature at
-/// `signatures[custodian]["wots-sha256-160-8-mtN:<height>"]`, where `N` is
-/// the configured Merkle-tree depth.
+/// `signatures[custodian]["ed25519:<height>"]`.
 ///
 /// Call this after setting the content hash. The device signature may already
 /// be present; signature fields are excluded from the signing object, so both
@@ -219,7 +213,7 @@ pub fn sign_custodian(
     insert_signature(
         event,
         custodian,
-        &signature_key_id(&height.to_string()),
+        &format!("ed25519:{height}"),
         &signature.to_bytes(),
     )
 }
@@ -237,7 +231,7 @@ pub fn verify_device_signature(
     device_id: &str,
     public_key: &[u8; 32],
 ) -> Result<(), Error> {
-    let signature = signature_entry(event, sender, &signature_key_id(device_id))?;
+    let signature = signature_entry(event, sender, &format!("ed25519:{device_id}"))?;
     let bytes = device_signing_bytes(event)?;
     crate::link::verify(public_key, &bytes, &signature)
 }
@@ -252,7 +246,7 @@ pub fn verify_custodian_signature(
     height: u64,
     public_key: &[u8; 32],
 ) -> Result<(), Error> {
-    let signature = signature_entry(event, custodian, &signature_key_id(&height.to_string()))?;
+    let signature = signature_entry(event, custodian, &format!("ed25519:{height}"))?;
     crate::link::verify(public_key, &signing_bytes(event)?, &signature)
 }
 
@@ -270,7 +264,7 @@ fn insert_signature(
     event: &mut Value,
     signer: &str,
     key_id: &str,
-    signature: &[u8],
+    signature: &[u8; 64],
 ) -> Result<(), Error> {
     let signatures = ensure_object_field(event, "signatures")?;
     let signer_signatures = signatures
@@ -295,7 +289,7 @@ fn ensure_object_field<'a>(event: &'a mut Value, field: &str) -> Result<&'a mut 
         .ok_or(Error::Envelope("signatures must be an object"))
 }
 
-fn signature_entry(event: &Value, signer: &str, key_id: &str) -> Result<Vec<u8>, Error> {
+fn signature_entry(event: &Value, signer: &str, key_id: &str) -> Result<[u8; 64], Error> {
     let signature = event
         .get("signatures")
         .and_then(|value| value.get(signer))
@@ -303,8 +297,8 @@ fn signature_entry(event: &Value, signer: &str, key_id: &str) -> Result<Vec<u8>,
         .and_then(Value::as_str)
         .ok_or(Error::Signature)?;
     let bytes = B64.decode(signature).map_err(|_| Error::Signature)?;
-    let signature = bytes;
-    if B64.encode(&signature) != signature_entry_text(event, signer, key_id)? {
+    let signature: [u8; 64] = bytes.try_into().map_err(|_| Error::Signature)?;
+    if B64.encode(signature) != signature_entry_text(event, signer, key_id)? {
         return Err(Error::Signature);
     }
     Ok(signature)

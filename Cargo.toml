@@ -6,7 +6,7 @@ rust-version = "1.89"
 authors = ["Shane Jaroch <chown_tee@proton.me>"]
 license = "MIT OR Apache-2.0"
 description = "Client-side core for MSC00FC (Cygnus) self-certifying Matrix identities: links, principals, verification."
-keywords = ["matrix", "identity", "cygnus"]
+keywords = ["matrix", "identity", "ed25519", "cygnus"]
 categories = ["cryptography"]
 readme = "README.md"
 
@@ -15,6 +15,7 @@ members = [".", "cygnus-wasm"]
 
 [dependencies]
 base64 = "0.22"
+ed25519-consensus = { version = "2", default-features = false }
 rand_core = { version = "0.6", default-features = false }
 sha2 = "0.10"
 # Tracks the `dev` branch of rezzy, which carries the strict `Value` canonical
@@ -29,6 +30,8 @@ default = []
 state-res = ["dep:rezzy"]
 # Exposes unchecked epoch constructors for tests. Never enable in production.
 test-support = []
+# Experimental zero-curve hash-based signatures (WOTS+). Not used by the protocol.
+wots-experimental = []
 
 [dev-dependencies]
 cygnus-core = { path = ".", features = ["test-support"] }
@@ -42,10 +45,3 @@ missing_docs = "warn"
 pedantic = { level = "warn", priority = -1 }
 module_name_repetitions = "allow"
 missing_panics_doc = "allow"
-
-# Key generation hashes hundreds of thousands of chain steps; optimize the hot
-# crates (and this one, which the tests link) even in dev builds.
-[profile.dev.package.sha2]
-opt-level = 3
-[profile.dev.package.cygnus-core]
-opt-level = 2

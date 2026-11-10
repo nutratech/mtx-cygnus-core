@@ -5,8 +5,8 @@
 //! and `prev_events` so the same resolution cases run in Rust.
 
 use cygnus_core::seal::{GraphEvent, SealGraph, ServerSeal};
-use cygnus_core::sig::SigningKey;
 use cygnus_core::{commitment, Kind, Link, Principal};
+use ed25519_consensus::SigningKey;
 use rezzy_json::Value;
 
 fn server_principal() -> (Principal, String) {

@@ -2,6 +2,7 @@
 
 use crate::{link::verify, Error, Principal, DEVICE_CERT_TAG};
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD as B64, Engine};
+use ed25519_consensus::VerificationKey;
 use rezzy_json::Value;
 
 /// A verified device certificate. Unknown JSON fields are ignored at version 1.
@@ -9,9 +10,9 @@ use rezzy_json::Value;
 pub struct DeviceCertificate {
     /// ASCII device identifier.
     pub device_id: String,
-    /// Device WOTS+ Merkle-root verification key.
+    /// Device Ed25519 public key.
     pub device_key: [u8; 32],
-    /// Certified self-signing WOTS+ Merkle-root verification key.
+    /// Certified self-signing Ed25519 public key.
     pub self_signing_key: [u8; 32],
 }
 
@@ -20,8 +21,8 @@ impl DeviceCertificate {
     /// sender's active user epoch (or create event).
     ///
     /// The input is the JSON value of `device_certificate`. Verification uses
-    /// canonical JSON for the two signed certificate statements and the
-    /// configured hash-signature profile ([`crate::sig`]).
+    /// canonical JSON for the two signed certificate statements and ZIP-215
+    /// Ed25519 rules, via `ed25519-consensus`.
     ///
     /// # Errors
     /// Returns [`Error::Certificate`] for malformed fields or invalid chain
@@ -100,18 +101,18 @@ fn decode_key(value: &str) -> Result<[u8; 32], Error> {
     if B64.encode(key) != value {
         return Err(Error::Certificate("non-canonical base64url key"));
     }
+    VerificationKey::try_from(key.as_slice()).map_err(|_| Error::PublicKey)?;
     Ok(key)
 }
 
-fn decode_signature(value: &str) -> Result<Vec<u8>, Error> {
+fn decode_signature(value: &str) -> Result<[u8; 64], Error> {
     let bytes = B64
         .decode(value)
         .map_err(|_| Error::Certificate("invalid base64url signature"))?;
-    if bytes.len() != crate::sig::SIGNATURE_LEN {
-        return Err(Error::Certificate("wrong signature length"));
-    }
-    let signature = bytes;
-    if B64.encode(&signature) != value {
+    let signature: [u8; 64] = bytes
+        .try_into()
+        .map_err(|_| Error::Certificate("signature must be 64 bytes"))?;
+    if B64.encode(signature) != value {
         return Err(Error::Certificate("non-canonical base64url signature"));
     }
     Ok(signature)
@@ -149,8 +150,8 @@ fn canonical_device_statement(sender: &str, device_id: &str, key: &str) -> Vec<u
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::sig::SigningKey;
     use base64::Engine;
+    use ed25519_consensus::SigningKey;
     use rezzy_json::json;
 
     fn signed_certificate() -> (String, [u8; 32], Value) {

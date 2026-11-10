@@ -1,7 +1,7 @@
 //! I/O-free core for MSC00FC ("Cygnus") self-certifying identities.
 //!
 //! Servers and users are identified by the SHA-256 digest of the first link of
-//! a pre-rotated hash-signature (WOTS+) key chain. This crate implements the link format and
+//! a pre-rotated Ed25519 key chain. This crate implements the link format and
 //! its verification rules (spec §2). Later layers (device certificates, event
 //! envelopes, tip bundles) build on these primitives.
 
@@ -17,7 +17,7 @@ pub mod principal;
 #[cfg(feature = "state-res")]
 pub mod rezzy_integration;
 pub mod seal;
-pub mod sig;
+#[cfg(feature = "wots-experimental")]
 pub mod wots;
 
 pub use cert::DeviceCertificate;

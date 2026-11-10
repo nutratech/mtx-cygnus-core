@@ -1,6 +1,5 @@
 //! §7 `m.room.server_seal` authorization against caller-selected state.
 
-use cygnus_core::sig::SigningKey;
 use cygnus_core::{
     auth::{authorize_seal, AuthContext, MemberState},
     bootstrap::{server_genesis, server_successor, user_genesis, RotationKey},
@@ -9,6 +8,7 @@ use cygnus_core::{
     link::{Kind, Link},
     Error, Principal,
 };
+use ed25519_consensus::SigningKey;
 use rezzy_json::{Object, Value};
 
 fn key(seed: u8) -> SigningKey {

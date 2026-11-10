@@ -1,6 +1,5 @@
 //! Client bootstrap: fresh rotation keys, commitments, and link building.
 
-use cygnus_core::sig::SigningKey;
 use cygnus_core::{
     bootstrap::{
         server_genesis, server_successor, user_genesis, user_successor,
@@ -10,6 +9,7 @@ use cygnus_core::{
     link::{verify_slice, Body, Kind, Link, Payload},
     Error,
 };
+use ed25519_consensus::SigningKey;
 use rand_core::{CryptoRng, Error as RandError, RngCore};
 
 fn key(seed: u8) -> SigningKey {
