@@ -19,7 +19,7 @@ use crate::{
 };
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD as B64, Engine};
 use ed25519_zebra::SigningKey;
-use rand_core::{CryptoRng, RngCore};
+use rand_core::CryptoRng;
 use rezzy_json::{Object, Value};
 
 /// A private rotation key the client keeps until it signs the next link.
@@ -55,7 +55,7 @@ impl RotationKey {
     /// Use an operating-system-backed CSPRNG supplied by the client platform;
     /// deterministic or shared room keys such as Megolm keys are not suitable.
     #[must_use]
-    pub fn generate(rng: &mut (impl RngCore + CryptoRng)) -> Self {
+    pub fn generate(rng: &mut impl CryptoRng) -> Self {
         let mut seed = [0; 32];
         rng.fill_bytes(&mut seed);
         Self::from_seed(seed)

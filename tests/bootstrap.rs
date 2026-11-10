@@ -1,5 +1,6 @@
 //! Client bootstrap: fresh rotation keys, commitments, and link building.
 
+use core::convert::Infallible;
 use cygnus_core::{
     bootstrap::{
         server_genesis, server_successor, user_genesis, user_successor,
@@ -10,7 +11,7 @@ use cygnus_core::{
     Error,
 };
 use ed25519_zebra::SigningKey;
-use rand_core::{CryptoRng, Error as RandError, RngCore};
+use rand_core::{TryCryptoRng, TryRng};
 
 fn key(seed: u8) -> SigningKey {
     SigningKey::from([seed; 32])
@@ -22,26 +23,24 @@ fn rotation(seed: u8) -> RotationKey {
 
 struct TestRng(u8);
 
-impl RngCore for TestRng {
-    fn next_u32(&mut self) -> u32 {
-        u32::from(self.0)
+impl TryRng for TestRng {
+    type Error = Infallible;
+
+    fn try_next_u32(&mut self) -> Result<u32, Infallible> {
+        Ok(u32::from(self.0))
     }
 
-    fn next_u64(&mut self) -> u64 {
-        u64::from(self.0)
+    fn try_next_u64(&mut self) -> Result<u64, Infallible> {
+        Ok(u64::from(self.0))
     }
 
-    fn fill_bytes(&mut self, dest: &mut [u8]) {
+    fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), Infallible> {
         dest.fill(self.0);
-    }
-
-    fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), RandError> {
-        self.fill_bytes(dest);
         Ok(())
     }
 }
 
-impl CryptoRng for TestRng {}
+impl TryCryptoRng for TestRng {}
 
 #[test]
 fn rotation_key_generation_uses_the_callers_rng() {
