@@ -13,7 +13,7 @@ use sha2::{Digest, Sha256};
 use std::collections::BTreeMap;
 
 /// Unstable room-version identifier used by the current MSC00FC vectors.
-pub const ROOM_VERSION: &str = "tk.nutra.cygnus.1";
+pub const ROOM_VERSION: &str = "tk.nutra.cygnus.12";
 
 /// A full client-server tip bundle as delivered by sync or the tip-bundle API.
 /// Event IDs are separate because Matrix reference IDs are not part of the

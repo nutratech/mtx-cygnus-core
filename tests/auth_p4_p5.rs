@@ -28,7 +28,7 @@ use cygnus_core::{
 use ed25519_zebra::SigningKey;
 use rezzy_json::{Object, Value};
 
-const ROOM_VERSION: &str = "tk.nutra.cygnus.1";
+const ROOM_VERSION: &str = "tk.nutra.cygnus.12";
 
 fn key(seed: u8) -> SigningKey {
     SigningKey::from([seed; 32])

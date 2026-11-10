@@ -158,7 +158,7 @@ drift.
 
 `rezzy_integration` maps Cygnus PDUs to Rezzy's generic event model and runs
 base v12 authorization under the optional `state-res` feature. Rezzy registers
-`tk.nutra.cygnus.1` as a v12-derived version (`V2_1`), accepts principal
+`tk.nutra.cygnus.12` as a v12-derived version (`V2_1`), accepts principal
 senders, and permits `m.room.user_epoch`, `m.room.server_epoch`,
 `m.room.server_seal`, and `m.room.server_acl` in `auth_events`. Epoch and seal
 events are skipped by base auth because §5.3/§5.6 fully define their sender,

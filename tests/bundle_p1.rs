@@ -29,9 +29,10 @@ fn pdu(events: &[Value], index: usize) -> &Value {
 fn p1_create_validates_room_id_both_chains_and_both_signatures() {
     let events = vectors();
     let created = VerifiedCreate::verify(pdu(&events, 0), event_id(&events, 0)).unwrap();
+    let fixture = Value::parse(include_str!("vectors/pid_pdu_vectors.json")).unwrap();
     assert_eq!(
-        created.room_id,
-        "!30zU4L44nR8z-TbH4R7So2CfI9UJzMYnMhzY9NKHXgY"
+        Some(created.room_id.as_str()),
+        fixture.get("room_id").and_then(Value::as_str)
     );
     assert_eq!(created.user_links.len(), 1);
     assert_eq!(created.server_links.len(), 2);

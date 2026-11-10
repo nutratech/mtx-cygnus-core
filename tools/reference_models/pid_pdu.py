@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""PDU layer and event-auth harness for MSCxxxx (room version tk.nutra.cygnus.1).
+"""PDU layer and event-auth harness for MSCxxxx (room version tk.nutra.cygnus.12).
 
 Implements: canonical JSON, room v12 redaction plus this MSC's additions (section 4.3),
 content hashes, reference hashes, event and room IDs, PDU signing, signer resolution
@@ -26,7 +26,7 @@ from typing import Dict, List, Optional, Set, Tuple, TypedDict, TypeVar
 import pid_ref as p
 from pid_ref import Invalid
 
-ROOM_VERSION = "tk.nutra.cygnus.1"
+ROOM_VERSION = "tk.nutra.cygnus.12"
 SERVER_EPOCH = "m.room.server_epoch"
 USER_EPOCH = "m.room.user_epoch"
 SERVER_SEAL = "m.room.server_seal"
@@ -2067,8 +2067,12 @@ def main():
         # Attaching `event_id` to a PDU must not change its hashes.
         for _, e in steps:
             tagged = dict(e, event_id=event_id(e))
-            assert event_id(tagged) == event_id(e), "event_id changed the reference hash"
-            assert content_hash(tagged) == content_hash(e), "event_id changed the content hash"
+            assert event_id(tagged) == event_id(e), (
+                "event_id changed the reference hash"
+            )
+            assert content_hash(tagged) == content_hash(e), (
+                "event_id changed the content hash"
+            )
         out = {
             "room_version": ROOM_VERSION,
             "room_id": R.room_id,

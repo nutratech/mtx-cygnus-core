@@ -10,7 +10,7 @@
 //! Enabled by the `state-res` feature so client and wasm builds do not compile
 //! the state engine.
 //!
-//! `tk.nutra.cygnus.1` is registered in Rezzy as a v12-derived room version
+//! `tk.nutra.cygnus.12` is registered in Rezzy as a v12-derived room version
 //! (`StateResVersion::V2_1`), so events pass through unchanged. Rezzy only
 //! knows the v12 redaction keys; Cygnus content hashing and signatures must go
 //! through [`crate::envelope`] via a Cygnus `EventVerifier`.

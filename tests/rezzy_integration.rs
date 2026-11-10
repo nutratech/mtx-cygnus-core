@@ -28,7 +28,7 @@ fn create_event() -> Value {
         "prev_events": [],
         "auth_events": [],
         "content": {
-            "room_version": "tk.nutra.cygnus.1",
+            "room_version": "tk.nutra.cygnus.12",
             "creator_links": {"server": [], "user": []}
         }
     })
@@ -88,14 +88,14 @@ fn event_map() -> EventMap {
 fn cygnus_room_version_is_native_to_rezzy_and_the_event_is_untouched() {
     use rezzy::basespec::rezzy_types::StateResVersion;
     assert_eq!(
-        StateResVersion::from_room_version("tk.nutra.cygnus.1"),
+        StateResVersion::from_room_version("tk.nutra.cygnus.12"),
         Some(StateResVersion::V2_1)
     );
     let create = create_event();
     let lean = adapter_event(&create).unwrap();
     assert_eq!(
         lean.content.get("room_version").and_then(Value::as_str),
-        Some("tk.nutra.cygnus.1")
+        Some("tk.nutra.cygnus.12")
     );
 }
 
