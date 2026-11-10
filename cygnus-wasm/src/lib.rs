@@ -1,12 +1,20 @@
-//! Verify-only WebAssembly API over `cygnus-core` for browser clients.
+//! WebAssembly API over `cygnus-core` for browser clients: verification, plus
+//! the client-side signing steps of MSC00FC §7/§9 (identity bootstrap, device
+//! certificates, event signing and user-chain rotation).
 //!
 //! Every function takes and returns plain strings so it works from any JS
 //! environment without extra glue. Events are passed as JSON text. Keys are
 //! unpadded base64url. Errors are thrown as JS `Error`s carrying the
-//! `cygnus-core` message.
+//! `cygnus-core` message. Seeds are 32 random bytes as unpadded base64url;
+//! the caller generates them (for example with `crypto.getRandomValues`) and
+//! is responsible for storing them.
 
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD as B64, Engine};
-use cygnus_core::{envelope, link, Link, Principal};
+use cygnus_core::{
+    bootstrap::{self, RotationKey},
+    envelope, link, DeviceCertificate, Link, Principal,
+};
+use ed25519_zebra::SigningKey;
 use rezzy_json::Value;
 use wasm_bindgen::prelude::*;
 
@@ -108,4 +116,131 @@ pub fn verify_custodian_signature(
         &key(public_key)?,
     )
     .map_err(err)
+}
+
+fn signing_key(seed: &str) -> Result<SigningKey, JsError> {
+    Ok(SigningKey::from(key(seed)?))
+}
+
+fn rotation_key(seed: &str) -> Result<RotationKey, JsError> {
+    Ok(RotationKey::from_seed(key(seed)?))
+}
+
+/// Ed25519 public key for a 32-byte seed, as unpadded base64url.
+///
+/// # Errors
+/// Throws if the seed is not 32 bytes of base64url.
+#[wasm_bindgen(js_name = publicKey)]
+pub fn public_key(seed: &str) -> Result<String, JsError> {
+    Ok(B64.encode(<[u8; 32]>::from(signing_key(seed)?.verification_key())))
+}
+
+/// Rotation commitment `C = commitment(K_rot)` for a rotation seed, as sent to
+/// the server in the §7 principal request.
+///
+/// # Errors
+/// Throws if the seed is not 32 bytes of base64url.
+#[wasm_bindgen(js_name = rotationCommitment)]
+pub fn rotation_commitment(rotation_seed: &str) -> Result<String, JsError> {
+    Ok(B64.encode(rotation_key(rotation_seed)?.commitment()))
+}
+
+/// Check the server's §7 `POST /principal` response against the rotation
+/// seed and master key the client sent, and return the genesis link.
+///
+/// # Errors
+/// Throws if the principal, link count, master key or commitment does not
+/// match the request.
+#[wasm_bindgen(js_name = verifyUserPrincipalResponse)]
+pub fn verify_user_principal_response(
+    rotation_seed: &str,
+    master_pub: &str,
+    principal: &str,
+    links: Vec<String>,
+) -> Result<String, JsError> {
+    let link = bootstrap::verify_user_principal_response(
+        &rotation_key(rotation_seed)?,
+        &key(master_pub)?,
+        principal,
+        &links,
+    )
+    .map_err(err)?;
+    Ok(link.to_b64())
+}
+
+/// Issue a version-1 `device_certificate` (JSON text): the master key
+/// certifies the self-signing key, which certifies the device key.
+///
+/// # Errors
+/// Throws for a non-user sender, an invalid device ID or a malformed seed.
+#[wasm_bindgen(js_name = createDeviceCertificate)]
+pub fn create_device_certificate(
+    sender: &str,
+    master_seed: &str,
+    self_signing_seed: &str,
+    device_id: &str,
+    device_seed: &str,
+) -> Result<String, JsError> {
+    let certificate = DeviceCertificate::issue(
+        sender,
+        &signing_key(master_seed)?,
+        &signing_key(self_signing_seed)?,
+        device_id,
+        &signing_key(device_seed)?,
+    )
+    .map_err(err)?;
+    rezzy_json::to_canonical_string(&certificate).map_err(err)
+}
+
+/// Set the content hash and add the device signature to an event that
+/// already carries its `device_certificate`; returns the signed event JSON.
+/// The custodian signature is added by the server.
+///
+/// # Errors
+/// Throws if the event is not valid JSON or a seed is malformed.
+#[wasm_bindgen(js_name = signEvent)]
+pub fn sign_event(
+    event_json: &str,
+    sender: &str,
+    device_id: &str,
+    device_seed: &str,
+) -> Result<String, JsError> {
+    let mut event = event(event_json)?;
+    if event.get("device_certificate").is_none() {
+        return Err(JsError::new("event must carry its device_certificate"));
+    }
+    envelope::set_content_hash(&mut event).map_err(err)?;
+    envelope::sign_device(&mut event, sender, device_id, &signing_key(device_seed)?)
+        .map_err(err)?;
+    rezzy_json::to_canonical_string(&event).map_err(err)
+}
+
+/// Extend a user chain: sign the next link with the rotation key the parent
+/// committed to, committing to `nextRotationSeed` for the following link.
+///
+/// `custodian` is the custodian server's 32-byte principal root (base64url).
+///
+/// # Errors
+/// Throws if the parent is not a user link, the current rotation seed does
+/// not match its commitment, or the master key differs from the parent's.
+#[wasm_bindgen(js_name = userSuccessor)]
+pub fn user_successor(
+    parent_link: &str,
+    current_rotation_seed: &str,
+    next_rotation_seed: &str,
+    custodian: &str,
+    master_pub: &str,
+    display_user_id: &str,
+) -> Result<String, JsError> {
+    let parent = Link::from_b64(parent_link).map_err(err)?;
+    let link = bootstrap::user_successor(
+        &parent,
+        &rotation_key(current_rotation_seed)?,
+        &rotation_key(next_rotation_seed)?,
+        key(custodian)?,
+        key(master_pub)?,
+        display_user_id,
+    )
+    .map_err(err)?;
+    Ok(link.to_b64())
 }

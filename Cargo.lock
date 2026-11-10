@@ -135,6 +135,7 @@ version = "0.0.1"
 dependencies = [
  "base64",
  "cygnus-core",
+ "ed25519-zebra",
  "rezzy-json",
  "wasm-bindgen",
 ]

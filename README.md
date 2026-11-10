@@ -21,12 +21,13 @@ Conformance: Appendix A link vectors and Appendix C hashes/event IDs are
 exercised by the Rust tests. Appendix B/C and DMLS reference models and
 fixtures are vendored under `tests/vectors/` and `tools/reference_models/`;
 `tools/reference_models/check.py` runs the upstream oracles. P1–P5 auth,
-including the relay and retired-key scenarios, is covered. Remaining gaps are
-the stale-`auth_events` check 21 (owned by base auth/state selection) and the
-two G7 merge scenarios (29–30). See
+including the relay and retired-key scenarios, is covered. All 53 PDU checks
+are covered (see [`docs/conformance.md`](docs/conformance.md)). See
 [`docs/client-integration.md`](docs/client-integration.md) for the SDK and
-client API gaps. Bindings (wasm, uniffi) and a prototype CLI will live in
-sibling workspace crates; key generation stays in this core and out of the
-verify-only wasm crate.
+client API gaps. Bindings live in sibling workspace crates: `cygnus-wasm`
+exposes verification plus the client-side signing steps (identity bootstrap,
+device certificates, event signing, user-chain rotation). It takes seeds from
+the caller and never generates or stores keys; uniffi bindings and a prototype
+CLI are planned.
 
 Setup: `pre-commit install` and `git config --local include.path ../.gitconfig`.

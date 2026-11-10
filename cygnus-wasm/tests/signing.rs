@@ -1,0 +1,168 @@
+//! Round-trips each client-side signing export through the verifiers.
+//!
+//! These run natively: the exports only construct a `JsError` on failure, so
+//! the success paths need no JS host.
+
+use base64::{engine::general_purpose::URL_SAFE_NO_PAD as B64, Engine};
+use cygnus_core::{bootstrap, commitment, DeviceCertificate, Link};
+use cygnus_wasm::{
+    content_hash, create_device_certificate, public_key, rotation_commitment, sign_event,
+    user_successor, verify_chain, verify_device_signature, verify_user_principal_response,
+};
+use ed25519_zebra::SigningKey;
+use rezzy_json::Value;
+
+const DISPLAY: &str = "@alice:chat.example.org";
+
+fn seed(byte: u8) -> String {
+    B64.encode([byte; 32])
+}
+
+struct Identity {
+    principal: String,
+    genesis: String,
+    master_pub: String,
+    custodian: String,
+}
+
+/// §7: the client sends its master key and rotation commitment; a server
+/// (simulated here with `bootstrap::user_genesis`) answers with the genesis.
+fn bootstrap_identity() -> Identity {
+    let master_pub = public_key(&seed(0x2F)).unwrap();
+    let custodian = [0x5A; 32];
+    let genesis = bootstrap::user_genesis(
+        &bootstrap::RotationKey::from_seed([0x21; 32]),
+        custodian,
+        <[u8; 32]>::try_from(B64.decode(&master_pub).unwrap().as_slice()).unwrap(),
+        DISPLAY,
+    )
+    .unwrap();
+    let principal = genesis.principal().to_id();
+    let accepted = verify_user_principal_response(
+        &seed(0x21),
+        &master_pub,
+        &principal,
+        vec![genesis.to_b64()],
+    )
+    .unwrap();
+    assert_eq!(accepted, genesis.to_b64());
+    Identity {
+        principal,
+        genesis: accepted,
+        master_pub,
+        custodian: B64.encode(custodian),
+    }
+}
+
+#[test]
+fn public_key_matches_ed25519_zebra() {
+    let key = SigningKey::from([0x07; 32]);
+    assert_eq!(
+        public_key(&seed(0x07)).unwrap(),
+        B64.encode(<[u8; 32]>::from(key.verification_key()))
+    );
+}
+
+#[test]
+fn rotation_commitment_commits_to_the_rotation_public_key() {
+    let rotation = bootstrap::RotationKey::from_seed([0x21; 32]);
+    assert_eq!(
+        rotation_commitment(&seed(0x21)).unwrap(),
+        B64.encode(commitment(&rotation.public_key()))
+    );
+}
+
+#[test]
+fn accepted_principal_response_verifies_as_a_chain() {
+    let identity = bootstrap_identity();
+    assert_eq!(
+        verify_chain(vec![identity.genesis.clone()]).unwrap(),
+        identity.principal
+    );
+    let genesis = Link::from_b64(&identity.genesis).unwrap();
+    assert_eq!(
+        B64.encode(genesis.body.next_commit),
+        rotation_commitment(&seed(0x21)).unwrap()
+    );
+}
+
+#[test]
+fn device_certificate_verifies_under_the_master_key() {
+    let identity = bootstrap_identity();
+    let certificate = create_device_certificate(
+        &identity.principal,
+        &seed(0x2F),
+        &seed(0x51),
+        "WEB01",
+        &seed(0x52),
+    )
+    .unwrap();
+    let master =
+        <[u8; 32]>::try_from(B64.decode(&identity.master_pub).unwrap().as_slice()).unwrap();
+    let verified = DeviceCertificate::parse_and_verify(
+        &Value::parse_strict(&certificate).unwrap(),
+        &identity.principal,
+        &master,
+    )
+    .unwrap();
+    assert_eq!(verified.device_id, "WEB01");
+    assert_eq!(
+        B64.encode(verified.device_key),
+        public_key(&seed(0x52)).unwrap()
+    );
+}
+
+#[test]
+fn signed_event_carries_its_hash_and_a_verifiable_device_signature() {
+    let identity = bootstrap_identity();
+    let certificate = create_device_certificate(
+        &identity.principal,
+        &seed(0x2F),
+        &seed(0x51),
+        "WEB01",
+        &seed(0x52),
+    )
+    .unwrap();
+    let event = format!(
+        r#"{{"type":"m.room.message","sender":"{}","room_id":"!room","content":{{"msgtype":"m.text","body":"hi"}},"origin_server_ts":1,"depth":2,"prev_events":[],"auth_events":[],"device_certificate":{certificate}}}"#,
+        identity.principal
+    );
+    let signed = sign_event(&event, &identity.principal, "WEB01", &seed(0x52)).unwrap();
+
+    verify_device_signature(
+        &signed,
+        &identity.principal,
+        "WEB01",
+        &public_key(&seed(0x52)).unwrap(),
+    )
+    .unwrap();
+    let parsed = Value::parse_strict(&signed).unwrap();
+    assert_eq!(
+        parsed["hashes"]["sha256"].as_str(),
+        Some(content_hash(&signed).unwrap().as_str())
+    );
+}
+
+#[test]
+fn user_successor_extends_the_chain() {
+    let identity = bootstrap_identity();
+    let next = user_successor(
+        &identity.genesis,
+        &seed(0x21),
+        &seed(0x22),
+        &identity.custodian,
+        &identity.master_pub,
+        DISPLAY,
+    )
+    .unwrap();
+    assert_eq!(
+        verify_chain(vec![identity.genesis.clone(), next.clone()]).unwrap(),
+        identity.principal
+    );
+    let link = Link::from_b64(&next).unwrap();
+    assert_eq!(link.body.height, 1);
+    assert_eq!(
+        B64.encode(link.body.next_commit),
+        rotation_commitment(&seed(0x22)).unwrap()
+    );
+}

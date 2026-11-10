@@ -2,7 +2,7 @@
 
 use crate::{link::verify, Error, Principal, DEVICE_CERT_TAG};
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD as B64, Engine};
-use ed25519_zebra::VerificationKey;
+use ed25519_zebra::{SigningKey, VerificationKey};
 use rezzy_json::Value;
 
 /// A verified device certificate. Unknown JSON fields are ignored at version 1.
@@ -48,15 +48,7 @@ impl DeviceCertificate {
         }
 
         let device_id = string(obj.get("device_id"))?.to_owned();
-        if device_id.is_empty()
-            || device_id.len() > 255
-            || !device_id.is_ascii()
-            || !device_id
-                .bytes()
-                .all(|b| b.is_ascii_alphanumeric() || b"._-".contains(&b))
-        {
-            return Err(Error::Certificate("invalid device_id"));
-        }
+        check_device_id(&device_id)?;
         let device_key_text = string(obj.get("device_key"))?;
         let self_key_text = string(obj.get("self_signing_key"))?;
         let device_key = decode_key(device_key_text)?;
@@ -83,6 +75,71 @@ impl DeviceCertificate {
             self_signing_key,
         })
     }
+
+    /// Issue a version-1 certificate for `device` under `sender`'s master key:
+    /// the master key certifies `self_signing`, which certifies the device.
+    ///
+    /// Returns the `device_certificate` JSON value, which
+    /// [`DeviceCertificate::parse_and_verify`] accepts for the master key.
+    ///
+    /// # Errors
+    /// Returns [`Error::Principal`] if `sender` is not a canonical user
+    /// principal and [`Error::Certificate`] for an invalid `device_id`.
+    pub fn issue(
+        sender: &str,
+        master: &SigningKey,
+        self_signing: &SigningKey,
+        device_id: &str,
+        device: &SigningKey,
+    ) -> Result<Value, Error> {
+        let principal = Principal::parse(sender)?;
+        if principal.kind != crate::link::Kind::User || principal.to_id() != sender {
+            return Err(Error::Principal);
+        }
+        check_device_id(device_id)?;
+        let self_key = B64.encode(<[u8; 32]>::from(self_signing.verification_key()));
+        let device_key = B64.encode(<[u8; 32]>::from(device.verification_key()));
+        let self_signature = master.sign(
+            &[
+                DEVICE_CERT_TAG,
+                &canonical_self_statement(sender, &self_key),
+            ]
+            .concat(),
+        );
+        let device_signature = self_signing.sign(
+            &[
+                DEVICE_CERT_TAG,
+                &canonical_device_statement(sender, device_id, &device_key),
+            ]
+            .concat(),
+        );
+        let mut object = rezzy_json::Object::new();
+        object.insert("version".into(), 1u64.into());
+        object.insert("device_id".into(), device_id.into());
+        object.insert("device_key".into(), device_key.into());
+        object.insert("self_signing_key".into(), self_key.into());
+        object.insert(
+            "self_signing_signature".into(),
+            B64.encode(self_signature.to_bytes()).into(),
+        );
+        object.insert(
+            "device_key_signature".into(),
+            B64.encode(device_signature.to_bytes()).into(),
+        );
+        Ok(Value::Object(object))
+    }
+}
+
+fn check_device_id(device_id: &str) -> Result<(), Error> {
+    if device_id.is_empty()
+        || device_id.len() > 255
+        || !device_id
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b"._-".contains(&b))
+    {
+        return Err(Error::Certificate("invalid device_id"));
+    }
+    Ok(())
 }
 
 fn string(value: Option<&Value>) -> Result<&str, Error> {
@@ -150,44 +207,62 @@ fn canonical_device_statement(sender: &str, device_id: &str, key: &str) -> Vec<u
 #[cfg(test)]
 mod tests {
     use super::*;
-    use base64::Engine;
-    use ed25519_zebra::SigningKey;
     use rezzy_json::json;
 
     fn signed_certificate() -> (String, [u8; 32], Value) {
         let master = SigningKey::from([0x31; 32]);
-        let self_signing = SigningKey::from([0x32; 32]);
-        let device = SigningKey::from([0x33; 32]);
         let sender = Principal {
             kind: crate::link::Kind::User,
             root: [0x44; 32],
         }
         .to_id();
-        let self_key = B64.encode(<[u8; 32]>::from(self_signing.verification_key()));
-        let device_key = B64.encode(<[u8; 32]>::from(device.verification_key()));
-        let self_sig = master.sign(
-            &[
-                DEVICE_CERT_TAG,
-                &canonical_self_statement(&sender, &self_key),
-            ]
-            .concat(),
-        );
-        let device_sig = self_signing.sign(
-            &[
-                DEVICE_CERT_TAG,
-                &canonical_device_statement(&sender, "DEVICE-1", &device_key),
-            ]
-            .concat(),
-        );
-        let value = json!({
-            "version": 1,
-            "device_id": "DEVICE-1",
-            "device_key": device_key,
-            "self_signing_key": self_key,
-            "self_signing_signature": B64.encode(self_sig.to_bytes()),
-            "device_key_signature": B64.encode(device_sig.to_bytes()),
-        });
+        let value = DeviceCertificate::issue(
+            &sender,
+            &master,
+            &SigningKey::from([0x32; 32]),
+            "DEVICE-1",
+            &SigningKey::from([0x33; 32]),
+        )
+        .unwrap();
         (sender, <[u8; 32]>::from(master.verification_key()), value)
+    }
+
+    #[test]
+    fn issued_certificate_names_the_certified_keys() {
+        let (sender, master_key, value) = signed_certificate();
+        let cert = DeviceCertificate::parse_and_verify(&value, &sender, &master_key).unwrap();
+        let device = SigningKey::from([0x33; 32]);
+        assert_eq!(cert.device_key, <[u8; 32]>::from(device.verification_key()));
+        let self_signing = SigningKey::from([0x32; 32]);
+        assert_eq!(
+            cert.self_signing_key,
+            <[u8; 32]>::from(self_signing.verification_key())
+        );
+    }
+
+    #[test]
+    fn issue_rejects_bad_device_ids_and_server_senders() {
+        let key = SigningKey::from([0x31; 32]);
+        let user = Principal {
+            kind: crate::link::Kind::User,
+            root: [0x44; 32],
+        }
+        .to_id();
+        for bad in ["", "has space", "dévice"] {
+            assert_eq!(
+                DeviceCertificate::issue(&user, &key, &key, bad, &key),
+                Err(Error::Certificate("invalid device_id"))
+            );
+        }
+        let server = Principal {
+            kind: crate::link::Kind::Server,
+            root: [0x44; 32],
+        }
+        .to_id();
+        assert_eq!(
+            DeviceCertificate::issue(&server, &key, &key, "D", &key),
+            Err(Error::Principal)
+        );
     }
 
     #[test]
