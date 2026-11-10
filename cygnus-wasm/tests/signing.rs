@@ -6,8 +6,9 @@
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD as B64, Engine};
 use cygnus_core::{bootstrap, commitment, DeviceCertificate, Link};
 use cygnus_wasm::{
-    content_hash, create_device_certificate, public_key, rotation_commitment, sign_event,
-    user_successor, verify_chain, verify_device_signature, verify_user_principal_response,
+    content_hash, create_device_certificate, parse_link, public_key, rotation_commitment,
+    sign_event, user_successor, verify_chain, verify_device_signature,
+    verify_user_principal_response,
 };
 use ed25519_zebra::SigningKey;
 use rezzy_json::Value;
@@ -165,4 +166,76 @@ fn user_successor_extends_the_chain() {
         B64.encode(link.body.next_commit),
         rotation_commitment(&seed(0x22)).unwrap()
     );
+}
+
+#[test]
+fn parse_link_reports_user_fields() {
+    let identity = bootstrap_identity();
+    let next = user_successor(
+        &identity.genesis,
+        &seed(0x21),
+        &seed(0x22),
+        &identity.custodian,
+        &identity.master_pub,
+        DISPLAY,
+    )
+    .unwrap();
+    let custodian = cygnus_core::Principal {
+        kind: cygnus_core::Kind::Server,
+        root: [0x5A; 32],
+    }
+    .to_id();
+    for (link, height) in [(&identity.genesis, "0"), (&next, "1")] {
+        let parsed = Value::parse_strict(&parse_link(link).unwrap()).unwrap();
+        assert_eq!(parsed["kind"].as_str(), Some("user"));
+        assert_eq!(parsed["height"].as_str(), Some(height));
+        assert_eq!(
+            parsed["principal"].as_str(),
+            Some(identity.principal.as_str())
+        );
+        assert_eq!(parsed["custodian"].as_str(), Some(custodian.as_str()));
+        assert_eq!(
+            parsed["master_key"].as_str(),
+            Some(identity.master_pub.as_str())
+        );
+        assert_eq!(parsed["display_user_id"].as_str(), Some(DISPLAY));
+        assert!(parsed["server_name"].is_null());
+        assert!(parsed["online_key"].is_null());
+    }
+}
+
+#[test]
+fn parse_link_reports_server_fields_and_the_custodian_principal() {
+    let online = SigningKey::from([0x01; 32]);
+    let server = bootstrap::server_genesis(
+        &bootstrap::RotationKey::from_seed([0x02; 32]),
+        &online,
+        "chat.example.org",
+    )
+    .unwrap();
+    let parsed = Value::parse_strict(&parse_link(&server.to_b64()).unwrap()).unwrap();
+    assert_eq!(parsed["kind"].as_str(), Some("server"));
+    assert_eq!(parsed["height"].as_str(), Some("0"));
+    let principal = server.principal().to_id();
+    assert_eq!(parsed["principal"].as_str(), Some(principal.as_str()));
+    assert_eq!(parsed["server_name"].as_str(), Some("chat.example.org"));
+    assert_eq!(
+        parsed["online_key"].as_str(),
+        Some(public_key(&seed(0x01)).unwrap().as_str())
+    );
+    for field in ["custodian", "master_key", "display_user_id"] {
+        assert!(parsed[field].is_null(), "{field}");
+    }
+
+    // The assisted-mode check: a user genesis custodied by this server names
+    // the server's principal as its custodian.
+    let user = bootstrap::user_genesis(
+        &bootstrap::RotationKey::from_seed([0x21; 32]),
+        server.principal().root,
+        [0x2F; 32],
+        DISPLAY,
+    )
+    .unwrap();
+    let user = Value::parse_strict(&parse_link(&user.to_b64()).unwrap()).unwrap();
+    assert_eq!(user["custodian"].as_str(), Some(principal.as_str()));
 }

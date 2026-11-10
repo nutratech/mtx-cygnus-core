@@ -12,7 +12,7 @@
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD as B64, Engine};
 use cygnus_core::{
     bootstrap::{self, RotationKey},
-    envelope, link, DeviceCertificate, Link, Principal,
+    envelope, link, DeviceCertificate, Kind, Link, Payload, Principal,
 };
 use ed25519_zebra::SigningKey;
 use rezzy_json::Value;
@@ -243,4 +243,64 @@ pub fn user_successor(
     )
     .map_err(err)?;
     Ok(link.to_b64())
+}
+
+/// Parse one link without verifying it, returning its fields as JSON text:
+/// `kind` (`"user"`/`"server"`), `height` (decimal string), `principal`, and
+/// for user links `custodian` (`~` ID), `master_key`, `display_user_id`, or for
+/// server links `server_name` and `online_key`; the other kind's fields are
+/// `null`. Pair it with [`verify_chain`] before trusting any field.
+///
+/// # Errors
+/// Throws if the link is not well-formed base64url link bytes.
+#[wasm_bindgen(js_name = parseLink)]
+pub fn parse_link(link_b64: &str) -> Result<String, JsError> {
+    let link = Link::from_b64(link_b64).map_err(err)?;
+    let mut object = rezzy_json::Object::new();
+    let string = |value: String| Value::String(value);
+    object.insert("height".into(), string(link.body.height.to_string()));
+    object.insert("principal".into(), string(link.principal().to_id()));
+    let (kind, custodian, master_key, display_user_id, server_name, online_key) =
+        match &link.body.payload {
+            Payload::User {
+                custodian,
+                master_key,
+                display_user_id,
+            } => (
+                "user",
+                Some(
+                    Principal {
+                        kind: Kind::Server,
+                        root: *custodian,
+                    }
+                    .to_id(),
+                ),
+                master_key.map(|key| B64.encode(key)),
+                Some(display_user_id.clone()),
+                None,
+                None,
+            ),
+            Payload::Server {
+                online_key,
+                server_name,
+            } => (
+                "server",
+                None,
+                None,
+                None,
+                Some(server_name.clone()),
+                Some(B64.encode(online_key)),
+            ),
+        };
+    object.insert("kind".into(), kind.into());
+    for (field, value) in [
+        ("custodian", custodian),
+        ("master_key", master_key),
+        ("display_user_id", display_user_id),
+        ("server_name", server_name),
+        ("online_key", online_key),
+    ] {
+        object.insert(field.into(), value.map_or(Value::Null, string));
+    }
+    rezzy_json::to_canonical_string(&Value::Object(object)).map_err(err)
 }
