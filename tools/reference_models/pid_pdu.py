@@ -127,13 +127,20 @@ def redact(ev: dict) -> dict:
     return out
 
 
+# A room v12 PDU has no `event_id`; callers often attach one, so it is never
+# hashed or signed.
 def content_hash(ev: dict) -> str:
-    e = {k: v for k, v in ev.items() if k not in ("unsigned", "signatures", "hashes")}
+    e = {
+        k: v
+        for k, v in ev.items()
+        if k not in ("event_id", "unsigned", "signatures", "hashes")
+    }
     return p.b64u(p.sha256(cjson(e)))
 
 
 def signing_input(ev: dict) -> bytes:
     r = redact(ev)
+    r.pop("event_id", None)
     r.pop("signatures", None)
     r.pop("unsigned", None)
     return cjson(r)
@@ -2057,6 +2064,11 @@ def main():
     C, vec = run()
     if vec:
         R, steps = vec
+        # Attaching `event_id` to a PDU must not change its hashes.
+        for _, e in steps:
+            tagged = dict(e, event_id=event_id(e))
+            assert event_id(tagged) == event_id(e), "event_id changed the reference hash"
+            assert content_hash(tagged) == content_hash(e), "event_id changed the content hash"
         out = {
             "room_version": ROOM_VERSION,
             "room_id": R.room_id,

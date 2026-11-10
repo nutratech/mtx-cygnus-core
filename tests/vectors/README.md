@@ -14,7 +14,7 @@ checkout.
 | `pid_known_gaps.json`  | `proposals/pid_known_gaps.json`  | `61159a3aac4536fc85d62c86a5acbda0d438c05920b5d60ee2a678d42c9cc9cb` |
 
 - Source: `https://gitlab.com/wombat-foundation/proposals` (or the
-  `../proposals` checkout), commit `c26d7c7779ea97cc1ac174d33aa8dcf05dc3e234`.
+  `../proposals` checkout), commit `b76dffcec5478abbe3e73b9fc7f91042f62f4662`.
 - License: Apache License 2.0. See `LICENSE-APACHE`, copied from the source
   repository's `LICENSE`.
 - Regenerating: the vectors are produced by `proposals/pid_ref.py` and

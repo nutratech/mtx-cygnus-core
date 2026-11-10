@@ -9,7 +9,7 @@
   "tools/reference_models/dmls_merge.py": "c30efdbc7336d0ab40de0542e15f7b4d426957a50a3f3342b16131cbba871bf6",
   "tools/reference_models/dmls_tree.py": "64a02455151ceecfa9b1fcea8cccb2756a86cae16e165cb076ca9017da4fb7d3",
   "tools/reference_models/pid_cutover.py": "1b6dfbdb2c5443e6c563185bd5e03a0deb2b78221538046c2a30b09808df59af",
-  "tools/reference_models/pid_pdu.py": "c80b4cb68645f042adad65445f9f799ec6ae84bfda3e40938710566dbba5a7cb",
+  "tools/reference_models/pid_pdu.py": "978098575a7e0436657bd1becbf5d72950f731901ae9f113e036980144adc778",
   "tools/reference_models/pid_ref.py": "1f2fb7ce6a3b54b7bca4f12b9e07024caf205bcf7ed754298d6724dbc62fdc75",
   "tools/reference_models/test_dmls.py": "69798a415fb325f84839d9866c18e450abdb60a21d5042c5bb61853e21f59f46"
 }
