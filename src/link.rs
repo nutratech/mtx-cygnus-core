@@ -2,11 +2,11 @@
 //!
 //! A link is `body ‖ trailer`. The digest covers only the body, so signature
 //! encoding can never change an identity. All signatures are verified under
-//! ZIP-215 rules (via `ed25519-consensus`).
+//! ZIP-215 rules (via `ed25519-zebra`).
 
 use crate::{commitment, principal::Principal, Error, LINK_TAG};
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD as B64, Engine};
-use ed25519_consensus::{Signature, SigningKey, VerificationKey};
+use ed25519_zebra::{Signature, SigningKey, VerificationKey};
 use sha2::{Digest, Sha256};
 
 const ZERO: [u8; 32] = [0; 32];
@@ -340,7 +340,7 @@ impl Link {
     /// Propagates [`Body::encode`] errors.
     pub fn sign_successor(body: Body, rotation: &SigningKey) -> Result<Self, Error> {
         let body_bytes = body.encode()?;
-        let key = rotation.verification_key().to_bytes();
+        let key = <[u8; 32]>::from(rotation.verification_key());
         let sig = rotation.sign(&[LINK_TAG, &body_bytes, &key].concat());
         let trailer = [key.as_slice(), &sig.to_bytes()].concat();
         Ok(Self {

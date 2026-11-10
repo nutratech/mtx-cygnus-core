@@ -5,7 +5,7 @@
 
 use crate::Error;
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD as B64, Engine};
-use ed25519_consensus::SigningKey;
+use ed25519_zebra::SigningKey;
 use rezzy_json::{Object, Value};
 use sha2::{Digest, Sha256};
 

@@ -5,7 +5,7 @@ use cygnus_core::envelope::{
     sign_custodian, sign_device, verify_custodian_signature, verify_device_signature,
     DEVICE_EVENT_TAG,
 };
-use ed25519_consensus::SigningKey;
+use ed25519_zebra::SigningKey;
 use rezzy_json::{json, Value};
 
 #[test]

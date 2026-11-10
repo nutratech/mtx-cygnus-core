@@ -9,7 +9,7 @@ use cygnus_core::{
     link::{verify_slice, Body, Kind, Link, Payload},
     Error,
 };
-use ed25519_consensus::SigningKey;
+use ed25519_zebra::SigningKey;
 use rand_core::{CryptoRng, Error as RandError, RngCore};
 
 fn key(seed: u8) -> SigningKey {
@@ -55,7 +55,7 @@ fn rotation_key_generation_uses_the_callers_rng() {
 fn user_genesis_commits_the_next_rotation_key_and_stays_unsigned() {
     let rotation = rotation(0x21);
     let custodian = [0x11; 32];
-    let master = key(0x2F).verification_key().to_bytes();
+    let master = <[u8; 32]>::from(key(0x2F).verification_key());
     let link = user_genesis(&rotation, custodian, master, "@alice:chat.example.org").unwrap();
 
     link.verify_genesis().unwrap();
@@ -84,7 +84,7 @@ fn user_genesis_commits_the_next_rotation_key_and_stays_unsigned() {
 #[test]
 fn principal_request_contains_only_public_key_and_commitment_and_verifies_response() {
     let rotation_key = rotation(0x21);
-    let master = key(0x2F).verification_key().to_bytes();
+    let master = <[u8; 32]>::from(key(0x2F).verification_key());
     let request = rotation_key.principal_request(&master);
     let request_value = request.to_value();
     assert_eq!(request_value.as_object().unwrap().len(), 2);
@@ -107,7 +107,7 @@ fn principal_request_contains_only_public_key_and_commitment_and_verifies_respon
             .unwrap();
     assert_eq!(returned, genesis);
 
-    let other_master = key(0x30).verification_key().to_bytes();
+    let other_master = <[u8; 32]>::from(key(0x30).verification_key());
     assert!(verify_user_principal_response(
         &rotation_key,
         &other_master,
@@ -146,7 +146,7 @@ fn server_genesis_proves_possession_of_the_online_key() {
     else {
         panic!("expected a server payload");
     };
-    assert_eq!(*online_key, online.verification_key().to_bytes());
+    assert_eq!(*online_key, <[u8; 32]>::from(online.verification_key()));
     assert_eq!(server_name, "chat.example.org");
     assert_eq!(link.principal().kind, Kind::Server);
 
@@ -157,7 +157,7 @@ fn server_genesis_proves_possession_of_the_online_key() {
         prev: [0; 32],
         next_commit: rotation.commitment(),
         payload: Payload::Server {
-            online_key: online.verification_key().to_bytes(),
+            online_key: <[u8; 32]>::from(online.verification_key()),
             server_name: "chat.example.org".to_owned(),
         },
     };
@@ -168,7 +168,7 @@ fn server_genesis_proves_possession_of_the_online_key() {
 #[test]
 fn client_extends_the_chain_after_a_handover() {
     let custodian = [0x11; 32];
-    let master = key(0x2F).verification_key().to_bytes();
+    let master = <[u8; 32]>::from(key(0x2F).verification_key());
     let first = rotation(0x21);
     let second = rotation(0x22);
     let third = rotation(0x23);
@@ -205,7 +205,7 @@ fn client_extends_the_chain_after_a_handover() {
 #[test]
 fn successor_rejects_a_key_that_does_not_match_the_parent_commitment() {
     let custodian = [0x11; 32];
-    let master = key(0x2F).verification_key().to_bytes();
+    let master = <[u8; 32]>::from(key(0x2F).verification_key());
     let first = rotation(0x21);
     let genesis = user_genesis(&first, custodian, master, "@alice:chat.example.org").unwrap();
 
@@ -224,8 +224,8 @@ fn successor_rejects_a_key_that_does_not_match_the_parent_commitment() {
 #[test]
 fn user_successor_refuses_to_change_the_master_key() {
     let custodian = [0x11; 32];
-    let master = key(0x2F).verification_key().to_bytes();
-    let other_master = key(0x30).verification_key().to_bytes();
+    let master = <[u8; 32]>::from(key(0x2F).verification_key());
+    let other_master = <[u8; 32]>::from(key(0x30).verification_key());
     let first = rotation(0x21);
     let genesis = user_genesis(&first, custodian, master, "@alice:chat.example.org").unwrap();
 
@@ -256,7 +256,10 @@ fn server_successor_rotates_the_online_key_and_commitment() {
     let Payload::Server { online_key, .. } = &h1.body.payload else {
         panic!("expected a server payload");
     };
-    assert_eq!(*online_key, fresh_online.verification_key().to_bytes());
+    assert_eq!(
+        *online_key,
+        <[u8; 32]>::from(fresh_online.verification_key())
+    );
 }
 
 #[test]
@@ -265,7 +268,7 @@ fn successor_helpers_enforce_the_parent_kind() {
     let genesis = user_genesis(
         &user,
         [0x11; 32],
-        key(0x2F).verification_key().to_bytes(),
+        <[u8; 32]>::from(key(0x2F).verification_key()),
         "@alice:chat.example.org",
     )
     .unwrap();

@@ -2,7 +2,7 @@
 
 use crate::{link::verify, Error, Principal, DEVICE_CERT_TAG};
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD as B64, Engine};
-use ed25519_consensus::VerificationKey;
+use ed25519_zebra::VerificationKey;
 use rezzy_json::Value;
 
 /// A verified device certificate. Unknown JSON fields are ignored at version 1.
@@ -22,7 +22,7 @@ impl DeviceCertificate {
     ///
     /// The input is the JSON value of `device_certificate`. Verification uses
     /// canonical JSON for the two signed certificate statements and ZIP-215
-    /// Ed25519 rules, via `ed25519-consensus`.
+    /// Ed25519 rules, via `ed25519-zebra`.
     ///
     /// # Errors
     /// Returns [`Error::Certificate`] for malformed fields or invalid chain
@@ -151,7 +151,7 @@ fn canonical_device_statement(sender: &str, device_id: &str, key: &str) -> Vec<u
 mod tests {
     use super::*;
     use base64::Engine;
-    use ed25519_consensus::SigningKey;
+    use ed25519_zebra::SigningKey;
     use rezzy_json::json;
 
     fn signed_certificate() -> (String, [u8; 32], Value) {
@@ -163,8 +163,8 @@ mod tests {
             root: [0x44; 32],
         }
         .to_id();
-        let self_key = B64.encode(self_signing.verification_key().to_bytes());
-        let device_key = B64.encode(device.verification_key().to_bytes());
+        let self_key = B64.encode(<[u8; 32]>::from(self_signing.verification_key()));
+        let device_key = B64.encode(<[u8; 32]>::from(device.verification_key()));
         let self_sig = master.sign(
             &[
                 DEVICE_CERT_TAG,
@@ -187,7 +187,7 @@ mod tests {
             "self_signing_signature": B64.encode(self_sig.to_bytes()),
             "device_key_signature": B64.encode(device_sig.to_bytes()),
         });
-        (sender, master.verification_key().to_bytes(), value)
+        (sender, <[u8; 32]>::from(master.verification_key()), value)
     }
 
     #[test]

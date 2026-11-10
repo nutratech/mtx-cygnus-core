@@ -26,7 +26,7 @@ use cygnus_core::{
     link::{Body, Kind, Link, Payload},
     Error, Principal, DEVICE_CERT_TAG,
 };
-use ed25519_consensus::SigningKey;
+use ed25519_zebra::SigningKey;
 use rezzy_json::{Object, Value};
 
 const ROOM_VERSION: &str = "tk.nutra.cygnus.1";
@@ -36,7 +36,7 @@ fn key(seed: u8) -> SigningKey {
 }
 
 fn pubkey(key: &SigningKey) -> [u8; 32] {
-    key.verification_key().to_bytes()
+    <[u8; 32]>::from(key.verification_key())
 }
 
 fn b64(bytes: &[u8]) -> String {

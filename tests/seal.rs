@@ -6,7 +6,7 @@
 
 use cygnus_core::seal::{GraphEvent, SealGraph, ServerSeal};
 use cygnus_core::{commitment, Kind, Link, Principal};
-use ed25519_consensus::SigningKey;
+use ed25519_zebra::SigningKey;
 use rezzy_json::Value;
 
 fn server_principal() -> (Principal, String) {
@@ -17,9 +17,9 @@ fn server_principal() -> (Principal, String) {
             root: [0; 32],
             height: 0,
             prev: [0; 32],
-            next_commit: commitment(&rotation.verification_key().to_bytes()),
+            next_commit: commitment(&<[u8; 32]>::from(rotation.verification_key())),
             payload: cygnus_core::Payload::Server {
-                online_key: online.verification_key().to_bytes(),
+                online_key: <[u8; 32]>::from(online.verification_key()),
                 server_name: "chat.example.org".to_owned(),
             },
         },

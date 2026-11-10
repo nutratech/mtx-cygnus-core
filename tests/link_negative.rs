@@ -6,7 +6,7 @@
 //! Fixtures are read from the vendored vectors, not retyped.
 
 use cygnus_core::{link::Payload, Error, Link};
-use ed25519_consensus::SigningKey;
+use ed25519_zebra::SigningKey;
 use rezzy_json::Value;
 
 fn link(name: &str) -> Link {

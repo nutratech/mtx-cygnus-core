@@ -18,7 +18,7 @@ use crate::{
     Error, Kind, Principal,
 };
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD as B64, Engine};
-use ed25519_consensus::SigningKey;
+use ed25519_zebra::SigningKey;
 use rand_core::{CryptoRng, RngCore};
 use rezzy_json::{Object, Value};
 
@@ -76,7 +76,7 @@ impl RotationKey {
     /// The Ed25519 public key revealed when this key signs its link.
     #[must_use]
     pub fn public_key(&self) -> [u8; 32] {
-        self.key.verification_key().to_bytes()
+        <[u8; 32]>::from(self.key.verification_key())
     }
 
     /// `SHA-256(ROT_TAG ‖ public_key)`, the value given to the custodian.
@@ -193,7 +193,7 @@ pub fn server_genesis(
             prev: [0; 32],
             next_commit: rotation.commitment(),
             payload: Payload::Server {
-                online_key: online_key.verification_key().to_bytes(),
+                online_key: <[u8; 32]>::from(online_key.verification_key()),
                 server_name: server_name.to_owned(),
             },
         },
@@ -269,7 +269,7 @@ pub fn server_successor(
         current,
         next,
         Payload::Server {
-            online_key: online_key.verification_key().to_bytes(),
+            online_key: <[u8; 32]>::from(online_key.verification_key()),
             server_name: server_name.to_owned(),
         },
     )?;

@@ -15,7 +15,7 @@ members = [".", "cygnus-wasm"]
 
 [dependencies]
 base64 = "0.22"
-ed25519-consensus = { version = "2", default-features = false }
+ed25519-zebra = { version = "4", default-features = false }
 rand_core = { version = "0.6", default-features = false }
 sha2 = "0.10"
 # Tracks the `dev` branch of rezzy, which carries the strict `Value` canonical

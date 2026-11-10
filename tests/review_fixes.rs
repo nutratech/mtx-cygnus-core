@@ -10,7 +10,7 @@ use cygnus_core::{
     link::{Link, Payload},
     Error,
 };
-use ed25519_consensus::SigningKey;
+use ed25519_zebra::SigningKey;
 use rezzy_json::{Object, Value};
 
 fn key(seed: u8) -> SigningKey {
@@ -18,7 +18,7 @@ fn key(seed: u8) -> SigningKey {
 }
 
 fn pubkey(key: &SigningKey) -> [u8; 32] {
-    key.verification_key().to_bytes()
+    <[u8; 32]>::from(key.verification_key())
 }
 
 fn b64(bytes: &[u8]) -> String {

@@ -1,13 +1,13 @@
 //! MSC00FC Appendix A vectors: keys from repeated-byte seeds.
 
 use cygnus_core::{commitment, link::verify_slice, Link, Principal};
-use ed25519_consensus::SigningKey;
+use ed25519_zebra::SigningKey;
 
 fn key(b: u8) -> SigningKey {
     SigningKey::from([b; 32])
 }
 fn pubkey(b: u8) -> [u8; 32] {
-    key(b).verification_key().to_bytes()
+    <[u8; 32]>::from(key(b).verification_key())
 }
 
 const A0: &str = "AQEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACn43blzT6rgsVNzZYO7Q2Rty6Gui6qDEtLT9KTxg_8UIqI4910CfGV_VLbLTy6XXLKZwm_HZQSG_N0iAG0D29cABBjaGF0LmV4YW1wbGUub3Jn2Q1TtCiz1ePkElNMfK781u9YMaFhnLO0hG8z6K_y2aSahTHRknkQ8MVLscIBbzf0LtD98Jfza5nXkVQuh_K0CQ";

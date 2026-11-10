@@ -9,7 +9,7 @@
 use cygnus_core::bundle::{resolve_pass0, ActiveAncestor, EpochParts, EpochStatus, VerifiedEpoch};
 use cygnus_core::commitment;
 use cygnus_core::link::{Body, Link, Payload};
-use ed25519_consensus::SigningKey;
+use ed25519_zebra::SigningKey;
 
 const MXID: &str = "@carol:chat.example.org";
 
@@ -18,7 +18,7 @@ fn key(seed: u8) -> SigningKey {
 }
 
 fn pubkey(key: &SigningKey) -> [u8; 32] {
-    key.verification_key().to_bytes()
+    <[u8; 32]>::from(key.verification_key())
 }
 
 fn user_body(
@@ -152,7 +152,7 @@ fn resolved(candidates: &[VerifiedEpoch]) -> String {
 
 #[test]
 fn t1_lagging_burn_is_stale_once_a_newer_tip_is_in_the_merge() {
-    let custodian = key(0x40).verification_key().to_bytes();
+    let custodian = <[u8; 32]>::from(key(0x40).verification_key());
     let (links, keys) = user_chain(custodian, 2, 0x41);
     let (forged1, _) = attacker_link(&links[0], &keys[0], custodian, 1);
 
@@ -190,7 +190,7 @@ fn t1_lagging_burn_is_stale_once_a_newer_tip_is_in_the_merge() {
 
 #[test]
 fn t2_live_burn_wins_over_the_longer_attacker_branch() {
-    let custodian = key(0x50).verification_key().to_bytes();
+    let custodian = <[u8; 32]>::from(key(0x50).verification_key());
     let (links, keys) = user_chain(custodian, 3, 0x51);
 
     let c0 = active("$c0", links[..2].to_vec(), None);
@@ -243,7 +243,7 @@ fn t2_live_burn_wins_over_the_longer_attacker_branch() {
 
 #[test]
 fn t4_burn_only_conflict_selects_the_earliest_fork_height() {
-    let custodian = key(0x70).verification_key().to_bytes();
+    let custodian = <[u8; 32]>::from(key(0x70).verification_key());
     let (links, keys) = user_chain(custodian, 2, 0x71);
     let t0 = active("$t0", links.clone(), None);
 
@@ -267,7 +267,7 @@ fn t4_burn_only_conflict_selects_the_earliest_fork_height() {
 
 #[test]
 fn t5_linear_tip_wins_and_equal_tips_break_by_event_id() {
-    let custodian = key(0x80).verification_key().to_bytes();
+    let custodian = <[u8; 32]>::from(key(0x80).verification_key());
     let (links, _) = user_chain(custodian, 2, 0x81);
 
     let p0 = active("$p0", links[..1].to_vec(), None);
@@ -281,7 +281,7 @@ fn t5_linear_tip_wins_and_equal_tips_break_by_event_id() {
 
 #[test]
 fn t6_concurrent_introductions_freeze_at_a_genesis_epoch() {
-    let custodian = key(0x90).verification_key().to_bytes();
+    let custodian = <[u8; 32]>::from(key(0x90).verification_key());
     let (links, keys) = user_chain(custodian, 1, 0x91);
     let (forged, _) = attacker_link(&links[0], &keys[0], custodian, 3);
 
@@ -308,7 +308,7 @@ fn t6_concurrent_introductions_freeze_at_a_genesis_epoch() {
 
 #[test]
 fn t7_freeze_is_order_independent_across_heights() {
-    let custodian = key(0x30).verification_key().to_bytes();
+    let custodian = <[u8; 32]>::from(key(0x30).verification_key());
     let (links, keys) = user_chain(custodian, 15, 0x31);
 
     let mut base = vec![active("$sw_e0", links[..1].to_vec(), None)];

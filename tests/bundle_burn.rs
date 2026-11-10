@@ -7,7 +7,7 @@ use cygnus_core::{
     link::{Body, Kind, Link, Payload},
     Principal,
 };
-use ed25519_consensus::SigningKey;
+use ed25519_zebra::SigningKey;
 use rezzy_json::Value;
 
 fn key(seed: u8) -> SigningKey {
@@ -42,7 +42,7 @@ fn chains() -> (Vec<Link>, Vec<SigningKey>) {
         [0; 32],
         0,
         [0; 32],
-        commitment(&keys[0].verification_key().to_bytes()),
+        commitment(&<[u8; 32]>::from(keys[0].verification_key())),
         custodian,
         "alice",
     ))
@@ -53,7 +53,7 @@ fn chains() -> (Vec<Link>, Vec<SigningKey>) {
             root,
             1,
             genesis.digest(),
-            commitment(&keys[1].verification_key().to_bytes()),
+            commitment(&<[u8; 32]>::from(keys[1].verification_key())),
             custodian,
             "alice",
         ),
@@ -65,7 +65,7 @@ fn chains() -> (Vec<Link>, Vec<SigningKey>) {
             root,
             2,
             h1.digest(),
-            commitment(&keys[2].verification_key().to_bytes()),
+            commitment(&<[u8; 32]>::from(keys[2].verification_key())),
             custodian,
             "alice",
         ),
@@ -86,7 +86,7 @@ fn sibling(parent: &Link, signer: &SigningKey, nonce: u8) -> Link {
             parent.principal().root,
             parent.body.height + 1,
             parent.digest(),
-            commitment(&next.verification_key().to_bytes()),
+            commitment(&<[u8; 32]>::from(next.verification_key())),
             custodian,
             if nonce % 2 == 0 { "alice" } else { "alice-alt" },
         ),
