@@ -30,6 +30,8 @@ default = []
 state-res = ["dep:rezzy"]
 # Exposes unchecked epoch constructors for tests. Never enable in production.
 test-support = []
+# Experimental zero-curve hash-based signatures (WOTS+). Not used by the protocol.
+wots-experimental = []
 
 [dev-dependencies]
 cygnus-core = { path = ".", features = ["test-support"] }
