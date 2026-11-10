@@ -2,6 +2,10 @@
 
 These files are copied verbatim from the proposal repository so the
 conformance tests do not depend on a sibling checkout or on the network.
+The table below lists the three proposal-sourced PID vector files. The broader
+`provenance.json` manifest also hashes repository-maintained DMLS fixtures and
+reference-model files; those are not additional files from the MSC00FC proposal
+checkout.
 
 | File                   | Source path                      | SHA-256                                                            |
 | ---------------------- | -------------------------------- | ------------------------------------------------------------------ |

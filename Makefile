@@ -27,6 +27,11 @@ lint: ##H Clippy, warnings are errors
 test: ##H Run tests
 	$(CARGO) test --workspace --all-features
 
+.PHONY: build
+build: ##H Build the workspace and the browser wasm package
+	$(CARGO) build --release --workspace --all-targets --all-features
+	$(MAKE) wasm
+
 .PHONY: check
 check: ##H Cargo check and code dupe
 	$(CARGO) check --workspace --all-targets --all-features
@@ -43,6 +48,7 @@ typos: ##H Spell-check
 .PHONY: clean
 clean: ##H Remove build artifacts
 	$(CARGO) clean
+	rm -rf cygnus-wasm/pkg
 
 .PHONY: extras/cloc
 extras/cloc: ##H Count lines of code (excludes vendored vectors and reference models)
