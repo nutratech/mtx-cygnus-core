@@ -432,4 +432,28 @@ mod tests {
             );
         }
     }
+
+    /// Run with `--ignored`: builds a production-size tree (1,024 leaves).
+    #[test]
+    #[ignore = "takes seconds"]
+    fn depth_ten_tree_cost() {
+        let t = Instant::now();
+        let tree = Tree::new(Profile::Bytes, SEED, 10);
+        let build = t.elapsed();
+        let t = Instant::now();
+        let (sig, path) = tree.sign(1023, b"pdu");
+        let signing = t.elapsed();
+        assert!(verify_tree(
+            Profile::Bytes,
+            &tree.root(),
+            1023,
+            &sig,
+            &path,
+            b"pdu"
+        ));
+        println!(
+            "depth 10 build {build:?}, sign {signing:?}, nodes {} KB",
+            tree.nodes.len() * 32 / 1024
+        );
+    }
 }
