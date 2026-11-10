@@ -12,13 +12,13 @@
 //! caller's responsibility. A client keeps exactly one rotation private key at
 //! a time: the next one.
 
+use crate::sig::SigningKey;
 use crate::{
     commitment,
     link::{Body, Link, Payload},
     Error, Kind, Principal,
 };
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD as B64, Engine};
-use ed25519_consensus::SigningKey;
 use rand_core::{CryptoRng, RngCore};
 use rezzy_json::{Object, Value};
 

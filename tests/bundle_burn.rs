@@ -1,13 +1,13 @@
 //! Event-level burn proofs from §4.2/§5.4, including bridge validation.
 
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD as B64, Engine};
+use cygnus_core::sig::SigningKey;
 use cygnus_core::{
     bundle::{EpochParts, EpochStatus, VerifiedEpoch},
     commitment, envelope,
     link::{Body, Kind, Link, Payload},
     Principal,
 };
-use ed25519_consensus::SigningKey;
 use rezzy_json::Value;
 
 fn key(seed: u8) -> SigningKey {

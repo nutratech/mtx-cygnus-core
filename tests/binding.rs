@@ -3,8 +3,8 @@
 use cygnus_core::binding::{admit, Acl, BindingState, Ingress, NameBinding};
 use cygnus_core::commitment;
 use cygnus_core::link::{Body, Link, Payload};
+use cygnus_core::sig::SigningKey;
 use cygnus_core::Principal;
-use ed25519_consensus::SigningKey;
 
 fn key(seed: u8) -> SigningKey {
     SigningKey::from([seed; 32])

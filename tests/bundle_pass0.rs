@@ -9,7 +9,7 @@
 use cygnus_core::bundle::{resolve_pass0, ActiveAncestor, EpochParts, EpochStatus, VerifiedEpoch};
 use cygnus_core::commitment;
 use cygnus_core::link::{Body, Link, Payload};
-use ed25519_consensus::SigningKey;
+use cygnus_core::sig::SigningKey;
 
 const MXID: &str = "@carol:chat.example.org";
 

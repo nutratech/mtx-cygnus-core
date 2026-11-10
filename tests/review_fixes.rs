@@ -2,6 +2,7 @@
 //! lists, state ID mismatches and `event_id` handling in the content hash.
 
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD as B64, Engine};
+use cygnus_core::sig::SigningKey;
 use cygnus_core::{
     auth::{authorize_active_epoch, AuthContext, MemberState},
     bootstrap::{server_genesis, user_genesis, user_successor, RotationKey},
@@ -10,7 +11,6 @@ use cygnus_core::{
     link::{Link, Payload},
     Error,
 };
-use ed25519_consensus::SigningKey;
 use rezzy_json::{Object, Value};
 
 fn key(seed: u8) -> SigningKey {

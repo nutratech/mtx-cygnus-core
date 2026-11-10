@@ -1,12 +1,12 @@
 //! Link codec and verification (§2).
 //!
 //! A link is `body ‖ trailer`. The digest covers only the body, so signature
-//! encoding can never change an identity. All signatures are verified under
-//! ZIP-215 rules (via `ed25519-consensus`).
+//! encoding can never change an identity. Signatures are hash-based (see
+//! [`crate::sig`]).
 
+use crate::sig::{SigningKey, SIGNATURE_LEN};
 use crate::{commitment, principal::Principal, Error, LINK_TAG};
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD as B64, Engine};
-use ed25519_consensus::{Signature, SigningKey, VerificationKey};
 use sha2::{Digest, Sha256};
 
 const ZERO: [u8; 32] = [0; 32];
@@ -236,7 +236,7 @@ pub struct Link {
     pub body: Body,
     /// Exact body bytes (what the digest and signatures cover).
     pub body_bytes: Vec<u8>,
-    /// Trailer bytes (§2.4): 64, 0 or 96 long.
+    /// Trailer bytes (§2.4): a signature, nothing, or a key plus signature.
     pub trailer: Vec<u8>,
 }
 
@@ -249,9 +249,9 @@ impl Link {
     pub fn parse(bytes: &[u8]) -> Result<Self, Error> {
         let (body, n) = Body::parse(bytes)?;
         let expected = match (body.height, body.payload.kind()) {
-            (0, Kind::Server) => 64,
+            (0, Kind::Server) => SIGNATURE_LEN,
             (0, Kind::User) => 0,
-            _ => 96,
+            _ => 32 + SIGNATURE_LEN,
         };
         let trailer = &bytes[n..];
         if trailer.len() != expected {
@@ -317,7 +317,7 @@ impl Link {
         Ok(Self {
             body,
             body_bytes,
-            trailer: sig.to_bytes().to_vec(),
+            trailer: sig.to_bytes(),
         })
     }
 
@@ -400,9 +400,9 @@ impl Link {
                 return Err(Error::Successor("master_key"));
             }
         }
-        if self.trailer.len() != 96 {
+        if self.trailer.len() != 32 + SIGNATURE_LEN {
             return Err(Error::Trailer {
-                expected: 96,
+                expected: 32 + SIGNATURE_LEN,
                 got: self.trailer.len(),
             });
         }
@@ -429,7 +429,5 @@ pub fn verify_slice<'a>(parent: &'a Link, slice: &'a [Link]) -> Result<&'a Link,
 }
 
 pub(crate) fn verify(key: &[u8], msg: &[u8], sig: &[u8]) -> Result<(), Error> {
-    let vk = VerificationKey::try_from(key).map_err(|_| Error::PublicKey)?;
-    let sig = Signature::try_from(sig).map_err(|_| Error::Signature)?;
-    vk.verify(&sig, msg).map_err(|_| Error::Signature)
+    crate::sig::verify(key, msg, sig)
 }

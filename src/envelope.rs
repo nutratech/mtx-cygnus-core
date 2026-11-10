@@ -3,9 +3,9 @@
 //! This is the client-side serialization boundary: SDKs should construct and
 //! sign event objects here so Rust, wasm, `UniFFI`, and Dart use identical bytes.
 
+use crate::sig::SigningKey;
 use crate::Error;
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD as B64, Engine};
-use ed25519_consensus::SigningKey;
 use rezzy_json::{Object, Value};
 use sha2::{Digest, Sha256};
 
@@ -264,7 +264,7 @@ fn insert_signature(
     event: &mut Value,
     signer: &str,
     key_id: &str,
-    signature: &[u8; 64],
+    signature: &[u8],
 ) -> Result<(), Error> {
     let signatures = ensure_object_field(event, "signatures")?;
     let signer_signatures = signatures
@@ -289,7 +289,7 @@ fn ensure_object_field<'a>(event: &'a mut Value, field: &str) -> Result<&'a mut 
         .ok_or(Error::Envelope("signatures must be an object"))
 }
 
-fn signature_entry(event: &Value, signer: &str, key_id: &str) -> Result<[u8; 64], Error> {
+fn signature_entry(event: &Value, signer: &str, key_id: &str) -> Result<Vec<u8>, Error> {
     let signature = event
         .get("signatures")
         .and_then(|value| value.get(signer))
@@ -297,8 +297,8 @@ fn signature_entry(event: &Value, signer: &str, key_id: &str) -> Result<[u8; 64]
         .and_then(Value::as_str)
         .ok_or(Error::Signature)?;
     let bytes = B64.decode(signature).map_err(|_| Error::Signature)?;
-    let signature: [u8; 64] = bytes.try_into().map_err(|_| Error::Signature)?;
-    if B64.encode(signature) != signature_entry_text(event, signer, key_id)? {
+    let signature = bytes;
+    if B64.encode(&signature) != signature_entry_text(event, signer, key_id)? {
         return Err(Error::Signature);
     }
     Ok(signature)

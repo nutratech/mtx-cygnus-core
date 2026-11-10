@@ -1,4 +1,4 @@
-//! Experimental zero-curve WOTS+ signatures over SHA-256 (feature `wots-experimental`).
+//! Zero-curve WOTS+ signatures over SHA-256, the signature primitive of Cygnus.
 //!
 //! This is a **prototype for evaluation**, not part of the protocol, and it has
 //! not been reviewed by a cryptographer. A key may sign **one** message; signing
@@ -230,7 +230,7 @@ pub fn is_equivocation(
 }
 
 /// A Merkle tree of `2^depth` one-time keys under a 32-byte root.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Tree {
     profile: Profile,
     seed: Hash32,
