@@ -26,12 +26,25 @@ fn event(json: &str) -> Result<Value, JsError> {
     Value::parse_strict(json).map_err(err)
 }
 
-fn require_device_certificate(event: &Value) -> Result<(), &'static str> {
-    if matches!(event.get("device_certificate"), Some(Value::Object(_))) {
-        Ok(())
-    } else {
-        Err("event must carry a device_certificate object")
+fn require_matching_device_certificate(
+    event: &Value,
+    sender: &str,
+    device_id: &str,
+    device_key: &str,
+) -> Result<(), &'static str> {
+    let Some(Value::Object(certificate)) = event.get("device_certificate") else {
+        return Err("event must carry a device_certificate object");
+    };
+    if event.get("sender").and_then(Value::as_str) != Some(sender) {
+        return Err("event sender does not match the signing sender");
     }
+    if certificate.get("device_id").and_then(Value::as_str) != Some(device_id) {
+        return Err("device_certificate device_id does not match the signing device");
+    }
+    if certificate.get("device_key").and_then(Value::as_str) != Some(device_key) {
+        return Err("device_certificate device_key does not match the signing key");
+    }
+    Ok(())
 }
 
 fn key(b64: &str) -> Result<[u8; 32], JsError> {
@@ -206,7 +219,8 @@ pub fn create_device_certificate(
 ///
 /// # Errors
 /// Throws if the event is not valid JSON, lacks an object-valued
-/// `device_certificate`, or a seed is malformed.
+/// `device_certificate`, the event sender or certificate's `device_id` /
+/// `device_key` does not match the signing arguments, or a seed is malformed.
 #[wasm_bindgen(js_name = signEvent)]
 pub fn sign_event(
     event_json: &str,
@@ -215,10 +229,12 @@ pub fn sign_event(
     device_seed: &str,
 ) -> Result<String, JsError> {
     let mut event = event(event_json)?;
-    require_device_certificate(&event).map_err(JsError::new)?;
+    let key = signing_key(device_seed)?;
+    let public_key = B64.encode(<[u8; 32]>::from(key.verification_key()));
+    require_matching_device_certificate(&event, sender, device_id, &public_key)
+        .map_err(JsError::new)?;
     envelope::set_content_hash(&mut event).map_err(err)?;
-    envelope::sign_device(&mut event, sender, device_id, &signing_key(device_seed)?)
-        .map_err(err)?;
+    envelope::sign_device(&mut event, sender, device_id, &key).map_err(err)?;
     rezzy_json::to_canonical_string(&event).map_err(err)
 }
 
@@ -317,18 +333,29 @@ mod tests {
     use super::*;
 
     #[test]
-    fn device_certificate_must_be_present_and_be_an_object() {
+    fn device_certificate_must_match_the_signing_arguments() {
         for json in [
             "{}",
-            r#"{"device_certificate":null}"#,
-            r#"{"device_certificate":"certificate"}"#,
-            r#"{"device_certificate":[]}"#,
-            r#"{"device_certificate":1}"#,
+            r#"{"sender":"@alice","device_certificate":null}"#,
+            r#"{"sender":"@alice","device_certificate":"certificate"}"#,
+            r#"{"sender":"@alice","device_certificate":[]}"#,
+            r#"{"sender":"@alice","device_certificate":1}"#,
+            r#"{"sender":"@bob","device_certificate":{"device_id":"DEV","device_key":"device-key"}}"#,
+            r#"{"sender":"@alice","device_certificate":{"device_key":"device-key"}}"#,
+            r#"{"sender":"@alice","device_certificate":{"device_id":"OTHER","device_key":"device-key"}}"#,
+            r#"{"sender":"@alice","device_certificate":{"device_id":"DEV"}}"#,
+            r#"{"sender":"@alice","device_certificate":{"device_id":"DEV","device_key":"other-key"}}"#,
         ] {
             let event = Value::parse_strict(json).unwrap();
-            assert!(require_device_certificate(&event).is_err(), "{json}");
+            assert!(
+                require_matching_device_certificate(&event, "@alice", "DEV", "device-key").is_err(),
+                "{json}"
+            );
         }
-        let event = Value::parse_strict(r#"{"device_certificate":{}}"#).unwrap();
-        assert!(require_device_certificate(&event).is_ok());
+        let event = Value::parse_strict(
+            r#"{"sender":"@alice","device_certificate":{"device_id":"DEV","device_key":"device-key"}}"#,
+        )
+        .unwrap();
+        assert!(require_matching_device_certificate(&event, "@alice", "DEV", "device-key").is_ok());
     }
 }
