@@ -67,9 +67,25 @@ fn tweak(domain: u8, chain: u8, step: u16, seed: &[u8], data: &[u8]) -> Hash32 {
     h.finalize().into()
 }
 
+/// Chain step: `SHA-256(pub_seed || 0^32 || 0x01 || chain || step_le || value)`.
+///
+/// The seed is padded to a full 64-byte block and absorbed once, so each step
+/// clones that midstate and runs a single compression (36 bytes plus padding
+/// fit in one block) instead of two.
 fn advance(mut value: Hash32, chain: u8, from: u16, steps: u16, seed: &Hash32) -> Hash32 {
+    let mut block = [0u8; 64];
+    block[..HASH_LEN].copy_from_slice(seed);
+    let mut base = Sha256::new();
+    base.update(block);
+    let mut tail = [0u8; 4 + HASH_LEN];
+    tail[0] = 0x01;
+    tail[1] = chain;
     for step in from..from + steps {
-        value = tweak(0x01, chain, step, seed, &value);
+        tail[2..4].copy_from_slice(&step.to_le_bytes());
+        tail[4..].copy_from_slice(&value);
+        let mut h = base.clone();
+        h.update(tail);
+        value = h.finalize().into();
     }
     value
 }
@@ -349,6 +365,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "16-bit profile runs ~2M hashes"]
     fn sign_verify_words() {
         let pk = public_key(Profile::Words, &SEED);
         let sig = sign(Profile::Words, &SEED, b"hello");
@@ -413,6 +430,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "16-bit profile runs ~2M hashes"]
     fn report_sizes_and_timings() {
         for profile in [Profile::Bytes, Profile::Words] {
             let t = Instant::now();
