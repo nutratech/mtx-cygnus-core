@@ -41,15 +41,15 @@ fn authorizes_create_epoch_introductions_advancement_join_and_message() {
 
     let user_epoch = authorize_active_epoch(pdu(&events, 1), event_id(&events, 1), &auth).unwrap();
     assert_eq!(user_epoch.status(), EpochStatus::Active);
-    auth.user_epochs.insert(alice.clone(), user_epoch);
+    auth.insert_epoch(user_epoch);
 
     let server_epoch =
         authorize_active_epoch(pdu(&events, 2), event_id(&events, 2), &auth).unwrap();
-    auth.server_epochs.insert(server.clone(), server_epoch);
+    auth.insert_epoch(server_epoch);
 
     let advanced = authorize_active_epoch(pdu(&events, 3), event_id(&events, 3), &auth).unwrap();
     assert_eq!(advanced.tip().body.height, 1);
-    auth.server_epochs.insert(server.clone(), advanced);
+    auth.insert_epoch(advanced);
 
     // The join event is self-targeted and establishes the custodian binding.
     authorize_user_event(pdu(&events, 4), &auth).unwrap();
@@ -71,16 +71,13 @@ fn ordinary_user_event_rejects_a_modified_device_signature() {
     let server = create.server_principal.to_id();
     let mut auth = AuthContext::default();
     auth.creators.insert(alice.clone());
-    auth.user_epochs.insert(
-        alice.clone(),
+    auth.insert_epoch(
         authorize_active_epoch(pdu(&events, 1), event_id(&events, 1), &auth).unwrap(),
     );
-    auth.server_epochs.insert(
-        server.clone(),
+    auth.insert_epoch(
         authorize_active_epoch(pdu(&events, 2), event_id(&events, 2), &auth).unwrap(),
     );
-    auth.server_epochs.insert(
-        server.clone(),
+    auth.insert_epoch(
         authorize_active_epoch(pdu(&events, 3), event_id(&events, 3), &auth).unwrap(),
     );
     auth.members.insert(

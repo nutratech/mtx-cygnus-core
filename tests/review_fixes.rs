@@ -102,16 +102,12 @@ fn burned_user_cannot_supply_the_relay_custodian() {
     let bob = bob_genesis.principal().to_id();
 
     let mut context = AuthContext::default();
-    context
-        .server_epochs
-        .insert(server_id.clone(), active("$server", vec![server.clone()]));
-    context
-        .user_epochs
-        .insert(alice.clone(), active("$alice", vec![alice_genesis]));
+    context.insert_epoch(active("$server", vec![server.clone()]));
+    context.insert_epoch(active("$alice", vec![alice_genesis]));
     let mut parts = active("$bob", vec![bob_genesis]).into_parts();
     parts.status = EpochStatus::Burned;
     let burned = VerifiedEpoch::from_parts_unchecked(parts);
-    context.user_epochs.insert(bob.clone(), burned);
+    context.insert_epoch(burned);
     for user in [&alice, &bob] {
         context.members.insert(
             user.clone(),

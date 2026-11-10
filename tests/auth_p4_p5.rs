@@ -367,7 +367,7 @@ fn bobs_room(a0: &Link, b0: &Link, u0: &Link, server_b: &SigningKey) -> BobsRoom
         ),
         &context,
     );
-    context.user_epochs.insert(bob.clone(), bob_epoch);
+    context.insert_epoch(bob_epoch);
 
     let b_epoch = authorize_epoch(
         &finish(
@@ -383,7 +383,7 @@ fn bobs_room(a0: &Link, b0: &Link, u0: &Link, server_b: &SigningKey) -> BobsRoom
         ),
         &context,
     );
-    context.server_epochs.insert(b_principal.clone(), b_epoch);
+    context.insert_epoch(b_epoch);
 
     let member = finish_device(
         event(
@@ -465,7 +465,7 @@ fn p4_ex_custodian_prefix_replay_and_relay() {
         links_in(introduction.get("content").unwrap(), "links"),
         vec![u0.clone()]
     );
-    room.context.user_epochs.insert(alice.clone(), epoch);
+    room.context.insert_epoch(epoch);
 
     // A's server epoch is introduced and advanced to its h=1 tip.
     for content in [
@@ -481,7 +481,7 @@ fn p4_ex_custodian_prefix_replay_and_relay() {
             ),
             &room.context,
         );
-        room.context.server_epochs.insert(server_a.clone(), epoch);
+        room.context.insert_epoch(epoch);
     }
 
     // 16/17: A cannot forge Alice's join or message without her device
@@ -540,7 +540,7 @@ fn p4_ex_custodian_prefix_replay_and_relay() {
         &server_b_key,
     );
     let relayed = authorize_epoch(&relay, &room.context);
-    room.context.user_epochs.insert(alice.clone(), relayed);
+    room.context.insert_epoch(relayed);
 
     // 20: after the relay the ex-custodian can no longer act for Alice.
     let stale_message = finish_device(
@@ -617,7 +617,7 @@ fn p5_retired_key_replay_and_relay() {
         &server_a_retired,
     );
     let epoch = authorize_epoch(&introduction, &room.context);
-    room.context.user_epochs.insert(mallory.clone(), epoch);
+    room.context.insert_epoch(epoch);
 
     // Introduce A at h=0 with the retired key.
     let a0_epoch = authorize_epoch(
@@ -634,9 +634,7 @@ fn p5_retired_key_replay_and_relay() {
         ),
         &room.context,
     );
-    room.context
-        .server_epochs
-        .insert(server_a.clone(), a0_epoch);
+    room.context.insert_epoch(a0_epoch);
 
     // 24/25: the retired server key still cannot forge Mallory's device
     // signature.
@@ -673,7 +671,7 @@ fn p5_retired_key_replay_and_relay() {
         &server_b_key,
     );
     let relayed = authorize_epoch(&relay, &room.context);
-    room.context.server_epochs.insert(server_a.clone(), relayed);
+    room.context.insert_epoch(relayed);
 
     // 27: the retired key no longer verifies after the relay, even on a fully
     // device-signed event.

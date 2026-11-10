@@ -40,7 +40,7 @@ impl fmt::Display for RezzyError {
         match self {
             Self::Parse(what) => write!(f, "rezzy adapter parse error: {what}"),
             Self::Auth(what) => write!(f, "rezzy base authorization failed: {what}"),
-            Self::Cygnus(what) => write!(f, "Cygnus authorization failed: {what}"),
+            Self::Cygnus(what) => write!(f, "Cygnus overlay rejected the event: {what}"),
         }
     }
 }
@@ -133,6 +133,11 @@ pub fn adapter_event(event: &Value) -> Result<LeanEvent<String, Value, String>, 
 /// their sender, admission, signature, and chain rules replace the v12 member
 /// and power-level checks, and no power level is required. Ordinary events
 /// still use base v12 authorization plus the Cygnus overlay.
+///
+/// This is only a routing predicate. When it returns `false`, the caller must
+/// run [`authorize_active_epoch_with_citations`], [`authorize_burn_with_citations`]
+/// or [`authorize_seal_with_citations`] instead; skipping base auth without
+/// them leaves the event unauthorized.
 #[must_use]
 pub fn base_auth_applies(event: &Value) -> bool {
     !matches!(
@@ -151,8 +156,8 @@ pub fn base_auth_applies(event: &Value) -> bool {
 /// set for the event according to room v12 and 00FC §5.1.
 ///
 /// # Errors
-/// [`RezzyError::Auth`] if a citation is missing, duplicated, non-state, or
-/// stale; [`RezzyError::Parse`] for malformed `auth_events`.
+/// [`RezzyError::Auth`] if a citation is missing, non-state, or stale;
+/// [`RezzyError::Parse`] for malformed `auth_events` or a duplicated citation.
 pub fn validate_auth_event_citations(
     event: &Value,
     state: &RoomAuthState,

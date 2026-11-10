@@ -88,12 +88,8 @@ fn fixture(membership: &str) -> Fixture {
     let alice_id = alice.principal().to_id();
 
     let mut context = AuthContext::default();
-    context
-        .server_epochs
-        .insert(server_id.clone(), active("$server", vec![server0, server1]));
-    context
-        .user_epochs
-        .insert(alice_id.clone(), active("$alice", vec![alice]));
+    context.insert_epoch(active("$server", vec![server0, server1]));
+    context.insert_epoch(active("$alice", vec![alice]));
     context.members.insert(
         alice_id.clone(),
         MemberState {
@@ -125,19 +121,25 @@ fn rejects_a_seal_sender_custodied_by_another_server() {
     let mut fixture = fixture("join");
     let other = RotationKey::from_seed([0x99; 32]);
     let other_server = server_genesis(&other, &key(0x98), "other.example.net").unwrap();
-    let detached = user_genesis(
+    let carol = user_genesis(
         &rotation(0x22),
         other_server.digest(),
         pubkey(&key(0x30)),
-        "@alice:other.example.net",
+        "@carol:other.example.net",
     )
     .unwrap();
-    fixture
-        .context
-        .user_epochs
-        .insert(fixture.alice.clone(), active("$detached", vec![detached]));
+    let carol_id = carol.principal().to_id();
+    fixture.context.insert_epoch(active("$carol", vec![carol]));
+    // Carol is joined, but her own epoch names a different custodian.
+    fixture.context.members.insert(
+        carol_id.clone(),
+        MemberState {
+            membership: "join".to_owned(),
+            custodian: Some(fixture.server.clone()),
+        },
+    );
 
-    let event = seal_event(&fixture.alice, &fixture.server, 1, 0, &fixture.online);
+    let event = seal_event(&carol_id, &fixture.server, 1, 0, &fixture.online);
     assert_eq!(
         authorize_seal(&event, &fixture.context),
         Err(Error::Authorization(
@@ -192,12 +194,8 @@ fn seal_must_be_signed_by_the_current_epoch_key() {
     .unwrap();
     let alice_id = alice.principal().to_id();
     let mut context = AuthContext::default();
-    context
-        .server_epochs
-        .insert(server.clone(), active("$a1", vec![a0, a1]));
-    context
-        .user_epochs
-        .insert(alice_id.clone(), active("$alice", vec![alice]));
+    context.insert_epoch(active("$a1", vec![a0, a1]));
+    context.insert_epoch(active("$alice", vec![alice]));
     context.members.insert(
         alice_id.clone(),
         MemberState {

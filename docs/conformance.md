@@ -180,8 +180,10 @@ Limits of the overlay, which callers must account for:
   validation themselves). `validate_auth_event_citations` rejects stale,
   missing, duplicate, and non-state citations. The caller still selects the
   complete required auth-event set under room v12 and §5.1.
-- `AuthContext` trusts the `VerifiedEpoch` values placed in it. Build them only
-  through the verification functions; the maps are public for convenience, not
-  as a trust boundary.
+- `AuthContext` trusts the `VerifiedEpoch` values placed in it. Its epoch maps
+  are private: `insert_epoch` files each epoch under its own principal, and a
+  `VerifiedEpoch` can only come from the verification functions (or
+  `from_parts_unchecked` behind `test-support`). Membership, creators, join
+  rule and ACL are still caller-selected state.
 
 G3–G7 in `known_gaps` are SPEC and intentionally not implemented.

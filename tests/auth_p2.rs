@@ -38,17 +38,13 @@ fn p1_context(events: &[Value]) -> (AuthContext, String, String) {
 
     let alice_epoch =
         authorize_active_epoch(pdu(events, 1), event_id(events, 1), &context).unwrap();
-    context.user_epochs.insert(alice.clone(), alice_epoch);
+    context.insert_epoch(alice_epoch);
     let server_a_genesis =
         authorize_active_epoch(pdu(events, 2), event_id(events, 2), &context).unwrap();
-    context
-        .server_epochs
-        .insert(server_a.clone(), server_a_genesis);
+    context.insert_epoch(server_a_genesis);
     let server_a_current =
         authorize_active_epoch(pdu(events, 3), event_id(events, 3), &context).unwrap();
-    context
-        .server_epochs
-        .insert(server_a.clone(), server_a_current);
+    context.insert_epoch(server_a_current);
 
     let member = pdu(events, 4)
         .get("content")
@@ -85,7 +81,7 @@ fn authorizes_user_move_new_server_introduction_rebind_and_message() {
 
     let moved_user =
         authorize_active_epoch(pdu(&events, 8), event_id(&events, 8), &context).unwrap();
-    context.user_epochs.insert(alice.clone(), moved_user);
+    context.insert_epoch(moved_user);
 
     // The migration names B before B has an epoch in this room. A cannot
     // continue speaking for Alice after the user epoch moves to B, and B's
@@ -95,7 +91,7 @@ fn authorizes_user_move_new_server_introduction_rebind_and_message() {
 
     let server_b = authorize_active_epoch(pdu(&events, 9), event_id(&events, 9), &context).unwrap();
     let server_b_id = server_b.principal().to_id();
-    context.server_epochs.insert(server_b_id.clone(), server_b);
+    context.insert_epoch(server_b);
 
     // Once B is introduced, the old custodian's signature remains invalid.
     assert!(authorize_user_event(pdu(&events, 7), &context).is_err());

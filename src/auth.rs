@@ -31,14 +31,41 @@ pub struct AuthContext {
     pub creators: BTreeSet<String>,
     /// Current memberships, keyed by user principal ID.
     pub members: BTreeMap<String, MemberState>,
-    /// Current user epochs, keyed by user principal ID.
-    pub user_epochs: BTreeMap<String, VerifiedEpoch>,
-    /// Current server epochs, keyed by server principal ID.
-    pub server_epochs: BTreeMap<String, VerifiedEpoch>,
+    /// Current user epochs, keyed by the epoch's own principal ID.
+    user_epochs: BTreeMap<String, VerifiedEpoch>,
+    /// Current server epochs, keyed by the epoch's own principal ID.
+    server_epochs: BTreeMap<String, VerifiedEpoch>,
     /// Current join rule, if one exists.
     pub join_rule: Option<String>,
     /// Current validated server ACL, if one exists.
     pub server_acl: Option<Acl>,
+}
+
+impl AuthContext {
+    /// Record a verified epoch as the current epoch of its own principal.
+    ///
+    /// The key is always taken from the epoch, so state for one principal can
+    /// never be filed under another. Returns the epoch it replaces.
+    pub fn insert_epoch(&mut self, epoch: VerifiedEpoch) -> Option<VerifiedEpoch> {
+        let principal = epoch.principal();
+        let map = match principal.kind {
+            Kind::User => &mut self.user_epochs,
+            Kind::Server => &mut self.server_epochs,
+        };
+        map.insert(principal.to_id(), epoch)
+    }
+
+    /// The current epoch of a user principal.
+    #[must_use]
+    pub fn user_epoch(&self, principal: &str) -> Option<&VerifiedEpoch> {
+        self.user_epochs.get(principal)
+    }
+
+    /// The current epoch of a server principal.
+    #[must_use]
+    pub fn server_epoch(&self, principal: &str) -> Option<&VerifiedEpoch> {
+        self.server_epochs.get(principal)
+    }
 }
 
 /// Verify a Cygnus room create event, its content hash, event ID, creator

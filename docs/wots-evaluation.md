@@ -18,11 +18,13 @@ cargo test --features wots-experimental --lib wots -- --ignored --nocapture
 
 | Scheme                    | Signature          | Keygen         | Sign  | Verify |
 | ------------------------- | ------------------ | -------------- | ----- | ------ |
-| Ed25519                   | 64 B               | µs             | µs    | µs     |
+| Ed25519 (`ed25519-zebra`) | 64 B               | not measured   | 17 µs | 31 µs  |
 | WOTS+ 8-bit (`Bytes`)     | 752 B              | 17 ms          | 7 ms  | 10 ms  |
 | WOTS+ 16-bit (`Words`)    | 432 B              | 2.4 s          | 1.0 s | 1.4 s  |
 | Tree, depth _d_ (`Bytes`) | 752 + 4 + 32·_d_ B | 2^_d_ × keygen | 7 ms  | ~10 ms |
 
+- Ed25519 timings are from a release build of `ed25519-zebra` 4 on the same
+  machine (100-byte message); WOTS+ timings are from the test build above.
 - The `Bytes` profile has 22 chains of 255 steps; `Words` has 12 chains of
   65,535 steps. Doubling the bits per chain digit squares the chain length and
   only halves the chain count, so `Words` costs about 140 times more hashing
@@ -45,9 +47,13 @@ inverting SHA-256.
 Two signatures from the same one-time key reveal, per chain, the lower of two
 positions, including on the checksum chains. An attacker then picks a message
 and grinds the salt until every digit, checksum included, is at or above
-those minimums. Treating the minimums as random, each chain passes about 2/3
-of the time, so one attempt succeeds with probability about (2/3)^22, roughly
-1 in 7,500. A forgery of an arbitrary message costs a few thousand hashes.
+those minimums. The chains are not independent: digits high enough to pass
+the message chains make the checksum low, which then has to clear the
+checksum minimums. Computing the exact success probability for 5,000 random
+signature pairs gives a median of about 1 in 8.5 million attempts per pair,
+with 10% of pairs easier than 1 in 140,000 and 10% harder than 1 in 800
+million. Each attempt is one SHA-256 digest, so a typical forgery of an
+arbitrary message takes seconds to minutes of hashing on one machine.
 No hash is ever inverted, and precomputed tables do not help because every
 step is domain-separated by `pub_seed`, chain and step.
 
@@ -58,8 +64,10 @@ written, which is exactly how a leaf counter would roll back.
 
 ## Why Cygnus keeps Ed25519
 
-- **Reuse is safe.** Ed25519 signs any number of messages; deterministic nonces
-  rule out nonce reuse across crashes and restores. A rotation key that signs
+- **Reuse is safe.** Ed25519 signs any number of messages. Its nonces are
+  derived from the key and the message, so a retry after a crash or restore
+  reproduces the same signature for the same message and a fresh nonce for a
+  different one; neither leaks the key. A rotation key that signs
   two different next links produces a fork, not a forgery, and the two
   signatures are the fraud proof that burns the epoch (`src/bundle.rs`). With
   WOTS+, the same mistake also lets third parties forge further histories.

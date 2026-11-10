@@ -33,8 +33,10 @@ small stable API with shared JSON fixtures:
    certificates, with stable error categories and strict version/encoding
    checks.
 3. **Event envelope operations**: room-v12/Cygnus redaction, canonical bytes,
-   content/reference hashes, signing-object construction, device/custodian
-   signatures, and PDU verification. Implemented in `envelope`.
+   content/reference hashes, signing-object construction, and device/custodian
+   signatures are in `envelope`. Verifying a PDU also needs `bundle` (epochs
+   and link bundles), `auth` (authorization), and the caller's selected room
+   state.
 4. **Epoch and bundle operations**: parse and verify epoch/burn events, resolve
    link tips and authorization state, and validate supplied link bundles.
 5. **Client flow data**: bootstrap link construction (fresh rotation key,
