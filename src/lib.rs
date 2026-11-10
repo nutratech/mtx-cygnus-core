@@ -17,8 +17,6 @@ pub mod principal;
 #[cfg(feature = "state-res")]
 pub mod rezzy_integration;
 pub mod seal;
-#[cfg(feature = "wots-experimental")]
-pub mod wots;
 
 pub use cert::DeviceCertificate;
 pub use error::Error;

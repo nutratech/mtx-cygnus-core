@@ -1,14 +1,16 @@
 # WOTS+ evaluation
 
 Cygnus briefly replaced Ed25519 with WOTS+ Merkle-tree signatures (0bb7d28,
-981e729) and then went back (6d33d02). The WOTS+ code remains in
-`src/wots.rs` behind the `wots-experimental` feature. This note records why.
+981e729) and then went back (6d33d02). The WOTS+ code has since been removed;
+its last version, `src/wots.rs` behind the `wots-experimental` feature, is in
+commit 14b67c7. This note records why Cygnus does not use it.
 
 ## Sizes and timings
 
 Measured on an Intel Coffee Lake desktop (AVX2, no SHA-NI), with a `cargo test`
 build in which `sha2` is at `opt-level = 3` and `cygnus-core` is unoptimized.
-Chain steps use one SHA-256 compression each (14b67c7). Reproduce with:
+Chain steps use one SHA-256 compression each (14b67c7). Reproduce from that
+commit with:
 
 ```sh
 cargo test --features wots-experimental --lib wots -- --ignored --nocapture
