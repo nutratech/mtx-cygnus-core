@@ -44,3 +44,15 @@ fn rejects_missing_or_unknown_sigil() {
     assert!(Principal::parse(ROOT).is_err());
     assert!(Principal::parse(&format!("#{ROOT}")).is_err());
 }
+
+/// P8 check 52, with the vector's input: `principal_digest` in the reference
+/// model is `Principal::parse(..).root` here.
+#[test]
+fn principal_digest_rejects_the_vector_padded_input() {
+    let canonical = "~-__7__v_-__7__v_-__7__v_-__7__v_-__7__v_-_8";
+    assert_eq!(
+        Principal::parse(canonical).unwrap().root,
+        [0xFB, 0xFF].repeat(16)[..]
+    );
+    assert!(Principal::parse(&format!("{canonical}=")).is_err());
+}

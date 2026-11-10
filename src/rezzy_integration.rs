@@ -5,6 +5,7 @@
 //! This module maps Cygnus PDUs into Rezzy's generic event model so a server
 //! can run those base rules without reimplementing them. The Cygnus-specific
 //! epoch, custodian, device, seal, and relay rules stay in [`crate::auth`].
+//! [`authorize_pdu`] runs citations, base auth and those rules as one call.
 //!
 //! Enabled by the `state-res` feature so client and wasm builds do not compile
 //! the state engine.
@@ -134,8 +135,9 @@ pub fn adapter_event(event: &Value) -> Result<LeanEvent<String, Value, String>, 
 /// and power-level checks, and no power level is required. Ordinary events
 /// still use base v12 authorization plus the Cygnus overlay.
 ///
-/// This is only a routing predicate. When it returns `false`, the caller must
-/// run [`authorize_active_epoch_with_citations`], [`authorize_burn_with_citations`]
+/// This is only a routing predicate; [`authorize_pdu`] applies it for you.
+/// When it returns `false`, the caller must run
+/// [`authorize_active_epoch_with_citations`], [`authorize_burn_with_citations`]
 /// or [`authorize_seal_with_citations`] instead; skipping base auth without
 /// them leaves the event unauthorized.
 #[must_use]
@@ -250,6 +252,74 @@ pub fn authorize_seal_with_citations(
     validate_auth_event_citations(event, state, events)?;
     auth::authorize_seal(event, context)
         .map_err(|error: Error| RezzyError::Cygnus(error.to_string()))
+}
+
+/// What [`authorize_pdu`] accepted.
+#[derive(Debug, Clone)]
+pub enum Authorized {
+    /// A verified `m.room.create`.
+    Create(Box<crate::bundle::VerifiedCreate>),
+    /// An active or burned user or server epoch.
+    Epoch(Box<VerifiedEpoch>),
+    /// A server seal.
+    Seal(ServerSeal),
+    /// Any other event, authorized as user-sent.
+    Event,
+}
+
+/// Fully authorize one Cygnus PDU against caller-selected state: the
+/// `auth_events` citations, Rezzy's base v12 rules where they apply
+/// ([`base_auth_applies`]), and the Cygnus overlay in [`crate::auth`].
+///
+/// `state` and `events` are the state-before and the cited events; `context`
+/// is the matching Cygnus view (creators, epochs, members). This function
+/// does not update either: the caller applies an accepted event to both.
+///
+/// # Errors
+/// [`RezzyError::Parse`] for malformed PDUs or citations,
+/// [`RezzyError::Auth`] for a missing, non-state or stale citation or a base
+/// authorization failure, and [`RezzyError::Cygnus`] when the overlay rejects.
+pub fn authorize_pdu(
+    event: &Value,
+    event_id: &str,
+    context: &auth::AuthContext,
+    state: &RoomAuthState,
+    events: &EventMap,
+) -> Result<Authorized, RezzyError> {
+    let cygnus = |error: Error| RezzyError::Cygnus(error.to_string());
+    validate_auth_event_citations(event, state, events)?;
+    match event.get("type").and_then(Value::as_str) {
+        Some("m.room.user_epoch" | "m.room.server_epoch") => {
+            let burned = event
+                .get("content")
+                .and_then(|content| content.get("status"))
+                .and_then(Value::as_str)
+                == Some("burned");
+            let epoch = if burned {
+                auth::authorize_burn(event, event_id, context)
+            } else {
+                auth::authorize_active_epoch(event, event_id, context)
+            };
+            epoch
+                .map(|epoch| Authorized::Epoch(Box::new(epoch)))
+                .map_err(cygnus)
+        }
+        Some("m.room.server_seal") => auth::authorize_seal(event, context)
+            .map(Authorized::Seal)
+            .map_err(cygnus),
+        Some("m.room.create") => {
+            check_base_auth(event, state, Some(events))?;
+            auth::authorize_create(event, event_id)
+                .map(|create| Authorized::Create(Box::new(create)))
+                .map_err(cygnus)
+        }
+        _ => {
+            check_base_auth(event, state, Some(events))?;
+            auth::authorize_user_event(event, context)
+                .map(|()| Authorized::Event)
+                .map_err(cygnus)
+        }
+    }
 }
 
 /// Run Rezzy's base Matrix v12 authorization for one Cygnus PDU.

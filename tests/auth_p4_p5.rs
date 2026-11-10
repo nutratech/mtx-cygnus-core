@@ -5,9 +5,8 @@
 //! (`A0`, `A1`, `B0`, `U0`, `U1`) are the upstream fixtures, taken from the
 //! JSON so the tests also cover their wire encoding.
 //!
-//! Check 21 (a stale `auth_events` citation) is a state-before rule owned by
-//! the base-auth/state-selection layer, not by this authorization overlay, so
-//! it is not exercised here.
+//! Check 21 (a stale `auth_events` citation) is a state-before rule, checked
+//! by `rezzy_integration::authorize_pdu` and tested in `rezzy_integration.rs`.
 
 // Scenario builders mirror `pid_pdu.py`; their length and a/b naming follow it.
 #![allow(

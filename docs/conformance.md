@@ -24,12 +24,12 @@ Status:
 
 ### P1 — founding flow (4)
 
-| #   | Check                                       | Status  | Rust evidence / gap                                                                                                                                                                                                            |
-| --- | ------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 0   | Founding flow accepted                      | partial | `auth_p1` covers Cygnus create/epoch/join/message checks; `rezzy_integration::p1_fixture_events_pass_rezzy_base_authorization` runs the regenerated P1 PDUs through v12 base auth. The two layers are not yet one entry point. |
-| 1   | Create signed with the retired key rejected | done    | `p1_g7_fixtures` re-signs the P1 create with the retired h=0 key (as h=0 and as h=1): `Error::Signature`; the current key is accepted.                                                                                         |
-| 2   | Second genesis introduction rejected        | done    | `p1_g7_fixtures` re-introduces A from genesis after A reached h=1: `Error::Successor("height")`.                                                                                                                               |
-| 3   | Malformed device certificate rejected       | done    | `p1_g7_fixtures` sets the P1 message certificate's `device_key` to `!`: `Error::Certificate("invalid base64url key")`.                                                                                                         |
+| #   | Check                                       | Status | Rust evidence / gap                                                                                                                                               |
+| --- | ------------------------------------------- | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0   | Founding flow accepted                      | done   | `rezzy_integration::p1_founding_flow_passes_the_combined_entry_point` replays every P1–P3 PDU through `authorize_pdu` (citations, v12 base auth, Cygnus overlay). |
+| 1   | Create signed with the retired key rejected | done   | `p1_g7_fixtures` re-signs the P1 create with the retired h=0 key (as h=0 and as h=1): `Error::Signature`; the current key is accepted.                            |
+| 2   | Second genesis introduction rejected        | done   | `p1_g7_fixtures` re-introduces A from genesis after A reached h=1: `Error::Successor("height")`.                                                                  |
+| 3   | Malformed device certificate rejected       | done   | `p1_g7_fixtures` sets the P1 message certificate's `device_key` to `!`: `Error::Certificate("invalid base64url key")`.                                            |
 
 ### P2 — custodian migration (9)
 
@@ -54,15 +54,15 @@ Status:
 
 ### P4 — relays (7)
 
-| #   | Check                                                          | Status  | Rust evidence / gap                                                                                                              |
-| --- | -------------------------------------------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| 15  | Ex-custodian introduces the h=0 prefix                         | done    | `auth_p4_p5` introduces Alice's genesis in a room that has never seen her, carrying A's signer chain.                            |
-| 16  | Ex-custodian cannot forge a join without the device signature  | done    | `auth_p4_p5` rejects the ex-custodian's join with no device certificate.                                                         |
-| 17  | Ex-custodian cannot post as Alice without the device signature | done    | `auth_p4_p5` rejects the ex-custodian's message with no device certificate.                                                      |
-| 18  | Non-member cannot relay                                        | done    | `auth_p4_p5` rejects an outsider relaying Alice's newer link because the relay sender is not joined.                             |
-| 19  | Bob's server relays Alice's newer link                         | done    | `auth_p4_p5` accepts the relay signed by Bob's custodian and advances Alice's epoch.                                             |
-| 20  | After the relay, A cannot send as Alice                        | done    | `auth_p4_p5` rejects the ex-custodian's device-signed message after the relay.                                                   |
-| 21  | Citing pre-relay state is stale                                | partial | State-before is the base-auth/state-selection layer's rule; the overlay receives current state, so the citation is not modelled. |
+| #   | Check                                                          | Status | Rust evidence / gap                                                                                                                                                    |
+| --- | -------------------------------------------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 15  | Ex-custodian introduces the h=0 prefix                         | done   | `auth_p4_p5` introduces Alice's genesis in a room that has never seen her, carrying A's signer chain.                                                                  |
+| 16  | Ex-custodian cannot forge a join without the device signature  | done   | `auth_p4_p5` rejects the ex-custodian's join with no device certificate.                                                                                               |
+| 17  | Ex-custodian cannot post as Alice without the device signature | done   | `auth_p4_p5` rejects the ex-custodian's message with no device certificate.                                                                                            |
+| 18  | Non-member cannot relay                                        | done   | `auth_p4_p5` rejects an outsider relaying Alice's newer link because the relay sender is not joined.                                                                   |
+| 19  | Bob's server relays Alice's newer link                         | done   | `auth_p4_p5` accepts the relay signed by Bob's custodian and advances Alice's epoch.                                                                                   |
+| 20  | After the relay, A cannot send as Alice                        | done   | `auth_p4_p5` rejects the ex-custodian's device-signed message after the relay.                                                                                         |
+| 21  | Citing pre-relay state is stale                                | done   | `rezzy_integration::citing_a_superseded_user_epoch_is_stale`: after Alice's user epoch is superseded, `authorize_pdu` rejects a message citing the old epoch as stale. |
 
 ### P5 — retired keys (6)
 
@@ -114,41 +114,40 @@ no-padding alphabet, canonical trailing bits, and a 32-byte payload.
 Check 44 is labelled `P1` in the vendored vectors but belongs with these
 encoding rules, so it is listed here.
 
-| #   | Check                                      | Status  | Rust evidence / gap                                                         |
-| --- | ------------------------------------------ | ------- | --------------------------------------------------------------------------- |
-| 44  | Malformed principal in server ACL rejected | done    | `acl_pdu::rejects_malformed_or_noncanonical_principal_acl_entries`.         |
-| 45  | Canonical principal accepted               | done    | `principal_p8::canonical_principal_encoding_is_accepted`.                   |
-| 46  | Padded encoding rejected                   | done    | `principal_p8::rejects_padded_encoding`.                                    |
-| 47  | 42-character payload rejected              | done    | `principal_p8::rejects_42_and_44_character_payloads`.                       |
-| 48  | 44-character payload rejected              | done    | Same.                                                                       |
-| 49  | Standard-base64 `+` rejected               | done    | `principal_p8::rejects_standard_base64_alphabet`.                           |
-| 50  | Standard-base64 `/` rejected               | done    | Same.                                                                       |
-| 51  | Nonzero trailing bits rejected             | done    | `principal_p8::rejects_nonzero_trailing_bits`.                              |
-| 52  | `principal_digest` rejects padded input    | partial | No `principal_digest` helper; the equivalent rule is in `Principal::parse`. |
+| #   | Check                                      | Status | Rust evidence / gap                                                                                                               |
+| --- | ------------------------------------------ | ------ | --------------------------------------------------------------------------------------------------------------------------------- |
+| 44  | Malformed principal in server ACL rejected | done   | `acl_pdu::rejects_malformed_or_noncanonical_principal_acl_entries`.                                                               |
+| 45  | Canonical principal accepted               | done   | `principal_p8::canonical_principal_encoding_is_accepted`.                                                                         |
+| 46  | Padded encoding rejected                   | done   | `principal_p8::rejects_padded_encoding`.                                                                                          |
+| 47  | 42-character payload rejected              | done   | `principal_p8::rejects_42_and_44_character_payloads`.                                                                             |
+| 48  | 44-character payload rejected              | done   | Same.                                                                                                                             |
+| 49  | Standard-base64 `+` rejected               | done   | `principal_p8::rejects_standard_base64_alphabet`.                                                                                 |
+| 50  | Standard-base64 `/` rejected               | done   | Same.                                                                                                                             |
+| 51  | Nonzero trailing bits rejected             | done   | `principal_p8::rejects_nonzero_trailing_bits`.                                                                                    |
+| 52  | `principal_digest` rejects padded input    | done   | `principal_p8::principal_digest_rejects_the_vector_padded_input` (the model's `principal_digest` is `Principal::parse(..).root`). |
 
 ## PDU summary
 
 | Group           | Checks |   done | partial | needs module |
 | --------------- | -----: | -----: | ------: | -----------: |
-| P1 founding     |      4 |      3 |       1 |            0 |
+| P1 founding     |      4 |      4 |       0 |            0 |
 | P2 migration    |      9 |      9 |       0 |            0 |
 | P3 rebinding    |      2 |      2 |       0 |            0 |
-| P4 relays       |      7 |      6 |       1 |            0 |
+| P4 relays       |      7 |      7 |       0 |            0 |
 | P5 retired keys |      6 |      6 |       0 |            0 |
 | G1/G7           |     10 |     10 |       0 |            0 |
 | P6 redaction    |      3 |      3 |       0 |            0 |
 | P7 certificates |      3 |      3 |       0 |            0 |
-| P8 encodings    |      9 |      8 |       1 |            0 |
-| **Total**       | **53** | **50** |   **3** |        **0** |
+| P8 encodings    |      9 |      9 |       0 |            0 |
+| **Total**       | **53** | **53** |   **0** |        **0** |
 
-P2–P5 now have vector- or scenario-driven Cygnus authorization tests. The one
-remaining P4 gap is check 21, which is a state-before (`auth_events` citation)
-rule owned by the base-auth/state-selection layer rather than the overlay. G7
-seal authorization (checks 31–34) runs through `auth::authorize_seal`, and the
-merge signing-height and chain-binding checks (29–30) are driven from the P1
-PDUs in `p1_g7_fixtures`. P1 check 0 stays partial until the Cygnus overlay and
-Rezzy base auth run as one entry point. The causal filtering predicates remain
-covered separately.
+All 53 PDU checks are covered. P1 check 0 and P4 check 21 run through
+`rezzy_integration::authorize_pdu`, which validates `auth_events` citations
+against the state-before, applies v12 base auth where it applies, and then the
+Cygnus overlay. G7 seal authorization (31–34) runs through
+`auth::authorize_seal`, and the merge checks (29–30) are driven from the P1
+PDUs in `p1_g7_fixtures`. The causal filtering predicates remain covered
+separately.
 
 The regenerated PDU fixtures now omit `m.room.create` from `auth_events`, as
 required by room v12. The proposal model and vector source should stay in sync
@@ -170,15 +169,19 @@ Cygnus event IDs.
 
 Limits of the overlay, which callers must account for:
 
-- `base_auth_applies` is the caller's routing decision. Seal events skip base
+- Prefer `authorize_pdu`: it validates citations, routes with
+  `base_auth_applies`, runs base auth where it applies, and then the matching
+  Cygnus check (create, active or burned epoch, seal, or user event). It does
+  not update state; the caller applies an accepted event to both the
+  `RoomAuthState` and the `AuthContext`.
+- Callers that route by hand must pair them correctly. Seal events skip base
   auth only because `auth::authorize_seal` replaces it; epoch events are
-  checked by `authorize_active_epoch`/`authorize_burn`. Prefer the
-  `*_with_citations` wrappers in `rezzy_integration`, which validate the
-  event's cited auth state before calling these checks. A caller that skips
-  base auth without running the corresponding Cygnus check has no
-  authorization at all.
+  checked by `authorize_active_epoch`/`authorize_burn`, and the
+  `*_with_citations` wrappers validate the event's cited auth state first. A
+  caller that skips base auth without running the corresponding Cygnus check
+  has no authorization at all.
 - The raw overlay functions do not validate `auth_events` citations. Callers
-  must use the `*_with_citations` wrappers (or perform the same state-before
+  must use `authorize_pdu` or the `*_with_citations` wrappers (or perform the same state-before
   validation themselves). `validate_auth_event_citations` rejects stale,
   missing, duplicate, and non-state citations. The caller still selects the
   complete required auth-event set under room v12 and §5.1.
