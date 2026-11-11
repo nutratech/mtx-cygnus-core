@@ -309,7 +309,7 @@ fn t6_concurrent_introductions_freeze_at_a_genesis_epoch() {
     assert_eq!(resolved(&[ga, gb, a1, b1, burn]), "$burn6");
 }
 
-/// Freeze selection is independent of the order heights are applied in.
+/// At each fixed height, freeze selection is independent of candidate order.
 #[test]
 fn t7_freeze_is_order_independent_across_heights() {
     let custodian = <[u8; 32]>::from(key(0x30).verification_key());
