@@ -75,6 +75,8 @@ fn chains() -> (Vec<Link>, Vec<SigningKey>) {
     (vec![genesis, h1, h2], keys)
 }
 
+/// Create a sibling user link at the parent's next height with a distinct
+/// display name chosen by `nonce`.
 fn sibling(parent: &Link, signer: &SigningKey, nonce: u8) -> Link {
     let next = key(0x80 + nonce);
     let custodian = match &parent.body.payload {
@@ -108,6 +110,7 @@ fn active(id: &str, links: Vec<Link>) -> VerifiedEpoch {
     })
 }
 
+/// Build a burned user-epoch PDU carrying a fork proof.
 fn burn_event(
     anchor: &VerifiedEpoch,
     fork_height: u64,
@@ -134,6 +137,7 @@ fn burn_event(
     .unwrap()
 }
 
+/// Verify a burn event against its active anchor.
 fn verify_burn(event: &Value, anchor: &VerifiedEpoch) -> Result<VerifiedEpoch, cygnus_core::Error> {
     VerifiedEpoch::burned(event, envelope::event_id(event)?, anchor)
 }

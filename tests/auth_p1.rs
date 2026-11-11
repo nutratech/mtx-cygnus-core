@@ -63,6 +63,7 @@ fn authorizes_create_epoch_introductions_advancement_join_and_message() {
     authorize_user_event(pdu(&events, 7), &auth).unwrap();
 }
 
+/// Rejects an ordinary user event whose device signature was modified.
 #[test]
 fn ordinary_user_event_rejects_a_modified_device_signature() {
     let events = events();

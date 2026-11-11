@@ -69,6 +69,7 @@ fn content_hash_still_binds_the_content() {
     );
 }
 
+/// A burned user's stale custodian cannot vouch for a relay signature.
 #[test]
 fn burned_user_cannot_supply_the_relay_custodian() {
     let server_rotation = RotationKey::from_seed([0x11; 32]);
@@ -137,6 +138,7 @@ fn burned_user_cannot_supply_the_relay_custodian() {
     );
 }
 
+/// Build user-epoch content carrying both the chain and the signer chain.
 fn user_content(links: &[Link], signer_links: &[Link]) -> Value {
     let tip = links.last().unwrap();
     let Payload::User {

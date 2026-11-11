@@ -42,6 +42,7 @@ fn b64(bytes: &[u8]) -> String {
     B64.encode(bytes)
 }
 
+/// Encode key/value string fields as canonical JSON bytes.
 fn canonical(fields: &[(&str, &str)]) -> Vec<u8> {
     let mut object = Object::new();
     for (key, value) in fields {
@@ -163,6 +164,8 @@ impl Credentials {
 // ---------------------------------------------------------------------------
 // PDU construction
 
+/// Build a minimal PDU with the given type, sender, optional state key, and
+/// content.
 fn event(kind: &str, sender: &str, state_key: Option<&str>, content: Value) -> Value {
     let mut object = Object::new();
     object.insert("type".into(), kind.into());
@@ -206,6 +209,8 @@ fn finish(mut event: Value, custodian: &str, height: u64, key: &SigningKey) -> V
     event
 }
 
+/// Build active user-epoch content from a link chain, optionally naming the
+/// signer chain.
 fn user_content(links: &[Link], signer_links: Option<&[Link]>) -> Value {
     let tip = links.last().unwrap();
     let Payload::User {
@@ -243,6 +248,8 @@ fn user_content(links: &[Link], signer_links: Option<&[Link]>) -> Value {
     Value::Object(content)
 }
 
+/// Build active server-epoch content from a link chain, optionally naming the
+/// signer chain.
 fn server_content(links: &[Link], signer_links: Option<&[Link]>) -> Value {
     let tip = links.last().unwrap();
     let Payload::Server {
@@ -433,6 +440,7 @@ fn bobs_room(a0: &Link, b0: &Link, u0: &Link, server_b: &SigningKey) -> BobsRoom
 
 // ---------------------------------------------------------------------------
 
+/// P4: exercises ex-custodian prefix replay and relay authorization failures.
 #[test]
 fn p4_ex_custodian_prefix_replay_and_relay() {
     let (a0, a1, b0, u0, u1) = fixture_links();

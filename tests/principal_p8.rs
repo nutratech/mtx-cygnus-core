@@ -5,6 +5,7 @@ use cygnus_core::principal::Principal;
 
 const ROOT: &str = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"; // 32 zero bytes
 
+/// Both server and user sigils accept the canonical unpadded encoding.
 #[test]
 fn canonical_principal_encoding_is_accepted() {
     for sigil in ["~", "@"] {

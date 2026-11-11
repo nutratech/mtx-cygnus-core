@@ -247,6 +247,7 @@ mod tests {
         );
     }
 
+    /// Rejects empty, overlong, or non-ASCII device IDs and server senders.
     #[test]
     fn issue_rejects_bad_device_ids_and_server_senders() {
         let key = SigningKey::from([0x31; 32]);

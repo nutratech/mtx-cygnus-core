@@ -235,14 +235,26 @@ pub fn sign_event(
     device_id: &str,
     device_seed: &str,
 ) -> Result<String, JsError> {
-    let mut event = event(event_json)?;
-    let key = signing_key(device_seed)?;
+    sign_event_inner(event_json, sender, device_id, device_seed).map_err(|e| JsError::new(&e))
+}
+
+/// `signEvent` with plain `String` errors, so native tests can exercise the
+/// validation (a `JsError` cannot be built off wasm).
+fn sign_event_inner(
+    event_json: &str,
+    sender: &str,
+    device_id: &str,
+    device_seed: &str,
+) -> Result<String, String> {
+    let mut event = Value::parse_strict(event_json).map_err(|e| e.to_string())?;
+    let seed = B64.decode(device_seed).map_err(|e| e.to_string())?;
+    let seed = <[u8; 32]>::try_from(seed.as_slice()).map_err(|_| "key must be 32 bytes")?;
+    let key = SigningKey::from(seed);
     let public_key = B64.encode(<[u8; 32]>::from(key.verification_key()));
-    require_matching_device_certificate(&event, sender, device_id, &public_key)
-        .map_err(JsError::new)?;
-    envelope::set_content_hash(&mut event).map_err(err)?;
-    envelope::sign_device(&mut event, sender, device_id, &key).map_err(err)?;
-    rezzy_json::to_canonical_string(&event).map_err(err)
+    require_matching_device_certificate(&event, sender, device_id, &public_key)?;
+    envelope::set_content_hash(&mut event).map_err(|e| e.to_string())?;
+    envelope::sign_device(&mut event, sender, device_id, &key).map_err(|e| e.to_string())?;
+    rezzy_json::to_canonical_string(&event).map_err(|e| e.to_string())
 }
 
 /// Extend a user chain: sign the next link with the rotation key the parent
@@ -339,6 +351,8 @@ pub fn parse_link(link_b64: &str) -> Result<String, JsError> {
 mod tests {
     use super::*;
 
+    /// Rejects malformed certificates, including mismatched sender, device ID,
+    /// device key, and non-object certificate values.
     #[test]
     fn device_certificate_must_match_the_signing_arguments() {
         for json in [
@@ -364,5 +378,45 @@ mod tests {
         )
         .unwrap();
         assert!(require_matching_device_certificate(&event, "@alice", "DEV", "device-key").is_ok());
+    }
+
+    /// Signs a matching event, rejects a mismatched sender/device/key, and
+    /// rejects an event without a device certificate.
+    #[test]
+    fn sign_event_rejects_mismatched_certificates_and_accepts_matching_ones() {
+        let seed = |b: u8| B64.encode([b; 32]);
+        let device = seed(3);
+        let alice = Principal {
+            kind: Kind::User,
+            root: [7; 32],
+        }
+        .to_id();
+        let bob = Principal {
+            kind: Kind::User,
+            root: [8; 32],
+        }
+        .to_id();
+        let sk = |b: u8| SigningKey::from([b; 32]);
+        let certificate = rezzy_json::to_canonical_string(
+            &DeviceCertificate::issue(&alice, &sk(1), &sk(2), "DEV", &sk(3)).unwrap(),
+        )
+        .unwrap();
+        let event = format!(
+            r#"{{"type":"m.room.message","content":{{}},"sender":"{alice}","device_certificate":{certificate}}}"#
+        );
+
+        let signed = sign_event_inner(&event, &alice, "DEV", &device).unwrap();
+        assert!(signed.contains("signatures"));
+
+        assert!(sign_event_inner(&event, &bob, "DEV", &device).is_err());
+        assert!(sign_event_inner(&event, &alice, "OTHER", &device).is_err());
+        assert!(sign_event_inner(&event, &alice, "DEV", &seed(9)).is_err());
+        assert!(sign_event_inner(
+            &format!(r#"{{"sender":"{alice}"}}"#),
+            &alice,
+            "DEV",
+            &device
+        )
+        .is_err());
     }
 }

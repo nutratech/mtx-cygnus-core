@@ -14,6 +14,8 @@ fn accepts_canonical_server_principal_and_domain_entries() {
     assert!(acl.deny.is_empty());
 }
 
+/// Rejects ACL entries with wildcards, padding, wrong lengths, or non-URL-safe
+/// base64 characters.
 #[test]
 fn rejects_malformed_or_noncanonical_principal_acl_entries() {
     for entry in [
@@ -33,6 +35,7 @@ fn rejects_malformed_or_noncanonical_principal_acl_entries() {
     }
 }
 
+/// Requires both `allow` and `deny` to be arrays of strings.
 #[test]
 fn requires_acl_entries_to_be_string_arrays() {
     for raw in [r#"{"allow":"example.org"}"#, r#"{"deny":[1]}"#] {

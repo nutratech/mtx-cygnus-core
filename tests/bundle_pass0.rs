@@ -101,6 +101,8 @@ fn attacker_link(
     (link, next)
 }
 
+/// Build an active epoch, optionally linking it to a previous result's
+/// ancestors.
 fn active(id: &str, links: Vec<Link>, previous: Option<&VerifiedEpoch>) -> VerifiedEpoch {
     let mut ancestors = previous.map_or_else(Vec::new, |p| p.clone().into_parts().ancestors);
     if let Some(previous) = previous {
@@ -188,6 +190,7 @@ fn t1_lagging_burn_is_stale_once_a_newer_tip_is_in_the_merge() {
     assert_eq!(resolved(&[e1, e2, lagging]), "$e2");
 }
 
+/// A live burn beats an attacker's longer branch.
 #[test]
 fn t2_live_burn_wins_over_the_longer_attacker_branch() {
     let custodian = <[u8; 32]>::from(key(0x50).verification_key());
@@ -306,6 +309,7 @@ fn t6_concurrent_introductions_freeze_at_a_genesis_epoch() {
     assert_eq!(resolved(&[ga, gb, a1, b1, burn]), "$burn6");
 }
 
+/// Freeze selection is independent of the order heights are applied in.
 #[test]
 fn t7_freeze_is_order_independent_across_heights() {
     let custodian = <[u8; 32]>::from(key(0x30).verification_key());

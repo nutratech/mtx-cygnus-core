@@ -31,6 +31,7 @@ fn server_principal() -> (Principal, String) {
     (principal, id)
 }
 
+/// Build the graph of plain and sealed events used by the resolution tests.
 fn graph() -> SealGraph {
     let mut graph = SealGraph::new();
     let events = [
@@ -255,6 +256,7 @@ fn duplicate_event_ids_are_rejected_when_content_differs() {
         .is_err());
 }
 
+/// Parsing validates seal type, state key, and content fields.
 #[test]
 fn server_seal_parsing_checks_the_structural_fields() {
     let (expected, principal) = server_principal();

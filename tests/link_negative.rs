@@ -9,6 +9,7 @@ use cygnus_core::{link::Payload, Error, Link};
 use ed25519_zebra::SigningKey;
 use rezzy_json::Value;
 
+/// Load a named link from the P1 vector fixture.
 fn link(name: &str) -> Link {
     let text = std::fs::read_to_string("tests/vectors/pid_vectors.json").unwrap();
     let vectors = Value::parse(&text).unwrap();

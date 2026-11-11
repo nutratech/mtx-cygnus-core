@@ -13,6 +13,9 @@ use cygnus_wasm::{
 use ed25519_zebra::SigningKey;
 use rezzy_json::Value;
 
+#[cfg(target_arch = "wasm32")]
+use wasm_bindgen_test::wasm_bindgen_test;
+
 const DISPLAY: &str = "@alice:chat.example.org";
 
 fn seed(byte: u8) -> String {
@@ -144,6 +147,40 @@ fn signed_event_carries_its_hash_and_a_verifiable_device_signature() {
     );
 }
 
+/// Exercises the exported `signEvent`: a matching certificate is accepted and
+/// a certificate for another device is rejected.
+#[cfg(target_arch = "wasm32")]
+#[wasm_bindgen_test]
+fn sign_event_accepts_a_matching_certificate_and_rejects_a_tampered_one() {
+    let identity = bootstrap_identity();
+    let certificate = create_device_certificate(
+        &identity.principal,
+        &seed(0x2F),
+        &seed(0x51),
+        "WEB01",
+        &seed(0x52),
+    )
+    .unwrap();
+    let event = format!(
+        r#"{{"type":"m.room.message","sender":"{}","room_id":"!room","content":{{"msgtype":"m.text","body":"hi"}},"origin_server_ts":1,"depth":2,"prev_events":[],"auth_events":[],"device_certificate":{certificate}}}"#,
+        identity.principal
+    );
+
+    let signed = sign_event(&event, &identity.principal, "WEB01", &seed(0x52)).unwrap();
+    verify_device_signature(
+        &signed,
+        &identity.principal,
+        "WEB01",
+        &public_key(&seed(0x52)).unwrap(),
+    )
+    .unwrap();
+
+    let mut invalid = Value::parse_strict(&event).unwrap();
+    invalid["device_certificate"]["device_id"] = "OTHER".into();
+    let invalid = rezzy_json::to_canonical_string(&invalid).unwrap();
+    assert!(sign_event(&invalid, &identity.principal, "WEB01", &seed(0x52)).is_err());
+}
+
 #[test]
 fn user_successor_extends_the_chain() {
     let identity = bootstrap_identity();
@@ -168,6 +205,7 @@ fn user_successor_extends_the_chain() {
     );
 }
 
+/// Parses genesis and successor user links and reports their identity fields.
 #[test]
 fn parse_link_reports_user_fields() {
     let identity = bootstrap_identity();
@@ -204,6 +242,7 @@ fn parse_link_reports_user_fields() {
     }
 }
 
+/// Parses a server link and confirms the custodial relationship to a user link.
 #[test]
 fn parse_link_reports_server_fields_and_the_custodian_principal() {
     let online = SigningKey::from([0x01; 32]);

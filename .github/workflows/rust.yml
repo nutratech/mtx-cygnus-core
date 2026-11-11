@@ -40,4 +40,5 @@ jobs:
       - run: cargo build -p cygnus-wasm --target wasm32-unknown-unknown --release --locked
       - run: cargo install wasm-pack --locked --version 0.13.1
       - run: make wasm
+      - run: wasm-pack test --node cygnus-wasm --test signing
       - run: test -s cygnus-wasm/pkg/cygnus_wasm.js && test -s cygnus-wasm/pkg/cygnus_wasm.d.ts && test -s cygnus-wasm/pkg/cygnus_wasm_bg.wasm

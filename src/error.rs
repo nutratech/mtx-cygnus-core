@@ -57,6 +57,7 @@ pub enum Error {
 }
 
 impl fmt::Display for Error {
+    /// Formats the error for display.
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Truncated => f.write_str("truncated input"),

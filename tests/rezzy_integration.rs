@@ -218,6 +218,7 @@ fn stale_epoch_auth_event_citation_is_rejected() {
     assert!(matches!(error, RezzyError::Auth(_)), "{error}");
 }
 
+/// Applies the fixture events in order and checks base authorization on each.
 #[test]
 fn p1_fixture_events_pass_rezzy_base_authorization() {
     let fixture = Value::parse(include_str!("vectors/pid_pdu_vectors.json")).unwrap();
@@ -289,6 +290,7 @@ impl Replay {
         authorize_pdu(pdu, event_id, &self.context, &state, &self.known)
     }
 
+    /// Record an accepted event in the replay's event store and selected state.
     fn apply(&mut self, event_id: &str, pdu: &Value, authorized: Authorized) {
         match authorized {
             Authorized::Create(create) => {
@@ -332,6 +334,7 @@ impl Replay {
         }
     }
 
+    /// Authorize and apply every PDU in order, as a linear server history would.
     fn run(pdus: &[(String, Value)]) -> Self {
         let mut replay = Self::default();
         for (index, (event_id, pdu)) in pdus.iter().enumerate() {

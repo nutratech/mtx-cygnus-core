@@ -161,6 +161,8 @@ fn p1_malformed_device_certificate_is_rejected() {
 
 // --- G7 merge -------------------------------------------------------------
 
+/// G7: create and signer links use the server's actual signing height rather
+/// than genesis.
 #[test]
 fn g7_create_and_signer_links_use_the_actual_server_signing_height() {
     let events = events();

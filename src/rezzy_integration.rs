@@ -44,6 +44,7 @@ pub enum RezzyError {
 }
 
 impl fmt::Display for RezzyError {
+    /// Formats the adapter error for display.
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Parse(what) => write!(f, "rezzy adapter parse error: {what}"),
