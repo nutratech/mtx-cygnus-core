@@ -276,6 +276,8 @@ pub fn server_successor(
     Link::sign_successor(body, current.signing_key())
 }
 
+/// Build a successor body, checking the parent's rotation commitment and that
+/// the height does not overflow.
 fn successor_body(
     parent: &Link,
     current: &RotationKey,

@@ -164,6 +164,7 @@ impl VerifiedTipBundle {
     }
 }
 
+/// Validate that `prev_events` and `auth_events` are arrays of strings.
 fn validate_event_references(object: &rezzy_json::Object) -> Result<(), Error> {
     for field in ["prev_events", "auth_events"] {
         if let Some(value) = object.get(field) {
@@ -461,6 +462,7 @@ pub struct Pass0Resolution {
 }
 
 impl Pass0Resolution {
+    /// Snapshot the resolution fields from a verified epoch.
     fn from_epoch(epoch: &VerifiedEpoch) -> Self {
         Self {
             event_id: epoch.event_id.clone(),
@@ -842,6 +844,7 @@ pub fn verify_epoch_custodian_signature(
     verify_custodian_signature(event, &principal.to_id(), tip.body.height, online_key)
 }
 
+/// Check that epoch content restates the tip link's height, digest and payload.
 fn check_restatements(content: &rezzy_json::Object, kind: Kind, tip: &Link) -> Result<(), Error> {
     if content.get("height").and_then(rezzy_json::Value::as_u64) != Some(tip.body.height) {
         return Err(Error::Epoch("height does not match link tip"));
@@ -894,10 +897,12 @@ fn check_restatements(content: &rezzy_json::Object, kind: Kind, tip: &Link) -> R
     Ok(())
 }
 
+/// Parse a genesis-first link chain of `kind`.
 fn parse_chain(value: Option<&rezzy_json::Value>, kind: Kind) -> Result<Vec<Link>, Error> {
     parse_link_slice(value, kind, None)
 }
 
+/// Parse a link slice, verifying it from `parent` or from genesis.
 fn parse_link_slice(
     value: Option<&rezzy_json::Value>,
     kind: Kind,
@@ -928,12 +933,14 @@ fn parse_link_slice(
     Ok(links)
 }
 
+/// Extract a required string field from epoch content.
 fn string(value: Option<&rezzy_json::Value>) -> Result<&str, Error> {
     value
         .and_then(rezzy_json::Value::as_str)
         .ok_or(Error::Epoch("required string field is missing"))
 }
 
+/// Decode canonical base64url bytes.
 fn decode_b64(value: &str) -> Result<Vec<u8>, Error> {
     let bytes = B64.decode(value).map_err(|_| Error::Base64)?;
     if B64.encode(&bytes) != value {
@@ -942,10 +949,12 @@ fn decode_b64(value: &str) -> Result<Vec<u8>, Error> {
     Ok(bytes)
 }
 
+/// Whether `prefix` is a prefix of `value`.
 fn is_prefix<T: Eq>(prefix: &[T], value: &[T]) -> bool {
     prefix.len() <= value.len() && value[..prefix.len()] == *prefix
 }
 
+/// Find the longest common prefix of the maximal chains and its height.
 fn divergence(chains: &[Vec<[u8; 32]>]) -> (Vec<[u8; 32]>, u64) {
     let maximal: Vec<&Vec<[u8; 32]>> = chains
         .iter()
@@ -969,6 +978,7 @@ fn divergence(chains: &[Vec<[u8; 32]>]) -> (Vec<[u8; 32]>, u64) {
     (maximal[0][..height].to_vec(), height as u64)
 }
 
+/// Whether a burn is live relative to the common chain and threshold.
 fn burn_is_live(burn: &VerifiedEpoch, common: &[[u8; 32]], threshold: u64, linear: bool) -> bool {
     let Some(fork_height) = burn.fork_height else {
         return false;

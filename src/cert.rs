@@ -130,6 +130,7 @@ impl DeviceCertificate {
     }
 }
 
+/// Validate a device ID's length and permitted ASCII characters.
 fn check_device_id(device_id: &str) -> Result<(), Error> {
     if device_id.is_empty()
         || device_id.len() > 255
@@ -142,12 +143,14 @@ fn check_device_id(device_id: &str) -> Result<(), Error> {
     Ok(())
 }
 
+/// Extract a required string field from certificate content.
 fn string(value: Option<&Value>) -> Result<&str, Error> {
     value
         .and_then(Value::as_str)
         .ok_or(Error::Certificate("string field required"))
 }
 
+/// Decode a canonical, valid base64url Ed25519 public key.
 fn decode_key(value: &str) -> Result<[u8; 32], Error> {
     let bytes = B64
         .decode(value)
@@ -162,6 +165,7 @@ fn decode_key(value: &str) -> Result<[u8; 32], Error> {
     Ok(key)
 }
 
+/// Decode a canonical base64url Ed25519 signature.
 fn decode_signature(value: &str) -> Result<[u8; 64], Error> {
     let bytes = B64
         .decode(value)
@@ -178,6 +182,7 @@ fn decode_signature(value: &str) -> Result<[u8; 64], Error> {
 // Certificate statements are canonical JSON objects of ASCII-only string
 // fields. Building them through `rezzy-json` keeps key ordering and escaping
 // in one place, and the strict writer rejects any future numeric field.
+/// Encode a certificate statement as canonical JSON bytes.
 fn canonical_statement(fields: &[(&str, &str)]) -> Vec<u8> {
     let mut object = rezzy_json::Object::new();
     for (key, value) in fields {
@@ -188,6 +193,7 @@ fn canonical_statement(fields: &[(&str, &str)]) -> Vec<u8> {
         .into_bytes()
 }
 
+/// Canonical bytes for a master-key self-signing statement.
 fn canonical_self_statement(sender: &str, key: &str) -> Vec<u8> {
     canonical_statement(&[
         ("key", key),
@@ -196,6 +202,7 @@ fn canonical_self_statement(sender: &str, key: &str) -> Vec<u8> {
     ])
 }
 
+/// Canonical bytes for a device-certificate statement.
 fn canonical_device_statement(sender: &str, device_id: &str, key: &str) -> Vec<u8> {
     canonical_statement(&[
         ("device_id", device_id),

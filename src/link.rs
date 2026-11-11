@@ -203,6 +203,7 @@ impl Body {
 struct Reader<'a>(&'a [u8]);
 
 impl<'a> Reader<'a> {
+    /// Read exactly `n` bytes and advance the reader.
     fn take(&mut self, n: usize) -> Result<&'a [u8], Error> {
         if self.0.len() < n {
             return Err(Error::Truncated);
@@ -211,15 +212,19 @@ impl<'a> Reader<'a> {
         self.0 = b;
         Ok(a)
     }
+    /// Read one byte.
     fn u8(&mut self) -> Result<u8, Error> {
         Ok(self.take(1)?[0])
     }
+    /// Read a big-endian `u16`.
     fn u16(&mut self) -> Result<u16, Error> {
         Ok(u16::from_be_bytes(self.take(2)?.try_into().expect("2")))
     }
+    /// Read a 32-byte array.
     fn arr(&mut self) -> Result<[u8; 32], Error> {
         Ok(self.take(32)?.try_into().expect("32"))
     }
+    /// Read `n` ASCII bytes as a string.
     fn ascii(&mut self, n: usize, field: &'static str) -> Result<String, Error> {
         let s = self.take(n)?;
         if !s.is_ascii() {
@@ -428,6 +433,7 @@ pub fn verify_slice<'a>(parent: &'a Link, slice: &'a [Link]) -> Result<&'a Link,
     Ok(tip)
 }
 
+/// Verify an Ed25519 signature over `msg` with a 32-byte public key.
 pub(crate) fn verify(key: &[u8], msg: &[u8], sig: &[u8]) -> Result<(), Error> {
     let vk = VerificationKey::try_from(key).map_err(|_| Error::PublicKey)?;
     let sig = Signature::try_from(sig).map_err(|_| Error::Signature)?;

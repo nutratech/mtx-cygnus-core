@@ -73,7 +73,8 @@ small stable API with shared JSON fixtures:
 
 The core crate implements principal IDs, link encoding/verification and
 bootstrap (caller-CSPRNG rotation keys, commitments, genesis/successor
-builders), device-certificate creation and verification, the event envelope (redaction,
+builders), device-certificate creation via `DeviceCertificate::issue` and
+verification, the event envelope (redaction,
 hashes, event IDs, device and custodian signatures), epoch/burn/seal/tip-bundle
 verification, Pass 0 resolution, and the Cygnus authorization overlay. With
 `state-res`, it can run Rezzy's Matrix v12 base authorization on
@@ -81,7 +82,8 @@ caller-selected state; state selection and resolution remain the caller's
 responsibility.
 
 The `cygnus-wasm` crate exposes principal parsing, link and chain inspection,
-bootstrap-response verification, device-certificate creation, event hashing,
+bootstrap-response verification, device-certificate creation via
+`createDeviceCertificate`, event hashing,
 device/custodian signature verification, event signing, and user-chain
 rotation. These are usable wasm-bindgen exports, not integrations in
 `matrix-js-sdk` or another client SDK. The exports still require the caller to

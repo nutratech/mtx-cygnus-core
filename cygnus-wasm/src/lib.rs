@@ -18,14 +18,18 @@ use ed25519_zebra::SigningKey;
 use rezzy_json::Value;
 use wasm_bindgen::prelude::*;
 
+/// Convert a core error into the `Error` thrown on the JS side.
 fn err(e: impl std::fmt::Display) -> JsError {
     JsError::new(&e.to_string())
 }
 
+/// Parse event JSON strictly, rejecting duplicate keys and non-canonical input.
 fn event(json: &str) -> Result<Value, JsError> {
     Value::parse_strict(json).map_err(err)
 }
 
+/// Require the event's `device_certificate` to match the sender and device
+/// being used to sign.
 fn require_matching_device_certificate(
     event: &Value,
     sender: &str,
@@ -47,6 +51,7 @@ fn require_matching_device_certificate(
     Ok(())
 }
 
+/// Decode a 32-byte key from unpadded base64url.
 fn key(b64: &str) -> Result<[u8; 32], JsError> {
     let bytes = B64.decode(b64).map_err(err)?;
     <[u8; 32]>::try_from(bytes.as_slice()).map_err(|_| JsError::new("key must be 32 bytes"))
@@ -139,10 +144,12 @@ pub fn verify_custodian_signature(
     .map_err(err)
 }
 
+/// Build an Ed25519 signing key from a 32-byte seed.
 fn signing_key(seed: &str) -> Result<SigningKey, JsError> {
     Ok(SigningKey::from(key(seed)?))
 }
 
+/// Build a rotation key from a 32-byte seed.
 fn rotation_key(seed: &str) -> Result<RotationKey, JsError> {
     Ok(RotationKey::from_seed(key(seed)?))
 }

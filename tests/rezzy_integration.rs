@@ -118,11 +118,42 @@ fn non_member_message_fails_base_authorization() {
 }
 
 #[test]
-fn stale_auth_event_citation_is_rejected() {
+fn missing_auth_event_citation_is_rejected() {
     let state = room_state();
     let mut events = event_map();
     events.remove(MEMBER_ID);
     let error = check_base_auth(&message_event(CREATOR, 2), &state, Some(&events)).unwrap_err();
+    assert!(matches!(error, RezzyError::Auth(_)), "{error}");
+}
+
+/// The adapter's explicit citation check rejects a cited event that is no
+/// longer current state, including citations base auth may not require.
+#[test]
+fn superseded_citation_is_rejected_by_citation_validation() {
+    let state = room_state();
+    let mut events = event_map();
+    let mut old = adapter_event(&member_event()).unwrap();
+    old.event_id = "$old-member".to_owned();
+    events.insert(old.event_id.clone(), old);
+    let mut message = message_event(CREATOR, 2);
+    message["auth_events"] = json!(["$old-member"]);
+    let error = validate_auth_event_citations(&message, &state, &events).unwrap_err();
+    assert!(matches!(error, RezzyError::Auth(_)), "{error}");
+}
+
+/// A required auth-event citation naming a superseded member event is also
+/// caught by Rezzy's own `auth_events` selection check, independent of the
+/// adapter's explicit citation validation.
+#[test]
+fn superseded_citation_is_rejected_by_base_auth() {
+    let state = room_state();
+    let mut events = event_map();
+    let mut old = adapter_event(&member_event()).unwrap();
+    old.event_id = "$old-member".to_owned();
+    events.insert(old.event_id.clone(), old);
+    let mut message = message_event(CREATOR, 2);
+    message["auth_events"] = json!(["$old-member"]);
+    let error = check_base_auth(&message, &state, Some(&events)).unwrap_err();
     assert!(matches!(error, RezzyError::Auth(_)), "{error}");
 }
 
@@ -349,9 +380,10 @@ fn combined_entry_point_rejects_a_mismatched_event_id() {
     let (other_id, _) = &pdus[0];
     assert_eq!(
         replay.authorize(other_id, epoch).unwrap_err(),
-        RezzyError::Cygnus(format!(
-            "event ID {other_id} does not match the event's reference hash {epoch_id}"
-        ))
+        RezzyError::EventId {
+            given: other_id.clone(),
+            computed: epoch_id.clone(),
+        }
     );
 }
 
@@ -377,9 +409,10 @@ fn combined_entry_point_rejects_a_seal_under_a_mismatched_event_id() {
     let other_id = "$different-id";
     assert_eq!(
         authorize_pdu(&seal, other_id, &context, &state, &events).unwrap_err(),
-        RezzyError::Cygnus(format!(
-            "event ID {other_id} does not match the event's reference hash {seal_id}"
-        ))
+        RezzyError::EventId {
+            given: other_id.to_owned(),
+            computed: seal_id.clone(),
+        }
     );
 }
 

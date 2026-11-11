@@ -225,7 +225,7 @@ pub fn authorize_burn(
         .ok_or(Error::Authorization(
             "burn custodian has no active server epoch",
         ))?;
-    verify_server_signature(event, &custodian, server.links())?;
+    verify_signature_at_tip(event, &custodian, server.links())?;
     Ok(epoch)
 }
 
@@ -276,7 +276,7 @@ pub fn authorize_seal(
             "seal height exceeds its signing epoch",
         ));
     }
-    verify_server_signature(event, &server, epoch.links())?;
+    verify_signature_at_tip(event, &server, epoch.links())?;
     Ok(seal)
 }
 
@@ -364,9 +364,14 @@ pub fn authorize_user_event(event: &rezzy_json::Value, context: &AuthContext) ->
         &certificate.device_id,
         &certificate.device_key,
     )?;
-    verify_server_signature(event, &custodian, server.links())
+    verify_signature_at_tip(event, &custodian, server.links())
 }
 
+/// Select the link chain that should have signed an epoch event.
+///
+/// A server advancing its own epoch signs with the new chain; otherwise the
+/// signer's current server epoch supplies the chain, falling back to the
+/// chains carried by the event itself.
 fn signer_chain_for(
     event: &rezzy_json::Value,
     signer: &str,
@@ -390,6 +395,11 @@ fn signer_chain_for(
     signer_chain(event)
 }
 
+/// Verify the full chain, then the signer's tip signature and content hash.
+///
+/// Use this for chains taken directly from potentially untrusted input; use
+/// [`verify_signature_at_tip`] when the chain already came from a
+/// `VerifiedEpoch`.
 fn verify_server_signature(
     event: &rezzy_json::Value,
     signer: &str,
@@ -403,6 +413,20 @@ fn verify_server_signature(
     for pair in links.windows(2) {
         pair[1].verify_successor(&pair[0])?;
     }
+    verify_signature_at_tip(event, signer, links)
+}
+
+/// Check the signer principal and the tip-key signature. `links` must already
+/// be a verified chain (e.g. from a `VerifiedEpoch`); the caller has checked
+/// the content hash.
+fn verify_signature_at_tip(
+    event: &rezzy_json::Value,
+    signer: &str,
+    links: &[Link],
+) -> Result<(), Error> {
+    let first = links
+        .first()
+        .ok_or(Error::Authorization("signer chain is empty"))?;
     let principal = first.principal();
     if principal.kind != Kind::Server || principal.to_id() != signer {
         return Err(Error::Authorization(
@@ -417,6 +441,7 @@ fn verify_server_signature(
     verify_custodian_signature(event, signer, tip.body.height, key)
 }
 
+/// The custodian server principal named by a user epoch's tip link.
 fn user_custodian(epoch: &VerifiedEpoch) -> Option<String> {
     match &epoch.tip().body.payload {
         Payload::User { custodian, .. } => Some(
@@ -430,6 +455,8 @@ fn user_custodian(epoch: &VerifiedEpoch) -> Option<String> {
     }
 }
 
+/// Whether the sender may participate under the current membership and join
+/// rule.
 fn admitted(context: &AuthContext, sender: &str) -> bool {
     context.creators.contains(sender)
         || context
@@ -441,6 +468,7 @@ fn admitted(context: &AuthContext, sender: &str) -> bool {
         })
 }
 
+/// Whether the current server ACL denies a member's previous custodian.
 fn acl_denies_old_custodian(member: &MemberState, context: &AuthContext) -> bool {
     let Some(old) = member.custodian.as_deref() else {
         return false;
@@ -458,12 +486,14 @@ fn acl_denies_old_custodian(member: &MemberState, context: &AuthContext) -> bool
         .is_some_and(|acl| acl_denies(acl, old, &names))
 }
 
+/// Extract a required string field from a PDU.
 fn string(value: Option<&rezzy_json::Value>) -> Result<&str, Error> {
     value
         .and_then(rezzy_json::Value::as_str)
         .ok_or(Error::Authorization("required string field is missing"))
 }
 
+/// Recompute the event's content hash and compare it with its `hashes` field.
 fn verify_content_hash(event: &rezzy_json::Value) -> Result<(), Error> {
     let expected = event
         .get("hashes")

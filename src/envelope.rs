@@ -250,6 +250,7 @@ pub fn verify_custodian_signature(
     crate::link::verify(public_key, &signing_bytes(event)?, &signature)
 }
 
+/// Remove top-level fields from an event.
 fn remove_fields(value: &mut Value, fields: &[&str]) -> Result<(), Error> {
     let object = value
         .as_object_mut()
@@ -260,6 +261,7 @@ fn remove_fields(value: &mut Value, fields: &[&str]) -> Result<(), Error> {
     Ok(())
 }
 
+/// Insert a base64url signature under `signer` and `key_id`.
 fn insert_signature(
     event: &mut Value,
     signer: &str,
@@ -277,6 +279,7 @@ fn insert_signature(
     Ok(())
 }
 
+/// Get or create an object field, rejecting an existing non-object value.
 fn ensure_object_field<'a>(event: &'a mut Value, field: &str) -> Result<&'a mut Object, Error> {
     let object = event
         .as_object_mut()
@@ -289,6 +292,7 @@ fn ensure_object_field<'a>(event: &'a mut Value, field: &str) -> Result<&'a mut 
         .ok_or(Error::Envelope("signatures must be an object"))
 }
 
+/// Decode one canonical base64url signature entry.
 fn signature_entry(event: &Value, signer: &str, key_id: &str) -> Result<[u8; 64], Error> {
     let signature = event
         .get("signatures")
@@ -304,6 +308,7 @@ fn signature_entry(event: &Value, signer: &str, key_id: &str) -> Result<[u8; 64]
     Ok(signature)
 }
 
+/// Borrow the raw text of one signature entry.
 fn signature_entry_text<'a>(
     event: &'a Value,
     signer: &str,
@@ -317,6 +322,7 @@ fn signature_entry_text<'a>(
         .ok_or(Error::Signature)
 }
 
+/// The content fields redaction keeps for an event type.
 fn kept_content_fields(event_type: &str) -> &'static [&'static str] {
     match event_type {
         "m.room.member" => &[

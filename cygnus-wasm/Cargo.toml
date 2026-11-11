@@ -16,7 +16,7 @@ crate-type = ["cdylib", "rlib"]
 base64 = "0.23"
 cygnus-core = { path = ".." }
 ed25519-zebra = { version = "5", default-features = false }
-rezzy-json = { git = "https://gitlab.com/wombat-foundation/rezzy.git", branch = "dev" }
+rezzy-json = { git = "https://gitlab.com/wombat-foundation/rezzy.git", rev = "ab3aed082b596ef2ab61b327c1b7c65439a4e540" }
 wasm-bindgen = "0.2"
 
 [lints.rust]

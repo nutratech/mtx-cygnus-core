@@ -33,7 +33,14 @@ pub enum RezzyError {
     /// Rezzy's base authorization rejected the event.
     Auth(String),
     /// A Cygnus-specific authorization check rejected the event.
-    Cygnus(String),
+    Cygnus(Error),
+    /// The supplied event ID is not the event's reference hash.
+    EventId {
+        /// The ID the caller supplied.
+        given: String,
+        /// The reference hash computed from the event.
+        computed: String,
+    },
 }
 
 impl fmt::Display for RezzyError {
@@ -42,6 +49,10 @@ impl fmt::Display for RezzyError {
             Self::Parse(what) => write!(f, "rezzy adapter parse error: {what}"),
             Self::Auth(what) => write!(f, "rezzy base authorization failed: {what}"),
             Self::Cygnus(what) => write!(f, "Cygnus overlay rejected the event: {what}"),
+            Self::EventId { given, computed } => write!(
+                f,
+                "event ID {given} does not match the event's reference hash {computed}"
+            ),
         }
     }
 }
@@ -153,9 +164,12 @@ pub fn base_auth_applies(event: &Value) -> bool {
 ///
 /// Use this for Cygnus epoch and seal events, whose Cygnus authorization
 /// replaces Rezzy's base membership and power-level checks. Ordinary events
-/// get the same citation validation from [`check_base_auth`]. This validates
-/// cited entries; callers must also select the complete required auth-event
-/// set for the event according to room v12 and 00FC §5.1.
+/// receive Rezzy's base authorization from [`check_base_auth`]; the combined
+/// [`authorize_pdu`] path also runs this explicit citation check for every
+/// event. Rezzy rejects missing required state auth events, while this explicit
+/// check also rejects unavailable, misfiled, non-state, or stale citations.
+/// Callers must select the complete required auth-event set for room v12 and
+/// 00FC §5.1.
 ///
 /// # Errors
 /// [`RezzyError::Auth`] if a citation is missing, filed under another
@@ -220,8 +234,7 @@ pub fn authorize_active_epoch_with_citations(
     events: &EventMap,
 ) -> Result<VerifiedEpoch, RezzyError> {
     validate_auth_event_citations(event, state, events)?;
-    auth::authorize_active_epoch(event, event_id, context)
-        .map_err(|error: Error| RezzyError::Cygnus(error.to_string()))
+    auth::authorize_active_epoch(event, event_id, context).map_err(RezzyError::Cygnus)
 }
 
 /// Check state-before citations and authorize a burn event.
@@ -239,8 +252,7 @@ pub fn authorize_burn_with_citations(
     events: &EventMap,
 ) -> Result<VerifiedEpoch, RezzyError> {
     validate_auth_event_citations(event, state, events)?;
-    auth::authorize_burn(event, event_id, context)
-        .map_err(|error: Error| RezzyError::Cygnus(error.to_string()))
+    auth::authorize_burn(event, event_id, context).map_err(RezzyError::Cygnus)
 }
 
 /// Check state-before citations and authorize a server seal.
@@ -257,8 +269,7 @@ pub fn authorize_seal_with_citations(
     events: &EventMap,
 ) -> Result<ServerSeal, RezzyError> {
     validate_auth_event_citations(event, state, events)?;
-    auth::authorize_seal(event, context)
-        .map_err(|error: Error| RezzyError::Cygnus(error.to_string()))
+    auth::authorize_seal(event, context).map_err(RezzyError::Cygnus)
 }
 
 /// What [`authorize_pdu`] accepted.
@@ -290,10 +301,10 @@ pub enum Authorized {
 /// [`RezzyError::Parse`] when the event cannot be hashed or its `auth_events`
 /// cannot be represented, [`RezzyError::Auth`] for a missing, misfiled,
 /// non-state or stale citation or a base authorization failure, and
-/// [`RezzyError::Cygnus`] for a mismatched `event_id` and for every overlay
-/// failure. The overlay does not separate malformed Cygnus content (an epoch
-/// or seal with bad fields) from a well-formed event it rejects; both are
-/// `Cygnus`.
+/// [`RezzyError::EventId`] for a mismatched `event_id` and
+/// [`RezzyError::Cygnus`] for every overlay failure. The overlay does not
+/// separate malformed Cygnus content (an epoch or seal with bad fields) from
+/// a well-formed event it rejects; both are `Cygnus`.
 pub fn authorize_pdu(
     event: &Value,
     event_id: &str,
@@ -301,13 +312,14 @@ pub fn authorize_pdu(
     state: &RoomAuthState,
     events: &EventMap,
 ) -> Result<Authorized, RezzyError> {
-    let cygnus = |error: Error| RezzyError::Cygnus(error.to_string());
+    let cygnus = RezzyError::Cygnus;
     let computed = crate::envelope::event_id(event)
         .map_err(|error| RezzyError::Parse(format!("cannot compute the event ID: {error}")))?;
     if computed != event_id {
-        return Err(RezzyError::Cygnus(format!(
-            "event ID {event_id} does not match the event's reference hash {computed}"
-        )));
+        return Err(RezzyError::EventId {
+            given: event_id.to_owned(),
+            computed,
+        });
     }
     validate_auth_event_citations(event, state, events)?;
     match event.get("type").and_then(Value::as_str) {

@@ -247,6 +247,8 @@ pub fn admit(
     Ingress::Reject
 }
 
+/// Whether an ACL entry names this principal, either by principal ID or by a
+/// server name matched against `names`.
 fn matches_entry(entry: &str, principal_id: &str, names: &[&str]) -> bool {
     if entry.starts_with('~') {
         return entry == principal_id;
@@ -301,6 +303,7 @@ fn glob_match(pattern: &str, text: &str) -> bool {
     pi == pattern.len()
 }
 
+/// The DNS name carried by a server link, if it is one.
 fn server_name(link: &Link) -> Option<&str> {
     match &link.body.payload {
         Payload::Server { server_name, .. } => Some(server_name),
@@ -308,6 +311,7 @@ fn server_name(link: &Link) -> Option<&str> {
     }
 }
 
+/// Whether `branch` is a complete genesis-first server chain for `principal`.
 fn complete_server_branch(branch: &[Link], principal: &Principal) -> bool {
     let Some(first) = branch.first() else {
         return false;
