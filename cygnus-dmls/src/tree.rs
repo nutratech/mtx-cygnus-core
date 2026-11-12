@@ -17,7 +17,7 @@
 
 use std::collections::{HashMap, HashSet};
 
-use sha2::{Digest, Sha256};
+use blake3::Hasher;
 use thiserror::Error;
 
 /// The tree shape or a requested tree operation is invalid.
@@ -177,12 +177,12 @@ fn lp(data: &[u8]) -> Vec<u8> {
 }
 
 fn digest(tag: &[u8], parts: &[&[u8]]) -> Vec<u8> {
-    let mut hasher = Sha256::new();
+    let mut hasher = Hasher::new();
     hasher.update(tag);
     for part in parts {
-        hasher.update(lp(part));
+        hasher.update(&lp(part));
     }
-    hasher.finalize().to_vec()
+    hasher.finalize().as_bytes().to_vec()
 }
 
 /// Model of RFC 9420 §7.2 `LeafNodeTBS` (model encoding, not TLS).
@@ -1074,6 +1074,34 @@ mod tests {
         assert_eq!(rfc.capacity(), 512);
         assert_eq!(rfc.member_count(), 300);
         assert_eq!(&rfc.nodes()[..keep], &left[..]);
+    }
+
+    #[test]
+    fn model_digests_match_the_python_reference() {
+        let mut tree = filled_tree(4);
+        tree.set_parent(
+            1,
+            Some(ParentNode::new(b"p1".to_vec()).with_unmerged_leaves([1])),
+        )
+        .unwrap();
+        assert_eq!(
+            hex::encode(tree.tree_hash().unwrap()),
+            "ca447eed1df77e716a71218aaa7fad75f626981b4d5d043a22376bf8cf26d210"
+        );
+
+        let key_package = LeafNode::new(b"alice".to_vec(), b"key".to_vec());
+        assert_eq!(
+            hex::encode(leaf_tbs(&key_package, None).unwrap()),
+            "830aa7928a192c74fbabd3303d8bad485496d10ad7382f8455f9b40a31a6582c"
+        );
+
+        let update = key_package
+            .with_source(LeafSource::Update)
+            .with_group_id(b"g".to_vec());
+        assert_eq!(
+            hex::encode(leaf_tbs(&update, Some(0)).unwrap()),
+            "638fd9ffeb659afbeb467f6dc66aa28af259e19bd970070c59bb8cd5ae2cd59a"
+        );
     }
 
     #[test]

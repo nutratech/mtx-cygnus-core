@@ -341,13 +341,14 @@ dependencies = [
 name = "cygnus-dmls"
 version = "0.0.1"
 dependencies = [
+ "blake3",
  "cygnus-core",
  "ed25519-zebra",
  "getrandom 0.2.17",
+ "hex",
  "openmls",
  "openmls_basic_credential",
  "openmls_rust_crypto",
- "sha2 0.11.1",
  "thiserror",
 ]
 
