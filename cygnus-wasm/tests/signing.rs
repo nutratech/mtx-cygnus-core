@@ -116,8 +116,9 @@ fn device_certificate_verifies_under_the_master_key() {
     );
 }
 
-#[test]
-fn signed_event_carries_its_hash_and_a_verifiable_device_signature() {
+/// Builds an event fixture carrying a certificate for device `WEB01` under the
+/// bootstrapped identity.
+fn device_event() -> (Identity, String) {
     let identity = bootstrap_identity();
     let certificate = create_device_certificate(
         &identity.principal,
@@ -131,6 +132,12 @@ fn signed_event_carries_its_hash_and_a_verifiable_device_signature() {
         r#"{{"type":"m.room.message","sender":"{}","room_id":"!room","content":{{"msgtype":"m.text","body":"hi"}},"origin_server_ts":1,"depth":2,"prev_events":[],"auth_events":[],"device_certificate":{certificate}}}"#,
         identity.principal
     );
+    (identity, event)
+}
+
+#[test]
+fn signed_event_carries_its_hash_and_a_verifiable_device_signature() {
+    let (identity, event) = device_event();
     let signed = sign_event(&event, &identity.principal, "WEB01", &seed(0x52)).unwrap();
 
     verify_device_signature(
@@ -152,19 +159,7 @@ fn signed_event_carries_its_hash_and_a_verifiable_device_signature() {
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen_test]
 fn sign_event_accepts_a_matching_certificate_and_rejects_a_tampered_one() {
-    let identity = bootstrap_identity();
-    let certificate = create_device_certificate(
-        &identity.principal,
-        &seed(0x2F),
-        &seed(0x51),
-        "WEB01",
-        &seed(0x52),
-    )
-    .unwrap();
-    let event = format!(
-        r#"{{"type":"m.room.message","sender":"{}","room_id":"!room","content":{{"msgtype":"m.text","body":"hi"}},"origin_server_ts":1,"depth":2,"prev_events":[],"auth_events":[],"device_certificate":{certificate}}}"#,
-        identity.principal
-    );
+    let (identity, event) = device_event();
 
     let signed = sign_event(&event, &identity.principal, "WEB01", &seed(0x52)).unwrap();
     verify_device_signature(
