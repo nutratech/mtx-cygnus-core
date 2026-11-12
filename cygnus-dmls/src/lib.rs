@@ -13,6 +13,8 @@
 use std::fmt::Debug;
 
 use cygnus_core::{Kind, Principal};
+
+pub mod tree;
 use ed25519_zebra::SigningKey;
 use openmls::prelude::{
     tls_codec::{Deserialize, Serialize},

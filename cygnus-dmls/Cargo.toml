@@ -17,6 +17,7 @@ ed25519-zebra = { version = "5", default-features = false }
 openmls = { version = "0.8.3", features = ["fork-resolution"] }
 openmls_basic_credential = "0.5.0"
 openmls_rust_crypto = "0.5.1"
+sha2 = "0.11"
 thiserror = "2"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
