@@ -14,7 +14,7 @@ publish = false
 [dependencies]
 cygnus-core = { path = ".." }
 ed25519-zebra = { version = "5", default-features = false }
-openmls = "0.8.3"
+openmls = { version = "0.8.3", features = ["fork-resolution"] }
 openmls_basic_credential = "0.5.0"
 openmls_rust_crypto = "0.5.1"
 thiserror = "2"

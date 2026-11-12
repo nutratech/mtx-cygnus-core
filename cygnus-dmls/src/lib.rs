@@ -418,6 +418,29 @@ mod tests {
     }
 
     #[test]
+    fn fork_resolution_helpers_are_reachable() {
+        let mut alice = client(ALICE, "ALICE1", 5);
+        let mut bob = client(BOB, "BOB1", 6);
+
+        alice.create_group(b"cygnus-dmls-fork").unwrap();
+        let bob_key_package = bob.key_package().unwrap();
+        let add = alice.add_member(&bob_key_package).unwrap();
+        bob.join_group(&add.welcome).unwrap();
+
+        let group = alice.group.as_mut().unwrap();
+        let own = group.own_leaf_index();
+        {
+            let builder = group.recover_fork_by_readding(&[own]).unwrap();
+            let complement = builder.complement_partition();
+            assert_eq!(complement.len(), 1);
+            assert_ne!(complement[0].index, own);
+        }
+
+        let reboot = group.reboot(GroupId::from_slice(b"cygnus-dmls-reboot"));
+        assert_eq!(reboot.old_members().count(), 1);
+    }
+
+    #[test]
     fn self_update_advances_both_sides() {
         let mut alice = client(ALICE, "ALICE1", 3);
         let mut bob = client(BOB, "BOB1", 4);
