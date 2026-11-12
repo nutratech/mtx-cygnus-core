@@ -27,6 +27,12 @@ lint: ##H Clippy, warnings are errors
 test: ##H Run tests
 	$(CARGO) test --workspace --all-features
 
+.PHONY: cov
+cov: ##H Test coverage (native crates; needs cargo-llvm-cov); HTML in target/llvm-cov/html
+	$(CARGO) llvm-cov --workspace --exclude cygnus-wasm --all-features --no-report
+	$(CARGO) llvm-cov report -p cygnus-core -p cygnus-dmls --html
+	$(CARGO) llvm-cov report -p cygnus-core -p cygnus-dmls --summary-only
+
 .PHONY: build
 build: ##H Build the workspace and the browser wasm package
 	$(CARGO) build --release --workspace --all-targets --all-features
