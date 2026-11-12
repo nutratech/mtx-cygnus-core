@@ -17,7 +17,7 @@ format: ##H Format code
 
 .PHONY: fix
 fix: ##H Apply auto-fixes with clippy
-	$(CARGO) clippy --fix --allow-dirty --allow-staged --allow-no-vcs --all-targets
+	$(CARGO) clippy --fix --allow-dirty --allow-staged --allow-no-vcs --workspace --all-targets
 
 .PHONY: lint
 lint: ##H Clippy, warnings are errors

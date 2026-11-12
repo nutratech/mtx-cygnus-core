@@ -1,0 +1,38 @@
+[package]
+name = "cygnus-dmls"
+version = "0.0.1"
+edition = "2021"
+rust-version = "1.89"
+authors = ["Shane Jaroch <shane@nutra.tk>"]
+license = "MIT OR Apache-2.0"
+repository = "https://git.nutra.tk/gamesguru/cygnus-core"
+description = "DMLS/MLS group encryption bound to Cygnus principals and device certificates."
+keywords = ["matrix", "mls", "dmls", "encryption", "cygnus"]
+categories = ["cryptography"]
+publish = false
+
+[dependencies]
+cygnus-core = { path = ".." }
+ed25519-zebra = { version = "5", default-features = false }
+openmls = "0.8.3"
+openmls_basic_credential = "0.5.0"
+openmls_rust_crypto = "0.5.1"
+thiserror = "2"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+# OpenMLS refuses to compile for wasm32 without this feature (randomness and
+# time use JavaScript APIs). Keeping it target-scoped avoids pulling
+# fluvio-wasm-timer and the wasm bindings into host builds.
+openmls = { version = "0.8.3", features = ["js"] }
+# openmls_basic_credential's rand 0.8 reaches getrandom 0.2, which needs the
+# `js` backend on wasm32.
+getrandom = { version = "0.2", features = ["js"] }
+
+[lints.rust]
+unsafe_code = "forbid"
+missing_docs = "warn"
+
+[lints.clippy]
+pedantic = { level = "warn", priority = -1 }
+module_name_repetitions = "allow"
+missing_panics_doc = "allow"

@@ -12,7 +12,7 @@ categories = ["cryptography"]
 readme = "README.md"
 
 [workspace]
-members = [".", "cygnus-wasm"]
+members = [".", "cygnus-dmls", "cygnus-wasm"]
 
 [dependencies]
 base64 = "0.23"
