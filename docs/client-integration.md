@@ -85,10 +85,12 @@ The `cygnus-wasm` crate exposes principal parsing, link and chain inspection,
 bootstrap-response verification, device-certificate creation via
 `createDeviceCertificate`, event hashing,
 device/custodian signature verification, event signing, and user-chain
-rotation. These are usable wasm-bindgen exports, not integrations in
-`matrix-js-sdk` or another client SDK. The exports still require the caller to
-supply and store seeds; they do not provide private-key storage/backup, HTTP
-flows, or client UI. UniFFI and Dart bindings remain planned. The bootstrap API
+rotation. The `wasm32-unknown-unknown` artifact enables Wasm SIMD128 and needs a
+runtime that supports that standard feature. These are usable wasm-bindgen
+exports, not integrations in `matrix-js-sdk` or another client SDK. The exports
+still require the caller to supply and store seeds; they do not provide
+private-key storage/backup, HTTP flows, or client UI. UniFFI and Dart bindings
+remain planned. The bootstrap API
 never derives identity material from Olm or Megolm keys; secret storage and
 recovery remain client responsibilities. Ordinary room-v12 behavior remains
 separate from full Cygnus support.
