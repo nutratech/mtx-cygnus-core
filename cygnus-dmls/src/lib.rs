@@ -14,6 +14,7 @@ use std::fmt::Debug;
 
 use cygnus_core::{Kind, Principal};
 
+pub mod merge;
 pub mod tree;
 use ed25519_zebra::SigningKey;
 use openmls::prelude::{
