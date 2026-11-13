@@ -26,7 +26,8 @@ Consequences:
   several tips, `dmlsEncrypt` without `atCommitId` throws `fork_unresolved`.
 - `dmlsDecrypt` selects branches by the ciphertext's `mls_epoch`. Sibling tips can
   share an epoch, so it tries each held branch at that epoch (only the right
-  epoch secrets succeed) and persists the one that decrypts; none held ⇒ status `missing_state` (buffer per §13.4).
+  epoch secrets succeed) and persists the one that decrypts; none held ⇒
+  status `missing_state` (buffer per §13.4).
 
 ## 1. Lifecycle and ownership
 
@@ -49,8 +50,8 @@ Consequences:
   the CAS write succeeds, so a crash never sends a Commit whose state was not
   persisted. `dmlsDecrypt` mutates too (it advances the secret tree), so it runs
   under the lock and is persisted. If `navigator.locks` is unavailable, claim a
-  single-writer tab via `BroadcastChannel`/`localStorage`, or refuse DMLS sends in
-  secondary tabs.
+  single-writer tab via `BroadcastChannel`/`localStorage`, or refuse DMLS sends
+  in secondary tabs.
 - **Extremity cap.** Wasm holds at most `MAX_HELD_EXTREMITIES = 8` branches per
   group. The cap is checked on the **post-update** set
   `next = (held − resolves) ∪ {new}`; only `next.len() > 8` is refused, so a
@@ -64,8 +65,8 @@ Consequences:
 - **Tips vs held states.** A commit's `resolves` includes its `base`, so applying
   it retires the base as a _tip_ but the base _state_ stays held; otherwise a
   concurrent sibling commit on the same base could never apply. Held states
-  are bounded by `MAX_RETAINED_STATES = 16` (oldest epoch evicted first, commit id
-  breaking ties; tips never). This is a bounded cache, not a guarantee for
+  are bounded by `MAX_RETAINED_STATES = 16` (oldest epoch evicted first, commit
+  id breaking ties; tips never). This is a bounded cache, not a guarantee for
   arbitrarily late backfill. A sibling whose base was evicted returns `deferred`
   `missing_base_state`. The cap of 8 counts tips only.
 - **`seq`.** Every mutating call increments the entry's `seq` (create, join,
@@ -111,8 +112,8 @@ Notes:
   Wasm checks that every `base`/`resolves` event_id is in `ancestors`.
 - `dmlsApplyCommit.status`:
     - `applied` — new branch stored, extremities updated.
-    - `deferred` — a `base`/`resolves` state is not held, or a referenced event is
-      not in `ancestors` (normal, §9.2 step 3). `reason`: `missing_base_state`,
+    - `deferred` — a `base`/`resolves` state is not held, or a referenced event
+      is not in `ancestors` (normal, §9.2 step 3). `reason`: `missing_base_state`,
       `missing_branch`, `unheld_ancestor`. Retry after more events arrive.
     - `orphaned` — external-commit whose joiner is excluded by every held tip
       (§9.4 ORPHANED); caller re-issues via `dmlsExternalCommit`.
@@ -178,7 +179,8 @@ of its `values`, restored by extending a fresh provider's map. The spike
 restores a group this way and encrypts from it.
 **`SignatureKeyPair::store` is never called**: operations take `&SignatureKeyPair`
 built from the per-call seed, so the seed never enters `values`. A test asserts
-the seed bytes do not appear in any exported blob. (`DmlsClient::new` no longer calls `store`; the engine `Signer` is built per call.)
+the seed bytes do not appear in any exported blob. (`DmlsClient::new` no longer
+calls `store`; the engine `Signer` is built per call.)
 
 `dmlsExportGroup` returns base64url of a versioned binary container:
 
@@ -236,12 +238,11 @@ Input `requestedJson`: `{"requested": [commit_id_b64...]}` — branch extremity
 ids; Hydrogen supplies no membership. Wasm derives `Branch` values from the held
 branches. Leaf signature checks use the held `LeafNode`s via the verify callback.
 Device-root identity needs the `DeviceRootRegistry`, which Hydrogen holds from
-00FC chains; passed as `registryJson` (`{principal: {device_id: root_key}}`).
-That adds one arg to both `dmlsPlanMerge` and `dmlsMerge` (which plans
-internally). It is passed **per call**, never cached: a stale registry is a
-security bug. It is scoped to the room's members, derived from the **auth
-events of the requested branches** (not current room state), and rejected over
-a size cap (`bad_argument`).
+00FC chains; passed as `registryJson` (§5.1). That adds one arg to both
+`dmlsPlanMerge` and `dmlsMerge` (which plans internally). It is passed **per
+call**, never cached: a stale registry is a security bug. It is scoped to the
+room's members, derived from the **auth events of the requested branches**
+(not current room state), and rejected over a size cap (`bad_argument`).
 
 Output: `{status: "planned" | "deferred", plan?: PlanSummary, reason?}`.
 `deferred` + `missing_base_state` when a requested extremity is not held
@@ -250,6 +251,82 @@ then builds the MLS Commit and returns the `m.dmls.merge` content
 (`resolves = requested`, `base = plan.base`, `plan` embedded). `required_self_updates`
 are reported in the plan; each named member later calls `dmlsCommit` with a
 self-update op. It never fabricates an `UpdateOther`.
+
+### 5.1 `registryJson` schema
+
+`registryJson` is a JSON **text** argument, parsed with the same strict
+canonical parser as event content, at most 262,144 bytes. It must be enough to
+rebuild the `DeviceRootRegistry`, because merge planning resolves leaf identity
+against certificates and roots, not against a bare device-id map.
+
+```json
+{
+    "masterKeys": [{ "principal": "@...", "key": "<b64url32>" }],
+    "roots": [
+        {
+            "principal": "@...",
+            "userEpochHeight": 7,
+            "generation": 1,
+            "selfSigningKey": "<b64url32>"
+        }
+    ],
+    "certificates": [
+        {
+            "principal": "@...",
+            "certificate": {
+                "version": 1,
+                "device_id": "D1",
+                "device_key": "<b64url32>",
+                "self_signing_key": "<b64url32>",
+                "self_signing_signature": "<b64url>",
+                "device_key_signature": "<b64url>"
+            }
+        }
+    ],
+    "revoked": ["<b64url32>"]
+}
+```
+
+Rules:
+
+1. **Bounds.** The 262,144-byte cap binds first; additionally each of
+   `masterKeys`, `roots`, `certificates` and `revoked` is at most 4,096 entries.
+   Duplicate principals, duplicated `(principal, generation)` roots, and
+   duplicated device keys are `bad_argument` rather than last-one-wins.
+2. **`masterKeys`.** One 32-byte key per user principal, sorted by principal.
+   `DeviceCertificate::parse_and_verify` uses it to check the certificate
+   chain, so an absent entry means the principal cannot be pinned.
+3. **`roots`.** The complete, ordered per-principal `m.room.device_root` chain,
+   ascending by `(userEpochHeight, generation)`, starting at generation 1 for
+   each height and advancing by exactly one within a height. Wasm replays
+   `DeviceRootRegistry::install_root`, so a gap, a conflict at the same height
+   and generation, or a backwards height is `bad_argument`. Only the last root
+   per principal is retained; the earlier entries exist to re-validate the
+   chain.
+4. **`certificates`.** Every certificate verified against a master key,
+   **including stale ones** for rotated or revoked devices: merge planning needs
+   them to recognise a member and plan a Remove. `principal` is the auth-event
+   sender the certificate was validated for (it is bound by the signature and
+   is not a certificate field). Wasm re-runs `parse_and_verify` with
+   `masterKeys[principal]`, then `certify`; a certificate that fails is
+   `bad_argument`, as is the same device key certified for a different
+   `(principal, device_id)`.
+5. **`revoked`.** Device keys, 32 bytes each, whether or not they appear in
+   `certificates`. Wasm calls `DeviceRootRegistry::revoke` for each.
+6. **Trust and scope.** The roots and certificates are **re-verified in wasm**;
+   Hydrogen's resolution is not trusted. Revocations cannot be re-derived from a
+   device key, so they are Hydrogen's assertion, accepted only within the branch
+   auth-event scope below. A leaf whose key has no master key, root or
+   certificate resolves to `MergeError::UncertifiedDevice`, i.e. `rejected` —
+   never a Megolm fallback and never "unknown device allowed".
+7. **Scope.** Entries MUST come only from the auth events of the `requested`
+   branches, not from current room state and not from the whole room history. A
+   member that is not in that ancestry must not appear; a needed member that is
+   absent surfaces as an uncertified leaf.
+8. **Never cached.** Every `dmlsPlanMerge` and `dmlsMerge` call takes a fresh
+   `registryJson`, scoped to that call's `requestedJson`. Caching a previous
+   value is a security bug, because revocation and rotation are exactly what it
+   is meant to reflect.
 
 ## 6. Implementation prerequisites (native, in `cygnus-dmls`, before any export)
 
