@@ -119,6 +119,14 @@ Notes:
   merge apply path is exactly the plan-verifying one (`apply_merge` natively).
   Omitting it for a merge is `bad_argument` (`registry_required`), never an
   unchecked apply. A plain `m.dmls.commit` does not need it.
+- `dmlsApplyCommit` routes by `eventType`: `m.dmls.commit` uses the plain apply
+  path, `m.dmls.merge` uses the plan-verifying path with `registryJson`, and
+  `m.dmls.external_commit` uses the external-commit apply path (no
+  `registryJson`). The external-commit path checks the target is an ancestor,
+  the sender is the joiner, the resulting epoch is `target + 1`, the Commit
+  carries no Add/Update/Remove proposal, the joiner holds no leaf in the target
+  state, exactly one leaf for the joiner is added, and `group_info` is the
+  joiner's signed GroupInfo for the resulting state.
 - `dmlsApplyCommit.status`:
     - `applied` — new branch stored, extremities updated.
     - `deferred` — a `base`/`resolves` state is not held, or a referenced event
