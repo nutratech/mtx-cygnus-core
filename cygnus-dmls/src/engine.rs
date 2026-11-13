@@ -824,8 +824,10 @@ pub fn apply_merge(
 /// `target.mls_epoch` whose event is a known ancestor. The Commit must carry no
 /// proposals at all: a Remove is how `OpenMLS` silently resyncs a same-identity
 /// join, so refusing every Remove enforces "no live leaf". The joiner must not
-/// hold a leaf in the target state, and the merged group must contain exactly
-/// one more leaf, the joiner's. The new state replaces `target` as the tip.
+/// hold a leaf in the target state, the merged group must contain exactly one
+/// more leaf, the joiner's, and `group_info` must be the joiner's signed
+/// `GroupInfo` for this exact resulting state. The new state replaces `target` as
+/// the tip.
 ///
 /// # Errors
 ///
@@ -849,16 +851,16 @@ pub fn apply_external_commit(
     }
     let target_epoch = parsed.target.id.mls_epoch;
     let new_epoch = parsed.mls_epoch();
-    let info_ok = MlsMessageIn::tls_deserialize_exact(&parsed.group_info)
-        .ok()
-        .and_then(|message| match message.extract() {
-            MlsMessageBodyIn::GroupInfo(info) => Some(info),
-            _ => None,
-        })
-        .is_some_and(|info| {
-            info.group_id().as_slice() == group_id.as_slice() && info.epoch().as_u64() == new_epoch
-        });
-    if !info_ok {
+    let verifiable = match MlsMessageIn::tls_deserialize_exact(&parsed.group_info) {
+        Ok(message) => match message.extract() {
+            MlsMessageBodyIn::GroupInfo(info) => info,
+            _ => return Ok(ApplyOutcome::Rejected("mismatch:group_info")),
+        },
+        Err(_) => return Ok(ApplyOutcome::Rejected("mismatch:group_info")),
+    };
+    if verifiable.group_id().as_slice() != group_id.as_slice()
+        || verifiable.epoch().as_u64() != new_epoch
+    {
         return Ok(ApplyOutcome::Rejected("mismatch:group_info"));
     }
 
@@ -868,7 +870,7 @@ pub fn apply_external_commit(
     let joiner = ctx.sender.clone();
     let commit = parsed.commit;
 
-    let result = entry.apply(&base_id, new_id, &resolves, |group, provider| {
+    let result = entry.apply(&base_id, new_id, &resolves, move |group, provider| {
         if group.epoch().as_u64() != target_epoch {
             return Err(RegistryError::Rejected("mismatch:base"));
         }
@@ -899,6 +901,21 @@ pub fn apply_external_commit(
         }
         if staged.add_proposals().next().is_some() || staged.update_proposals().next().is_some() {
             return Err(RegistryError::Rejected("malformed:commit"));
+        }
+        // `group_info` must be the GroupInfo for this Commit's resulting state,
+        // not merely one for the same group and epoch.
+        let path = staged
+            .update_path_leaf_node()
+            .ok_or(RegistryError::Rejected("mismatch:joiner"))?;
+        let key = OpenMlsSignaturePublicKey::from_signature_key(
+            path.signature_key().clone(),
+            group.ciphersuite().signature_algorithm(),
+        );
+        let info = verifiable
+            .verify(provider.crypto(), &key)
+            .map_err(|_| RegistryError::Rejected("mismatch:group_info"))?;
+        if info.group_context() != staged.group_context() {
+            return Err(RegistryError::Rejected("mismatch:group_info"));
         }
         group
             .merge_staged_commit(provider, *staged)
@@ -1954,6 +1971,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::too_many_lines)]
     fn a_peer_applies_an_external_commit_and_refuses_bad_ones() {
         let (alice, bob, mut a, mut b, tip) = three_member_group();
         let group_id = a.group_id();
@@ -1992,6 +2010,22 @@ mod tests {
         assert!(matches!(
             apply_external_commit(&mut b, &out.content, &ctx(&dave_key, &["$second"])).unwrap(),
             ApplyOutcome::Deferred("unheld_ancestor")
+        ));
+        assert_eq!(b.export(), before);
+
+        // A GroupInfo for the same epoch but a different tree, signed by a
+        // different member, is not the join's resulting state.
+        let other_info = CommitContent::parse(wire::COMMIT_EVENT, &s.content, &group_id)
+            .unwrap()
+            .group_info;
+        let mut wrong_info = out.content.clone();
+        wrong_info.as_object_mut().unwrap().insert(
+            "group_info".to_owned(),
+            Value::from(crate::content::b64_encode(&other_info)),
+        );
+        assert!(matches!(
+            apply_external_commit(&mut b, &wrong_info, &ctx(&dave_key, &["$s"])).unwrap(),
+            ApplyOutcome::Rejected("mismatch:group_info")
         ));
         assert_eq!(b.export(), before);
 
