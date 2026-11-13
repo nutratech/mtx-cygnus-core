@@ -43,6 +43,17 @@ Consequences:
   compare-and-set on `seq` in IndexedDB; on conflict, discard the in-memory
   entry (`dmlsForget`), re-import, and retry the event. Wasm itself is per-tab
   and cannot enforce this.
+- **Lock scope.** The lock covers the whole read → import → mutate → export →
+  CAS-write transaction, not just the wasm call. Publish to Matrix only **after**
+  the CAS write succeeds, so a crash never sends a Commit whose state was not
+  persisted. `dmlsDecrypt` mutates too (it advances the secret tree), so it runs
+  under the lock and is persisted. If `navigator.locks` is unavailable, claim a
+  single-writer tab via `BroadcastChannel`/`localStorage`, or refuse DMLS sends in
+  secondary tabs.
+- **Extremity cap.** Wasm holds at most `MAX_HELD_EXTREMITIES` branches per group
+  (proposed 8). Past the cap, `dmlsApplyCommit` returns `deferred` with reason
+  `extremity_cap` and Hydrogen enters the §11 recovery path; no tip is ever
+  silently evicted.
 
 ## 2. Function table
 
@@ -50,23 +61,23 @@ H = handshake (returns `{eventType, content}` ready to send), A = application,
 S = state/utility. "Mutates" means the registry entry changes; Hydrogen must
 re-export after any mutating call.
 
-| JS name              | Args                                                                       | Returns                                                            | Mutates                | Kind |
-| -------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------ | ---------------------- | ---- |
-| `dmlsKeyPackage`     | `identityJson, deviceSeedB64, roomId`                                      | `{eventType, content, keyPackageId, secretsB64}`                   | no (see §4)            | H    |
-| `dmlsCreateGroup`    | `identityJson, deviceSeedB64, roomId, nonceB64`                            | `{groupId, eventType, content, stateB64}`                          | new entry              | H    |
-| `dmlsCommit`         | `groupId, deviceSeedB64, opsJson, atCommitId?`                             | `{eventType, content, welcomes: [{toDevice, eventType, content}]}` | adds branch            | H    |
-| `dmlsPlanMerge`      | `groupId, requestedJson`                                                   | `{status, plan?}` (see §5)                                         | no                     | S    |
-| `dmlsMerge`          | `groupId, deviceSeedB64, requestedJson`                                    | `{eventType, content, welcomes}`                                   | adds branch            | H    |
-| `dmlsExternalCommit` | `identityJson, deviceSeedB64, groupInfoContentJson`                        | `{groupId, eventType, content}`                                    | new entry/branch       | H    |
-| `dmlsApplyCommit`    | `groupId, eventType, contentJson, ctxJson`                                 | `{status, reason?, commitId?, epoch?, members?}`                   | on `applied` only      | S    |
-| `dmlsJoinWelcome`    | `identityJson, deviceSeedB64, roomId, welcomeContentJson, secretsB64?`     | `{status, groupId?, epoch?, members?}`                             | new entry on `applied` | S    |
-| `dmlsReboot`         | `groupId, deviceSeedB64, reason, membersJson, baseEventId`                 | `{newGroupId, eventType, content, welcomes}`                       | new entry              | H    |
-| `dmlsEncrypt`        | `groupId, deviceSeedB64, roomId, innerType, innerContentJson, atCommitId?` | `{eventType, content}`                                             | ratchet                | A    |
-| `dmlsDecrypt`        | `groupId, contentJson, roomId`                                             | `{status, innerType?, innerContentJson?, senderMember?, epoch?}`   | ratchet on `ok`        | A    |
-| `dmlsExportGroup`    | `groupId`                                                                  | `stateB64`                                                         | no                     | S    |
-| `dmlsImportGroup`    | `stateB64`                                                                 | `{groupId, seq, extremities}`                                      | new/replace entry      | S    |
-| `dmlsHasGroup`       | `groupId`                                                                  | `bool`                                                             | no                     | S    |
-| `dmlsForget`         | `groupId`                                                                  | `void`                                                             | drops entry            | S    |
+| JS name              | Args                                                                       | Returns                                                                        | Mutates                | Kind |
+| -------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------ | ---------------------- | ---- |
+| `dmlsKeyPackage`     | `identityJson, deviceSeedB64`                                              | `{eventType, content, keyPackageId, secretsB64}`                               | no (see §4)            | H    |
+| `dmlsCreateGroup`    | `identityJson, deviceSeedB64, roomId`                                      | `{groupId, eventType, content, stateB64}` (`groupId = wire::group_id(roomId)`) | new entry              | H    |
+| `dmlsCommit`         | `groupId, deviceSeedB64, opsJson, atCommitId?`                             | `{eventType, content, welcomes: [{toDevice, eventType, content}]}`             | adds branch            | H    |
+| `dmlsPlanMerge`      | `groupId, requestedJson, registryJson`                                     | `{status, plan?}` (see §5)                                                     | no                     | S    |
+| `dmlsMerge`          | `groupId, deviceSeedB64, requestedJson, registryJson`                      | `{eventType, content, welcomes}`                                               | adds branch            | H    |
+| `dmlsExternalCommit` | `identityJson, deviceSeedB64, roomId, groupInfoContentJson`                | `{groupId, eventType, content}` (checked against `wire::group_id(roomId)`)     | new entry/branch       | H    |
+| `dmlsApplyCommit`    | `groupId, eventType, contentJson, ctxJson`                                 | `{status, reason?, commitId?, epoch?, members?}`                               | on `applied` only      | S    |
+| `dmlsJoinWelcome`    | `identityJson, deviceSeedB64, roomId, welcomeContentJson, secretsB64?`     | `{status, groupId?, epoch?, members?}`                                         | new entry on `applied` | S    |
+| `dmlsReboot`         | `groupId, deviceSeedB64, reason, membersJson, baseEventId`                 | `{newGroupId, eventType, content, welcomes}`                                   | new entry              | H    |
+| `dmlsEncrypt`        | `groupId, deviceSeedB64, roomId, innerType, innerContentJson, atCommitId?` | `{eventType, content}`                                                         | ratchet                | A    |
+| `dmlsDecrypt`        | `groupId, contentJson, roomId`                                             | `{status, innerType?, innerContentJson?, senderMember?, epoch?}`               | ratchet on `ok`        | A    |
+| `dmlsExportGroup`    | `groupId`                                                                  | `stateB64`                                                                     | no                     | S    |
+| `dmlsImportGroup`    | `stateB64`                                                                 | `{groupId, seq, extremities}`                                                  | new/replace entry      | S    |
+| `dmlsHasGroup`       | `groupId`                                                                  | `bool`                                                                         | no                     | S    |
+| `dmlsForget`         | `groupId`                                                                  | `void`                                                                         | drops entry            | S    |
 
 Notes:
 
@@ -104,6 +115,18 @@ Notes:
 
 ## 3. Persisted state blob
 
+**Storage mechanism (verified by `cygnus-dmls/tests/storage_snapshot.rs`).**
+`openmls_memory_storage::MemoryStorage::values` is a public
+`RwLock<HashMap<Vec<u8>, Vec<u8>>>`; its `serialize`/`deserialize` are
+`test-utils` KAT helpers and are **not** used. Each held extremity owns one
+`OpenMlsRustCrypto`; a snapshot is our own versioned, length-prefixed encoding
+of its `values`, restored by extending a fresh provider's map. The spike
+restores a group this way and encrypts from it.
+**`SignatureKeyPair::store` is never called**: operations take `&SignatureKeyPair`
+built from the per-call seed, so the seed never enters `values`. A test asserts
+the seed bytes do not appear in any exported blob. (`DmlsClient::new` currently
+calls `store`; that is removed in the refactor.)
+
 `dmlsExportGroup` returns base64url of a versioned binary container:
 
 ```text
@@ -138,20 +161,17 @@ compare-and-set from §1. Old `version`s are migrated on import or rejected with
 
 ## 4. Key packages
 
-- Per device, not per group; one **device key-package store**, blob-persisted
-  separately: `dmlsKeyPackage` returns `secretsB64` (the init private key and
-  KeyPackage private material, keyed by `key_package_id`). Hydrogen stores
-  `{keyPackageId -> secretsB64}`, encrypted, and keeps the pool (target 3
-  unexpired per §6 rule 6; replace after an Add is accepted). The `m.dmls.key_package`
-  event is the returned `{eventType, content}`.
-- `dmlsJoinWelcome` takes the `secretsB64` for the Welcome's `key_package_id`
-  (parsed from the Welcome content by `WelcomeContent`, which names it).
-  Hydrogen looks it up by that id; if absent ⇒ `wrong_key_package`. On
-  `applied`, Hydrogen deletes that secret (single-use, §6 rule 5).
-- **Open point:** OpenMLS can look up the init key itself if its storage is
-  imported wholesale. Passing explicit `secretsB64` keeps the contract
-  stateless; it costs Hydrogen a small store. Flag if you prefer a wasm-held
-  device store.
+Key-package secrets live **in Hydrogen**, not wasm; wasm stays group-scoped.
+
+- `dmlsKeyPackage` returns `secretsB64` (init/leaf private material) and
+  `keyPackageId`. Hydrogen persists `{keyPackageId -> secretsB64}`, encrypted with
+  the same mechanism as the group blob, never logged. **Write-ahead:** persist
+  before publishing the `m.dmls.key_package` event, so a Welcome can never arrive
+  for a secret that was not stored. Pool target: 3 unexpired (§6 rule 6).
+- `dmlsJoinWelcome` takes the `secretsB64` for the `key_package_id` parsed from
+  the Welcome content. Hydrogen looks it up by that id and does **not**
+  trial-decrypt the pool. Absent or non-matching id → `wrong_key_package`.
+- Delete the secret only after a successful join, or on expiry.
 
 ## 5. Merge planning
 
@@ -161,7 +181,11 @@ ids; Hydrogen supplies no membership. Wasm derives `Branch` values from the held
 branches. Leaf signature checks use the held `LeafNode`s via the verify callback.
 Device-root identity needs the `DeviceRootRegistry`, which Hydrogen holds from
 00FC chains; passed as `registryJson` (`{principal: {device_id: root_key}}`).
-That adds one arg: `dmlsPlanMerge(groupId, requestedJson, registryJson)`.
+That adds one arg to both `dmlsPlanMerge` and `dmlsMerge` (which plans
+internally). It is passed **per call**, never cached: a stale registry is a
+security bug. It is scoped to the room's members, derived from the **auth
+events of the requested branches** (not current room state), and rejected over
+a size cap (`bad_argument`).
 
 Output: `{status: "planned" | "deferred", plan?: PlanSummary, reason?}`.
 `deferred` + `missing_base_state` when a requested extremity is not held
@@ -184,11 +208,8 @@ self-update op. It never fabricates an `UpdateOther`.
 Landing order: 1→2→3, then wasm exports + `make install`, announced to Hydrogen
 with the final `.d.ts` diff.
 
-## Open questions for review
+## Resolved in review (6c576c9)
 
-1. Per-extremity branch storage (§0) vs. "one state per group": agree?
-2. Lazy import + `navigator.locks` (§1): acceptable for Hydrogen?
-3. Explicit `secretsB64` key-package store in Hydrogen (§4) vs. wasm-held store.
-4. `registryJson` passed per `dmlsPlanMerge` call (§5), or hold the registry in wasm?
-5. Should `deviceSeedB64` be passed per call (current draft) or set once with a
-   `dmlsUnlock(seed)` registry-scoped call?
+Per-extremity state; lazy import under Web Locks (scope above); key-package
+secrets in Hydrogen; `registryJson` per call; seed per call (no `dmlsUnlock`).
+`dmlsCreateGroup` has no nonce, and `dmlsKeyPackage` takes no `roomId`.
