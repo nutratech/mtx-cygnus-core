@@ -79,6 +79,9 @@ pub enum RegistryError {
     /// `OpenMLS` failed.
     #[error("crypto: {0}")]
     Mls(String),
+    /// The caller supplied an unusable argument.
+    #[error("bad_argument: {0}")]
+    BadArgument(&'static str),
     /// The operation is permanently invalid; the payload is the stable code.
     #[error("{0}")]
     Rejected(&'static str),
@@ -101,6 +104,7 @@ impl RegistryError {
             Self::WrongGroup => "mismatch:group_id",
             Self::AlreadyHeld => "already_held",
             Self::Mls(_) => "crypto",
+            Self::BadArgument(_) => "bad_argument",
             Self::Rejected(code) => code,
         }
     }

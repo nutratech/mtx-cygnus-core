@@ -439,7 +439,7 @@ pub fn commit(
                 }
                 CommitOp::Remove(target) => {
                     if *target == signer.member_key() {
-                        return Err(RegistryError::Mls("bad_argument: self_remove".into()));
+                        return Err(RegistryError::BadArgument("self_remove"));
                     }
                     let mut leaves = Vec::new();
                     for member in group.members() {
@@ -449,7 +449,7 @@ pub fn commit(
                         }
                     }
                     if leaves.is_empty() {
-                        return Err(RegistryError::Mls("bad_argument: member".into()));
+                        return Err(RegistryError::BadArgument("member"));
                     }
                     let (commit, _welcome, _info) = group
                         .remove_members(provider, &signer.pair, &leaves)
@@ -1103,7 +1103,8 @@ mod tests {
             device_id: "NOPE".to_owned(),
         };
         for target in [alice.member_key(), stranger] {
-            assert!(commit(&mut a, &alice, &tip, &CommitOp::Remove(target)).is_err());
+            let error = commit(&mut a, &alice, &tip, &CommitOp::Remove(target)).unwrap_err();
+            assert_eq!(error.code(), "bad_argument");
             assert_eq!(a.export(), before);
         }
     }
