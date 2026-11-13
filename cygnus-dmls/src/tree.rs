@@ -806,6 +806,11 @@ impl Rfc9420Tree {
             Some(nodes) => RatchetTree::with_nodes(capacity, nodes)?,
             None => RatchetTree::new(capacity)?,
         };
+        for leaf_index in member_count..capacity {
+            if tree.leaf(leaf_index)?.is_some() {
+                return Err(invalid(format!("padding leaf {leaf_index} must be blank")));
+            }
+        }
         Ok(Self {
             tree,
             member_count,
@@ -841,21 +846,68 @@ impl Rfc9420Tree {
     ///
     /// # Errors
     ///
-    /// Returns [`InvalidTree`] if `new_count` is zero.
+    /// Returns [`InvalidTree`] if `new_count` is zero or exceeds the current
+    /// member count (this type never grows), or if a retained parent or a
+    /// leaf past `new_count` is not blank. Nothing changes on error.
     pub fn shrink_to(&mut self, new_count: usize) -> Result<bool, InvalidTree> {
-        let capacity = rfc9420_capacity(new_count)?;
-        self.member_count = new_count;
-        if capacity >= self.capacity {
-            return Ok(false);
+        if new_count > self.member_count {
+            return Err(invalid("cannot shrink to more members than the tree holds"));
         }
-        let keep = 2 * capacity - 1;
-        self.tree.nodes.truncate(keep);
+        let capacity = rfc9420_capacity(new_count)?;
+        for leaf_index in new_count..self.member_count {
+            if self.tree.leaf(leaf_index)?.is_some() {
+                return Err(invalid(format!(
+                    "leaf {leaf_index} past the new member count is not blank"
+                )));
+            }
+        }
+        // Validates spanning parents before mutating; a no-op when the
+        // capacity does not drop.
+        let shrank = self.tree.shrink_to(capacity)?;
+        self.member_count = new_count;
         self.capacity = capacity;
-        self.tree.leaf_count = capacity;
-        self.tree.children.clear();
-        self.tree.parent_of.clear();
-        self.tree.build_shape(0, capacity)?;
-        Ok(true)
+        Ok(shrank)
+    }
+
+    /// Set or clear a leaf. Populating a padding leaf is rejected.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`InvalidTree`] if the index is out of range or is padding
+    /// and `node` is `Some`.
+    pub fn set_leaf(
+        &mut self,
+        leaf_index: usize,
+        node: Option<LeafNode>,
+    ) -> Result<(), InvalidTree> {
+        if node.is_some() && leaf_index >= self.member_count {
+            return Err(invalid(format!(
+                "leaf {leaf_index} is padding and must stay blank"
+            )));
+        }
+        self.tree.set_leaf(leaf_index, node)
+    }
+
+    /// Set or clear a parent node.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`InvalidTree`] if `node_index` is not a parent.
+    pub fn set_parent(
+        &mut self,
+        node_index: usize,
+        node: Option<ParentNode>,
+    ) -> Result<(), InvalidTree> {
+        self.tree.set_parent(node_index, node)
+    }
+
+    /// Blank a leaf and its direct path.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`InvalidTree`] if the leaf index is out of range.
+    pub fn remove_leaf(&mut self, leaf_index: usize) -> Result<(), InvalidTree> {
+        self.tree.remove_leaf(leaf_index)
     }
 
     /// Shrink past trailing blank members.
@@ -875,12 +927,6 @@ impl std::ops::Deref for Rfc9420Tree {
 
     fn deref(&self) -> &Self::Target {
         &self.tree
-    }
-}
-
-impl std::ops::DerefMut for Rfc9420Tree {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.tree
     }
 }
 
@@ -1051,7 +1097,7 @@ mod tests {
         assert_eq!(skipped.leaf_count(), 600);
 
         let mut rfc = Rfc9420Tree::new(600).unwrap();
-        for leaf_index in 0..rfc.leaf_count() {
+        for leaf_index in 0..rfc.member_count() {
             rfc.set_leaf(
                 leaf_index,
                 Some(LeafNode::new(
@@ -1074,6 +1120,20 @@ mod tests {
         assert_eq!(rfc.capacity(), 512);
         assert_eq!(rfc.member_count(), 300);
         assert_eq!(&rfc.nodes()[..keep], &left[..]);
+    }
+
+    #[test]
+    fn rfc_tree_rejects_padding_and_invalid_shrinks_without_mutating() {
+        let mut rfc = Rfc9420Tree::new(5).unwrap();
+        assert_eq!((rfc.member_count(), rfc.capacity()), (5, 8));
+        let leaf = LeafNode::new(b"x".to_vec(), b"k".to_vec());
+        assert!(rfc.set_leaf(6, Some(leaf.clone())).is_err());
+        assert!(rfc.shrink_to(9).is_err());
+        assert_eq!((rfc.member_count(), rfc.capacity()), (5, 8));
+
+        let mut nodes = vec![None; 15];
+        nodes[12] = Some(TreeNode::Leaf(leaf));
+        assert!(Rfc9420Tree::with_nodes(5, Some(nodes)).is_err());
     }
 
     #[test]
