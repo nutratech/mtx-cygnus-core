@@ -1,11 +1,11 @@
 # DMLS wasm API — draft for review
 
-Status: **native DMLS implementation in progress; wasm exports are not
-implemented.** The native `cygnus-dmls` crate implements the group lifecycle,
-branch persistence, commit operations, merge planning, and merge Commit
-construction. The API below is still a draft for the wasm and Hydrogen layers.
-All exports are new and additive; no existing `cygnus-wasm` signature changes.
-Spec: MSC00FD.
+Status: **native and wasm implementations complete; Hydrogen integration
+pending.** The native `cygnus-dmls` crate implements the group lifecycle, branch
+persistence, commit operations, merge planning, merge Commit construction,
+external joins, and reboot. `cygnus-wasm` exports the table below. All exports
+are new and additive; no existing `cygnus-wasm` signature changes. Spec:
+MSC00FD.
 
 Conventions (same as the existing exports): strings in, strings out; bytes are
 unpadded base64url; JSON is canonical text from `content.rs`; Hydrogen sends
@@ -90,35 +90,52 @@ H = handshake (returns `{eventType, content}` ready to send), A = application, S
 = state/utility. "Mutates" means the registry entry changes; Hydrogen must
 re-export after any mutating call.
 
-| JS name              | Args                                                                       | Returns                                                                        | Mutates                | Kind |
-| -------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------ | ---------------------- | ---- |
-| `dmlsKeyPackage`     | `identityJson, deviceSeedB64`                                              | `{eventType, content, keyPackageId, secretsB64}`                               | no (see §4)            | H    |
-| `dmlsCreateGroup`    | `identityJson, deviceSeedB64, roomId`                                      | `{groupId, commitId, epoch, members, stateB64}` (nothing to publish, see §2.1) | new entry              | H    |
-| `dmlsCommit`         | `groupId, deviceSeedB64, opsJson, atCommitId?`                             | `{eventType, content, welcomes: [{toDevice, eventType, content}]}`             | adds branch            | H    |
-| `dmlsPlanMerge`      | `groupId, requestedJson, registryJson`                                     | `{status, plan?}` (see §5)                                                     | no                     | S    |
-| `dmlsMerge`          | `groupId, deviceSeedB64, requestedJson, registryJson`                      | `{eventType, content, welcomes}`                                               | adds branch            | H    |
-| `dmlsExternalCommit` | `identityJson, deviceSeedB64, roomId, groupInfoContentJson`                | `{groupId, eventType, content}` (checked against `wire::group_id(roomId)`)     | new entry/branch       | H    |
-| `dmlsApplyCommit`    | `groupId, eventType, contentJson, ctxJson, registryJson?`                  | `{status, reason?, commitId?, epoch?, members?}`                               | on `applied` only      | S    |
-| `dmlsJoinWelcome`    | `identityJson, deviceSeedB64, roomId, welcomeContentJson, secretsB64?`     | `{status, groupId?, epoch?, members?}`                                         | new entry on `applied` | S    |
-| `dmlsReboot`         | `groupId, deviceSeedB64, reason, membersJson, baseEventId`                 | `{newGroupId, eventType, content, welcomes}`                                   | new entry              | H    |
-| `dmlsEncrypt`        | `groupId, deviceSeedB64, roomId, innerType, innerContentJson, atCommitId?` | `{eventType, content}`                                                         | ratchet                | A    |
-| `dmlsDecrypt`        | `groupId, contentJson, roomId`                                             | `{status, innerType?, innerContentJson?, senderMember?, epoch?}`               | ratchet on `ok`        | A    |
-| `dmlsExportGroup`    | `groupId`                                                                  | `stateB64`                                                                     | no                     | S    |
-| `dmlsImportGroup`    | `stateB64`                                                                 | `{groupId, seq, extremities, extremityCount}`                                  | new/replace entry      | S    |
-| `dmlsHasGroup`       | `groupId`                                                                  | `bool`                                                                         | no                     | S    |
-| `dmlsForget`         | `groupId`                                                                  | `void`                                                                         | drops entry            | S    |
+| JS name              | Args                                                                       | Returns                                                                                  | Mutates                | Kind |
+| -------------------- | -------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- | ---------------------- | ---- |
+| `dmlsKeyPackage`     | `identityJson, deviceSeedB64`                                              | `{eventType, content, keyPackageId, secretsB64}`                                         | no (see §4)            | H    |
+| `dmlsCreateGroup`    | `identityJson, deviceSeedB64, roomId`                                      | `{groupId, commitId, epoch, members, stateB64}` (nothing to publish, see §2.1)           | new entry              | H    |
+| `dmlsCommit`         | `groupId, deviceSeedB64, opsJson, baseJson?`                               | `{eventType, content, groupId, commitId, epoch, members, welcome, recipients}` | adds branch            | H    |
+| `dmlsWelcomeContent` | `groupId, commitEventId, commitId, keyPackageId, welcomeB64`               | `{eventType, content}`                                                                   | no                     | H    |
+| `dmlsPlanMerge`      | `groupId, requestedJson, registryJson`                                     | `{status, plan?}` (see §5)                                                               | no                     | S    |
+| `dmlsMerge`          | `groupId, deviceSeedB64, requestedJson, registryJson`                      | `{status, eventType?, content?, commitId?, epoch?, members?, reason?}`                   | adds branch            | H    |
+| `dmlsExternalCommit` | `identityJson, deviceSeedB64, roomId, targetJson, sourceContentJson`       | `{eventType, content, groupId, commitId, epoch, members}`                                | new entry/branch       | H    |
+| `dmlsApplyCommit`    | `groupId, eventType, contentJson, ctxJson, registryJson?`                  | `{status, reason?, groupId?, commitId?, epoch?, members?, extremityCount}`               | on `applied` only      | S    |
+| `dmlsCheckReboot`    | `groupId, contentJson, ctxJson`                                            | `{status, newGroupId?, members?, reason?}`                                               | no                     | S    |
+| `dmlsJoinWelcome`    | `identityJson, deviceSeedB64, welcomeContentJson, secretsB64?`             | `{status, reason?, groupId?, commitId?, epoch?, members?}`                               | new entry on `applied` | S    |
+| `dmlsReboot`         | `groupId, deviceSeedB64, reason, keyPackagesJson, baseJson`                | `{newGroupId, rebootContent, commitContent, commitId, welcome, recipients}`              | new entry              | H    |
+| `dmlsEncrypt`        | `groupId, deviceSeedB64, roomId, innerType, innerContentJson, atCommitId?` | `{eventType, content}`                                                                   | ratchet                | A    |
+| `dmlsDecrypt`        | `groupId, contentJson, roomId`                                             | `{status, innerType?, innerContentJson?, senderMember?, epoch?, commitId?}`              | ratchet on `ok`        | A    |
+| `dmlsExportGroup`    | `groupId`                                                                  | `stateB64`                                                                               | no                     | S    |
+| `dmlsImportGroup`    | `stateB64`                                                                 | `{groupId, seq, extremities, extremityCount}`                                            | new/replace entry      | S    |
+| `dmlsHasGroup`       | `groupId`                                                                  | `bool`                                                                                   | no                     | S    |
+| `dmlsForget`         | `groupId`                                                                  | `void`                                                                                   | drops entry            | S    |
 
 Notes:
 
-- `ctxJson` for `dmlsApplyCommit` is caller-supplied room context Hydrogen has
-  and wasm cannot: `{"roomId", "senderMember", "ancestors": [event_id...]}` —
-  the DAG ancestry check (§9.2 step 4) and the sender's auth are Hydrogen's.
-  Wasm checks that every `base`/`resolves` event_id is in `ancestors`.
+- `identityJson` is `{"principal": "@...", "deviceId": "D1"}`. It is needed
+  only when the device is not yet represented by a held state (key package,
+  create, external join, welcome). Calls on a loaded group read the caller's
+  identity back from the group's own leaf, so they take only `deviceSeedB64`.
+- `opsJson` for `dmlsCommit` is exactly one operation:
+  `{"op":"add","keyPackage":"<b64url>"}`,
+  `{"op":"remove","member":"<principal:device>"}`, or `{"op":"self_update"}`.
+  One Commit carries one operation; `dmlsMerge` is the only multi-extremity
+  path.
+- `baseJson` for `dmlsCommit` is the held base extremity
+  (`{mls_epoch, commit_id, event_id}`). Omit it to commit on the genesis state,
+  whose reference has no `event_id` (§2.1). A later base without an event id is
+  `bad_argument`.
+- `ctxJson` for `dmlsApplyCommit` is caller-supplied context Hydrogen has and
+  wasm cannot:
+  `{"senderMember": "<principal:device>", "ancestors": [event_id...]}`. The DAG
+  ancestry check (§9.2 step 4) and the sender's auth are Hydrogen's; wasm checks
+  that every `base`/`resolves` event id is in `ancestors`. `roomId` may be
+  present and is ignored: a reboot group's id is not room-derived.
 - `registryJson` is **required** when `eventType` is `m.dmls.merge` and ignored
   otherwise. This is the same per-call registry used by `dmlsPlanMerge`; the
   merge apply path is exactly the plan-verifying one (`apply_merge` natively).
   Omitting it for a merge is `bad_argument` (`registry_required`), never an
-  unchecked apply. A plain `m.dmls.commit` does not need it.
+  unchecked apply. Plain commits and external commits do not need it.
 - `dmlsApplyCommit` routes by `eventType`: `m.dmls.commit` uses the plain apply
   path, `m.dmls.merge` uses the plan-verifying path with `registryJson`, and
   `m.dmls.external_commit` uses the external-commit apply path (no
@@ -127,26 +144,59 @@ Notes:
   carries no Add/Update/Remove proposal, the joiner holds no leaf in the target
   state, exactly one leaf for the joiner is added, and `group_info` is the
   joiner's signed GroupInfo for the resulting state.
+- `targetJson` for `dmlsExternalCommit` is the target extremity
+  (`{mls_epoch, commit_id, event_id}`). `sourceContentJson` is the content of
+  the event that produced it. Wasm checks that the source's derived
+  `mls_epoch`/`commit_id` match the target and takes `group_info` from it; the
+  group is `wire::group_id(roomId)`.
+- `dmlsWelcomeContent` builds `m.dmls.welcome` once the Commit's room event id
+  is known. `dmlsCommit` and `dmlsReboot` return raw `welcome` because they run
+  before the Commit is published. Their `recipients` are
+  `[{toDevice:{principal,deviceId}, keyPackageId}]`: one to-device event per
+  recipient, all carrying the same Welcome bytes.
+- `requestedJson` for `dmlsPlanMerge`/`dmlsMerge` is an array of
+  `{"commit_id":"<b64url32>","event_id":"$..."}`. The epoch is read from the
+  held state, not supplied. Any unheld `commit_id` defers with
+  `missing_base_state`.
+- `dmlsReboot` lists members to carry over as `keyPackagesJson`, an array of
+  base64url serialized KeyPackages. `baseJson` is the held old-group extremity
+  (`{mls_epoch, commit_id, event_id}`). Native `reboot` derives each member from
+  its KeyPackage and refuses anyone outside `base`, a repeat, or the caller. The
+  replacement group id is derived from the old group and the base commit, so it
+  is **not** `wire::group_id(roomId)`.
 - `dmlsApplyCommit.status`:
     - `applied` — new branch stored, extremities updated.
     - `deferred` — a `base`/`resolves` state is not held, or a referenced event
       is not in `ancestors` (normal, §9.2 step 3). `reason`:
-      `missing_base_state`, `missing_branch`, `unheld_ancestor`. Retry after
-      more events arrive.
-    - `orphaned` — external-commit whose joiner is excluded by every held tip
-      (§9.4 ORPHANED); caller re-issues via `dmlsExternalCommit`.
+      `missing_base_state`, `missing_branch`, `unheld_ancestor`,
+      `extremity_cap`. Retry after more events arrive.
     - `rejected` — permanently invalid (bad `commit_id`, wrong `mls_epoch`, MLS
-      verification failure, plan mismatch). `reason` carries the error code
-      below. Never retried. For `m.dmls.merge`, `mismatch:plan` means the
-      recomputed base, plan summary or merged member set disagrees with the
-      event; `uncertified_device` means the registry cannot certify a leaf.
+      verification failure, plan mismatch, external-commit rule violation).
+      `reason` carries the error code below. Never retried. For `m.dmls.merge`,
+      `mismatch:plan` means the recomputed base, plan summary or merged member
+      set disagrees with the event; `uncertified_device` means the registry
+      cannot certify a leaf.
+- `dmlsPlanMerge` plan fields are `base` (`{mls_epoch, commit_id}`), `adds`,
+  `removes`, `requiredSelfUpdates`, and `orphanedExternalJoiners`; member lists
+  are `<principal:device>` strings.
+- `dmlsCheckReboot` authorizes a received `m.dmls.reboot` without mutating
+  state. `accepted` returns the derived `newGroupId` and the listed `members`;
+  it defers with `missing_base_state` when the named base is not held (the
+  rebooting member is exactly the one who may lack it). The caller then treats
+  the replacement group's first Commit as a new group.
 - `dmlsDecrypt.status`: `ok`, `missing_state` (epoch not held; buffer),
-  `rejected` (bad MLS message, inactive leaf, `room_id` mismatch).
-- `dmlsJoinWelcome.status`: `applied`, `wrong_key_package` (no retained secret
-  decrypts it — the §6 rule 5 race loser; re-add needed), `rejected`.
+  `rejected` (bad MLS message, inactive leaf, `room_id` mismatch). A wrong room
+  still advances that branch's ratchet because the MLS message was valid, so
+  persist the export even on this rejection.
+- `dmlsJoinWelcome.status`: `applied`, `wrong_key_package` (the supplied secret
+  does not redeem the Welcome — the §6 rule 5 race loser; re-add needed), or
+  `rejected` for a malformed or foreign Welcome. The group id comes from the
+  Welcome content, so a reboot replacement group joins the same way as a
+  room-derived one.
 - `deviceSeedB64` is an argument, not retained (see §3).
 - `dmlsEncrypt` `innerType`/`innerContentJson` are wrapped with `room_id` into
-  the §13 plaintext inside wasm; Hydrogen does not build it.
+  the §13 plaintext inside wasm; Hydrogen does not build it. `room_id` is the
+  room id, which is not required to hash to `groupId` for a reboot group.
 
 ### 2.1 Creation and the genesis base
 
@@ -237,6 +287,10 @@ entry. `dmlsImportGroup` replaces atomically (build new entry, then swap).
 export-after-every-mutation in one IndexedDB transaction with the `seq`
 compare-and-set from §1. Old `version`s are migrated on import or rejected with
 `unsupported_version`; exporting always writes the current version.
+`cygnus-dmls/tests/fixtures/group-blob-v1.b64` is a real two-state export;
+`blob_vector.rs` imports and re-exports it byte-for-byte and checks truncation,
+corruption, and version rejection. Regenerate it with
+`CYGNUS_REGEN_BLOB_VECTOR=1` when the v1 layout changes.
 
 ## 4. Key packages
 
@@ -269,15 +323,20 @@ registry is a security bug. It is scoped to the room's members, derived from the
 **auth events of the requested branches** (not current room state), and rejected
 over a size cap (`bad_argument`).
 
-Output: `{status: "planned" | "deferred", plan?: PlanSummary, reason?}`.
-`deferred` + `missing_base_state` when a requested extremity is not held
+Output: `{status: "planned" | "deferred", plan?: PlanSummary, reason?}`. `plan`
+is
+`{base: {mls_epoch, commit_id}, adds, removes, requiredSelfUpdates, orphanedExternalJoiners}`,
+with member lists as `<principal:device>` strings. `deferred` +
+`missing_base_state` when a requested extremity is not held
 (`MergeError::MissingBaseState`); a bad plan is `rejected`. `dmlsMerge` plans,
-then builds the MLS Commit and returns the `m.dmls.merge` content
-(`resolves = requested`, `base = plan.base`, `plan` embedded).
-`required_self_updates` are reported in the plan; each named member later calls
-`dmlsCommit` with a self-update op. It never fabricates an `UpdateOther`. Until
-merge inputs retain the original KeyPackages, a plan that needs an Add returns
-`unsupported_add`; the affected member must rejoin.
+then builds the MLS Commit and returns
+`{status: "merged", eventType, content, commitId, epoch, members}` (or
+`{status, reason}`). The `m.dmls.merge` content has `resolves = requested` and
+`base = plan.base`, with the plan embedded. Merge never adds a member, so it
+returns no welcomes. `required_self_updates` are reported in the plan; each
+named member later calls `dmlsCommit` with a self-update op. It never fabricates
+an `UpdateOther`. Until merge inputs retain the original KeyPackages, a plan
+that needs an Add returns `unsupported_add`; the affected member must rejoin.
 
 On receive, `m.dmls.merge` must go through `dmlsApplyCommit` with a fresh
 `registryJson`. It recomputes the plan and rejects a mismatch in the base, plan
@@ -364,14 +423,21 @@ Rules:
 
 The native crate has snapshot/restore storage, per-extremity group state,
 version-1 blob persistence, create/join/encrypt/decrypt, Add/Remove/self-update
-commits, apply, merge planning, merge Commit construction, and plan-verifying
-received merges. Native tests cover the commit and merge paths, including failed
-operations leaving exported state unchanged.
+commits, apply, merge planning, merge Commit construction, plan-verifying
+received merges, external commits, and reboot. Native tests cover the commit,
+merge, external-join, and reboot paths, including failed operations leaving
+exported state unchanged.
 
-Remaining work: implement the wasm exports and update the generated `.d.ts`; add
-a blob-format conformance vector; then run `make install` and announce the final
-bindings to Hydrogen. The blob is unreleased and remains version 1 while its
-format is still changing.
+`cygnus-wasm` now exports every function in §2 (built with `make wasm`), and
+`cygnus-wasm/tests/dmls.rs` round-trips create/add/join/encrypt/decrypt,
+external joins, apply, reboot, and received-reboot checks natively. The
+string-level implementation is `cygnus-dmls/src/api.rs`, which carries its own
+native tests. The blob conformance vector is
+`cygnus-dmls/tests/fixtures/group-blob-v1.b64`.
+
+Remaining work: Hydrogen integrates the exports and announces the final
+bindings. The blob is unreleased and remains version 1 while its format is still
+changing.
 
 ## Resolved in review (6c576c9)
 

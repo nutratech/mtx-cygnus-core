@@ -9,6 +9,9 @@
 //! the caller generates them (for example with `crypto.getRandomValues`) and
 //! is responsible for storing them.
 
+pub mod dmls;
+pub use dmls::*;
+
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD as B64, Engine};
 use cygnus_core::{
     bootstrap::{self, RotationKey},

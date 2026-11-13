@@ -15,6 +15,7 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 base64 = "0.23"
 cygnus-core = { path = ".." }
+cygnus-dmls = { path = "../cygnus-dmls" }
 ed25519-zebra = { version = "5", default-features = false }
 rezzy-json = { git = "https://gitlab.com/wombat-foundation/rezzy.git", branch = "dev" }
 wasm-bindgen = "0.2"
