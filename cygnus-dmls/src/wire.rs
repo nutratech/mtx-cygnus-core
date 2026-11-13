@@ -1,8 +1,8 @@
 //! Matrix transport constants and identifier derivations for DMLS.
 //!
-//! The event schemas and rules are specified in
-//! `proposals/dmls-matrix-transport.md`. This module owns the parts that every
-//! implementation must compute identically: the event type names, the
+//! The event schemas and rules are specified in MSC00FD
+//! (`proposals/00FD-dmls-matrix-transport.md`). This module owns the parts that
+//! every implementation must compute identically: the event type names, the
 //! capability flag in `m.room.create`, and the domain-separated BLAKE3
 //! identifiers.
 //!
@@ -40,6 +40,7 @@ const COMMIT_TAG: &[u8] = b"cygnus-dmls-commit-v1\0";
 const KEY_PACKAGE_TAG: &[u8] = b"cygnus-dmls-key-package-v1\0";
 const WELCOME_TAG: &[u8] = b"cygnus-dmls-welcome-v1\0";
 const GROUP_INFO_TAG: &[u8] = b"cygnus-dmls-group-info-v1\0";
+const REBOOT_TAG: &[u8] = b"cygnus-dmls-reboot-v1\0";
 
 /// A malformed DMLS transport value.
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
@@ -87,6 +88,17 @@ pub fn welcome_id(welcome_bytes: &[u8]) -> [u8; 32] {
 #[must_use]
 pub fn group_info_id(group_info_bytes: &[u8]) -> [u8; 32] {
     tagged(GROUP_INFO_TAG, group_info_bytes)
+}
+
+/// `BLAKE3("cygnus-dmls-reboot-v1\0" ‖ old_group_id ‖ base_commit_id)`.
+///
+/// The `group_id` of the replacement group an `m.dmls.reboot` starts.
+#[must_use]
+pub fn reboot_group_id(old_group_id: &[u8; 32], base_commit_id: &[u8; 32]) -> [u8; 32] {
+    let mut input = [0_u8; 64];
+    input[..32].copy_from_slice(old_group_id);
+    input[32..].copy_from_slice(base_commit_id);
+    tagged(REBOOT_TAG, &input)
 }
 
 /// The DMLS capability version advertised by an `m.room.create` content, if any.
@@ -175,6 +187,14 @@ mod tests {
                 assert_ne!(left, right);
             }
         }
+    }
+
+    #[test]
+    fn reboot_group_id_binds_both_inputs() {
+        let (a, b) = ([1_u8; 32], [2_u8; 32]);
+        assert_ne!(reboot_group_id(&a, &b), reboot_group_id(&b, &a));
+        assert_ne!(reboot_group_id(&a, &b), reboot_group_id(&a, &a));
+        assert_ne!(reboot_group_id(&a, &b), group_id("x"));
     }
 
     #[test]

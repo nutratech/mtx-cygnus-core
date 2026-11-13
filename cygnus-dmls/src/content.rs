@@ -1,6 +1,7 @@
 //! Typed event content for the DMLS Matrix transport.
 //!
-//! The schemas are specified in `proposals/dmls-matrix-transport.md`. Each
+//! The schemas are specified in MSC00FD
+//! (`proposals/00FD-dmls-matrix-transport.md`). Each
 //! `*Content` type here is the decoded form of one event's `content`:
 //!
 //! - `parse` is strict: known fields that are missing or malformed are
@@ -360,7 +361,7 @@ impl CommitContent {
     /// The epoch of the state this Commit produces.
     #[must_use]
     pub fn mls_epoch(&self) -> u64 {
-        self.base.id.mls_epoch + 1
+        self.base.id.mls_epoch.saturating_add(1)
     }
 
     /// `BLAKE3("cygnus-dmls-commit-v1\0" ‖ commit)`.
@@ -388,7 +389,7 @@ impl CommitContent {
 
     fn validate(&self) -> Result<()> {
         check_epoch(self.base.id.mls_epoch, "base")?;
-        check_epoch(self.base.id.mls_epoch + 1, "mls_epoch")?;
+        check_epoch(self.base.id.mls_epoch.saturating_add(1), "mls_epoch")?;
         if self.commit.is_empty() {
             return Err(ContentError::Malformed("commit"));
         }
@@ -619,9 +620,13 @@ impl WelcomeContent {
     ///
     /// # Errors
     ///
-    /// Returns a [`ContentError`] for a missing or malformed field, or a
-    /// `welcome_id` that differs from the recomputed digest.
-    pub fn parse(content: &Value) -> Result<Self> {
+    /// Returns a [`ContentError`] for a missing or malformed field, a
+    /// `group_id` other than `expected_group_id`, or a `welcome_id` that
+    /// differs from the recomputed digest.
+    pub fn parse(content: &Value, expected_group_id: &[u8; 32]) -> Result<Self> {
+        if &id32(content, "group_id")? != expected_group_id {
+            return Err(ContentError::Mismatch("group_id"));
+        }
         let commit_event_id = string(content, "commit_event_id")?;
         event_id(commit_event_id, "commit_event_id")?;
         let parsed = Self {
@@ -688,7 +693,7 @@ impl ExternalCommitContent {
     /// The epoch of the state this Commit produces.
     #[must_use]
     pub fn mls_epoch(&self) -> u64 {
-        self.target.id.mls_epoch + 1
+        self.target.id.mls_epoch.saturating_add(1)
     }
 
     /// `BLAKE3("cygnus-dmls-commit-v1\0" ‖ commit)`.
@@ -705,7 +710,7 @@ impl ExternalCommitContent {
 
     fn validate(&self) -> Result<()> {
         check_epoch(self.target.id.mls_epoch, "target")?;
-        check_epoch(self.target.id.mls_epoch + 1, "mls_epoch")?;
+        check_epoch(self.target.id.mls_epoch.saturating_add(1), "mls_epoch")?;
         match &self.target.event_id {
             Some(event) => event_id(event, "event_id")?,
             None => return Err(ContentError::Missing("event_id")),
@@ -790,6 +795,97 @@ impl ExternalCommitContent {
                     ("device_id", Value::from(self.joiner.device_id.as_str())),
                 ]),
             ),
+        ]))
+    }
+}
+
+/// Content of `m.dmls.reboot`.
+///
+/// `new_group_id` is derived:
+/// `BLAKE3("cygnus-dmls-reboot-v1\0" ‖ old_group_id ‖ base.commit_id)`.
+/// Whether the sender and `members` belong to `base` is a caller-side check.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RebootContent {
+    /// The room-derived group being abandoned.
+    pub old_group_id: [u8; 32],
+    /// Why the rebooter could not continue, e.g. `state-loss`.
+    pub reason: String,
+    /// The members the rebooter will send a Welcome to.
+    pub members: Vec<MemberKey>,
+    /// The old-group extremity the reboot starts from; the event ID is required.
+    pub base: ExtremityRef,
+}
+
+impl RebootContent {
+    /// The `group_id` of the replacement group.
+    #[must_use]
+    pub fn new_group_id(&self) -> [u8; 32] {
+        wire::reboot_group_id(&self.old_group_id, &self.base.id.commit_id)
+    }
+
+    fn validate(&self) -> Result<()> {
+        if self.reason.is_empty() {
+            return Err(ContentError::Malformed("reason"));
+        }
+        if self.base.event_id.is_none() {
+            return Err(ContentError::Missing("event_id"));
+        }
+        self.members.iter().try_for_each(require_user)
+    }
+
+    /// Parse the content of an `m.dmls.reboot` event.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`ContentError`] for a missing or malformed field, an
+    /// `old_group_id` other than `expected_group_id`, a `base` without an event
+    /// ID, or a `new_group_id` that differs from the recomputed value.
+    pub fn parse(content: &Value, expected_group_id: &[u8; 32]) -> Result<Self> {
+        let old_group_id = id32(content, "old_group_id")?;
+        if &old_group_id != expected_group_id {
+            return Err(ContentError::Mismatch("old_group_id"));
+        }
+        let members = array(content, "members")?
+            .iter()
+            .map(|item| {
+                let text = item.as_str().ok_or(ContentError::Malformed("members"))?;
+                MemberKey::parse(text).map_err(|_| ContentError::Malformed("members"))
+            })
+            .collect::<Result<Vec<_>>>()?;
+        let parsed = Self {
+            old_group_id,
+            reason: string(content, "reason")?.to_owned(),
+            members: normalize(members),
+            base: ExtremityRef::parse(field(content, "base")?, true)?,
+        };
+        parsed.validate()?;
+        if id32(content, "new_group_id")? != parsed.new_group_id() {
+            return Err(ContentError::Mismatch("new_group_id"));
+        }
+        Ok(parsed)
+    }
+
+    /// Build the event content.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`ContentError`] if the content would not parse back, or if it
+    /// is larger than [`MAX_CONTENT_BYTES`].
+    pub fn to_value(&self) -> Result<Value> {
+        self.validate()?;
+        let members = normalize(self.members.iter().cloned())
+            .iter()
+            .map(|key| Value::from(key.to_wire()))
+            .collect();
+        finish(object([
+            ("old_group_id", Value::from(b64_encode(&self.old_group_id))),
+            (
+                "new_group_id",
+                Value::from(b64_encode(&self.new_group_id())),
+            ),
+            ("reason", Value::from(self.reason.as_str())),
+            ("members", Value::Array(members)),
+            ("base", self.base.to_value()?),
         ]))
     }
 }
@@ -917,6 +1013,64 @@ mod tests {
         move |object| {
             object.remove(key);
         }
+    }
+
+    #[test]
+    fn reboot_round_trips_and_recomputes_the_new_group() {
+        let group = wire::group_id(ROOM);
+        let content = RebootContent {
+            old_group_id: group,
+            reason: "state-loss".into(),
+            members: vec![member(BOB, "BOB1"), member(ALICE, "D1")],
+            base: reference(9, 0x44, "$base"),
+        };
+        assert_eq!(
+            content.new_group_id(),
+            wire::reboot_group_id(&group, &[0x44; 32])
+        );
+        assert_ne!(content.new_group_id(), group);
+        let value = content.to_value().unwrap();
+        let parsed = RebootContent::parse(&value, &group).unwrap();
+        assert_eq!(parsed.members.len(), 2);
+        assert_eq!(parsed.new_group_id(), content.new_group_id());
+
+        let wrong = set("new_group_id", Value::from(b64_encode(&[1; 32])));
+        assert_eq!(
+            RebootContent::parse(&tampered(&value, wrong), &group),
+            Err(ContentError::Mismatch("new_group_id"))
+        );
+        let other = set("old_group_id", Value::from(b64_encode(&[1; 32])));
+        assert_eq!(
+            RebootContent::parse(&tampered(&value, other), &group),
+            Err(ContentError::Mismatch("old_group_id"))
+        );
+        let mut base = value["base"].clone();
+        base.as_object_mut().unwrap().remove("event_id");
+        assert_eq!(
+            RebootContent::parse(&tampered(&value, set("base", base)), &group),
+            Err(ContentError::Missing("event_id"))
+        );
+        let bad_members = set("members", Value::Array(vec![Value::from("@bob:x")]));
+        assert_eq!(
+            RebootContent::parse(&tampered(&value, bad_members), &group),
+            Err(ContentError::Malformed("members"))
+        );
+        assert_eq!(
+            RebootContent::parse(&tampered(&value, unset("reason")), &group),
+            Err(ContentError::Missing("reason"))
+        );
+        let mut bad = content;
+        bad.reason.clear();
+        assert_eq!(bad.to_value(), Err(ContentError::Malformed("reason")));
+    }
+
+    #[test]
+    fn epoch_accessors_do_not_overflow() {
+        let mut content = commit();
+        content.base = reference(u64::MAX, 1, "$x");
+        content.resolves = vec![content.base.clone()];
+        assert_eq!(content.mls_epoch(), u64::MAX);
+        assert!(content.to_value().is_err());
     }
 
     #[test]
@@ -1283,25 +1437,39 @@ mod tests {
             welcome: b"welcome".to_vec(),
         };
         let value = content.to_value().unwrap();
-        assert_eq!(WelcomeContent::parse(&value).unwrap(), content);
+        assert_eq!(
+            WelcomeContent::parse(&value, &wire::group_id(ROOM)).unwrap(),
+            content
+        );
 
         let wrong = set("welcome_id", Value::from(b64_encode(&[5; 32])));
         assert_eq!(
-            WelcomeContent::parse(&tampered(&value, wrong)),
+            WelcomeContent::parse(&tampered(&value, wrong), &wire::group_id(ROOM)),
             Err(ContentError::Mismatch("welcome_id"))
         );
         let swapped = set("welcome", Value::from(b64_encode(b"different")));
         assert_eq!(
-            WelcomeContent::parse(&tampered(&value, swapped)),
+            WelcomeContent::parse(&tampered(&value, swapped), &wire::group_id(ROOM)),
             Err(ContentError::Mismatch("welcome_id"))
         );
         assert_eq!(
-            WelcomeContent::parse(&tampered(&value, unset("commit_event_id"))),
+            WelcomeContent::parse(
+                &tampered(&value, unset("commit_event_id")),
+                &wire::group_id(ROOM)
+            ),
             Err(ContentError::Missing("commit_event_id"))
         );
         assert_eq!(
-            WelcomeContent::parse(&tampered(&value, set("commit_event_id", Value::from("c")))),
+            WelcomeContent::parse(
+                &tampered(&value, set("commit_event_id", Value::from("c"))),
+                &wire::group_id(ROOM)
+            ),
             Err(ContentError::Malformed("commit_event_id"))
+        );
+        let other = set("group_id", Value::from(b64_encode(&[9; 32])));
+        assert_eq!(
+            WelcomeContent::parse(&tampered(&value, other), &wire::group_id(ROOM)),
+            Err(ContentError::Mismatch("group_id"))
         );
         let mut bad = content;
         bad.welcome.clear();
