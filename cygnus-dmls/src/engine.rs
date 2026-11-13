@@ -670,8 +670,8 @@ pub struct ExternalOut {
 /// receivers must reject an external Commit that carries a Remove (§8 rule 3).
 /// The returned branch is a new root for the caller to install with
 /// `GroupEntry::insert_root` (or a new entry), not a mutation of any entry.
-/// `key_package_id` is the digest of the joiner's new `LeafNode`, since an
-/// external Commit carries no `KeyPackage`.
+/// An external Commit uses no `KeyPackage`, so the event has no
+/// `key_package_id`; its `commit_id` is its identity.
 ///
 /// # Errors
 ///
@@ -725,18 +725,12 @@ pub fn external_commit(
         .map_err(mls)?
         .to_bytes()
         .map_err(mls)?;
-    let own_leaf = group
-        .own_leaf_node()
-        .ok_or(EngineError::BadArgument("own_leaf"))?
-        .tls_serialize_detached()
-        .map_err(mls)?;
     let epoch = group.epoch().as_u64();
     let content = ExternalCommitContent {
         group_id: *group_id,
         target: target.clone(),
         commit,
         group_info: resulting_info,
-        key_package_id: wire::key_package_id(&own_leaf),
         joiner: me.clone(),
     };
     if content.mls_epoch() != epoch {
@@ -746,12 +740,8 @@ pub fn external_commit(
 
     let mut meta =
         BranchMeta::from_group(&group, group_id).map_err(|e| EngineError::Mls(e.to_string()))?;
-    let joiner = crate::branch_meta::member_id_from_key(&me);
-    if let Some(record) = meta.members.get_mut(&joiner) {
-        record.origin = crate::merge::LeafOrigin::ExternalCommit;
-        record.leaf.generation = epoch;
-    }
-    meta.external_joiners.insert(joiner);
+    meta.after_external_commit(&group, group_id, epoch, &me)
+        .map_err(|e| EngineError::Mls(e.to_string()))?;
     let summary = summarize(&group, *group_id, commit_id)?;
     let mut branch = HeldBranch::new(provider, group);
     branch.set_meta(meta.encode());
@@ -826,6 +816,135 @@ pub fn apply_merge(
         return Err(EngineError::BadArgument("event_type"));
     }
     apply_event(entry, event_type, content, ctx, Some(registry))
+}
+
+/// Apply a received `m.dmls.external_commit` (00FD §8).
+///
+/// The sender must be the `joiner`, and `target` must be a held state at epoch
+/// `target.mls_epoch` whose event is a known ancestor. The Commit must carry no
+/// proposals at all: a Remove is how `OpenMLS` silently resyncs a same-identity
+/// join, so refusing every Remove enforces "no live leaf". The joiner must not
+/// hold a leaf in the target state, and the merged group must contain exactly
+/// one more leaf, the joiner's. The new state replaces `target` as the tip.
+///
+/// # Errors
+///
+/// [`EngineError`] for corrupt stored metadata. Protocol failures are an
+/// [`ApplyOutcome`].
+#[allow(clippy::too_many_lines)]
+pub fn apply_external_commit(
+    entry: &mut GroupEntry,
+    content: &Value,
+    ctx: &ApplyCtx,
+) -> Result<ApplyOutcome, EngineError> {
+    let group_id = entry.group_id();
+    let parsed = match ExternalCommitContent::parse(content, &ctx.sender, &group_id) {
+        Ok(parsed) => parsed,
+        Err(error) => return Ok(ApplyOutcome::Rejected(error.code())),
+    };
+    if let Some(event) = &parsed.target.event_id {
+        if !ctx.ancestors.contains(event) {
+            return Ok(ApplyOutcome::Deferred("unheld_ancestor"));
+        }
+    }
+    let target_epoch = parsed.target.id.mls_epoch;
+    let new_epoch = parsed.mls_epoch();
+    let info_ok = MlsMessageIn::tls_deserialize_exact(&parsed.group_info)
+        .ok()
+        .and_then(|message| match message.extract() {
+            MlsMessageBodyIn::GroupInfo(info) => Some(info),
+            _ => None,
+        })
+        .is_some_and(|info| {
+            info.group_id().as_slice() == group_id.as_slice() && info.epoch().as_u64() == new_epoch
+        });
+    if !info_ok {
+        return Ok(ApplyOutcome::Rejected("mismatch:group_info"));
+    }
+
+    let base_id = parsed.target.id.commit_id;
+    let new_id = parsed.commit_id();
+    let resolves = BTreeSet::from([base_id]);
+    let joiner = ctx.sender.clone();
+    let commit = parsed.commit;
+
+    let result = entry.apply(&base_id, new_id, &resolves, |group, provider| {
+        if group.epoch().as_u64() != target_epoch {
+            return Err(RegistryError::Rejected("mismatch:base"));
+        }
+        let before = group.members().count();
+        if group
+            .members()
+            .any(|m| member_of(&m.credential).is_ok_and(|key| key == joiner))
+        {
+            return Err(RegistryError::Rejected("joiner_has_leaf"));
+        }
+        let message = MlsMessageIn::tls_deserialize_exact(&commit)
+            .map_err(|e| RegistryError::Mls(format!("{e:?}")))?;
+        let protocol = ProtocolMessage::try_from(message)
+            .map_err(|_| RegistryError::Rejected("malformed:commit"))?;
+        let processed = group
+            .process_message(provider, protocol)
+            .map_err(|e| RegistryError::Mls(format!("{e:?}")))?;
+        let committer = member_of(processed.credential())
+            .map_err(|_| RegistryError::Rejected("malformed:credential"))?;
+        if committer != joiner {
+            return Err(RegistryError::Rejected("mismatch:sender"));
+        }
+        let ProcessedMessageContent::StagedCommitMessage(staged) = processed.into_content() else {
+            return Err(RegistryError::Rejected("malformed:commit"));
+        };
+        if staged.remove_proposals().next().is_some() {
+            return Err(RegistryError::Rejected("external_remove"));
+        }
+        if staged.add_proposals().next().is_some() || staged.update_proposals().next().is_some() {
+            return Err(RegistryError::Rejected("malformed:commit"));
+        }
+        group
+            .merge_staged_commit(provider, *staged)
+            .map_err(|e| RegistryError::Mls(format!("{e:?}")))?;
+        if group.epoch().as_u64() != new_epoch {
+            return Err(RegistryError::Rejected("mismatch:mls_epoch"));
+        }
+        let mine = group
+            .members()
+            .filter(|m| member_of(&m.credential).is_ok_and(|key| key == joiner))
+            .count();
+        if mine != 1 || group.members().count() != before + 1 {
+            return Err(RegistryError::Rejected("mismatch:joiner"));
+        }
+        summarize(group, group_id, new_id).map_err(|e| RegistryError::Mls(e.to_string()))
+    });
+
+    Ok(match result {
+        Ok(summary) => {
+            let encoded = {
+                let branch = entry
+                    .branch(&new_id)
+                    .ok_or(EngineError::BadArgument("state"))?;
+                let mut meta = BranchMeta::decode(branch.meta())
+                    .map_err(|e| EngineError::Mls(e.to_string()))?;
+                meta.after_external_commit(branch.group(), &group_id, new_epoch, &ctx.sender)
+                    .map_err(|e| EngineError::Mls(e.to_string()))?;
+                meta.encode()
+            };
+            entry
+                .branch_mut(&new_id)
+                .ok_or(EngineError::BadArgument("state"))?
+                .set_meta(encoded);
+            ApplyOutcome::Applied(summary)
+        }
+        Err(RegistryError::AlreadyHeld) => {
+            let held = entry
+                .branch(&new_id)
+                .ok_or(EngineError::BadArgument("state"))?;
+            ApplyOutcome::Applied(summarize(held.group(), group_id, new_id)?)
+        }
+        Err(RegistryError::MissingBase) => ApplyOutcome::Deferred("missing_base_state"),
+        Err(RegistryError::MissingBranch) => ApplyOutcome::Deferred("missing_branch"),
+        Err(RegistryError::ExtremityCap(_)) => ApplyOutcome::Deferred("extremity_cap"),
+        Err(error) => ApplyOutcome::Rejected(error.code()),
+    })
 }
 
 #[allow(clippy::too_many_lines)]
@@ -1832,6 +1951,113 @@ mod tests {
             plan_merge(&b, &[out.commit_id], &registry).unwrap(),
             PlanOutcome::Planned(plan) if plan.members.len() == 2
         ));
+    }
+
+    #[test]
+    fn a_peer_applies_an_external_commit_and_refuses_bad_ones() {
+        let (alice, bob, mut a, mut b, tip) = three_member_group();
+        let group_id = a.group_id();
+        let s = commit(&mut a, &alice, &tip, &CommitOp::SelfUpdate).unwrap();
+        let ctx = |sender: &MemberKey, events: &[&str]| ApplyCtx {
+            sender: sender.clone(),
+            ancestors: events.iter().map(|e| (*e).to_owned()).collect(),
+        };
+        assert!(matches!(
+            apply_commit(
+                &mut b,
+                wire::COMMIT_EVENT,
+                &s.content,
+                &ctx(&alice.member_key(), &["$second"])
+            )
+            .unwrap(),
+            ApplyOutcome::Applied(_)
+        ));
+        let info = CommitContent::parse(wire::COMMIT_EVENT, &s.content, &group_id)
+            .unwrap()
+            .group_info;
+        let target = ExtremityRef::new(ExtremityId::new(3, s.commit_id), "$s");
+        let dave_key = MemberKey {
+            principal: "@ggggggggggggggggggggggggggggggggggggggggggg".to_owned(),
+            device_id: "DAVE1".to_owned(),
+        };
+        let dave = signer(&dave_key.principal, "DAVE1", 4);
+        let (_, out) = external_commit(&dave, &group_id, &target, &info).unwrap();
+
+        let before = b.export();
+        let other = alice.member_key();
+        assert!(matches!(
+            apply_external_commit(&mut b, &out.content, &ctx(&other, &["$s"])).unwrap(),
+            ApplyOutcome::Rejected("mismatch")
+        ));
+        assert!(matches!(
+            apply_external_commit(&mut b, &out.content, &ctx(&dave_key, &["$second"])).unwrap(),
+            ApplyOutcome::Deferred("unheld_ancestor")
+        ));
+        assert_eq!(b.export(), before);
+
+        let applied = apply_external_commit(&mut b, &out.content, &ctx(&dave_key, &["$s"]));
+        assert!(matches!(
+            applied.unwrap(),
+            ApplyOutcome::Applied(summary) if summary == out.summary
+        ));
+        let meta = BranchMeta::decode(b.branch(&out.commit_id).unwrap().meta()).unwrap();
+        let dave_id = crate::branch_meta::member_id_from_key(&dave_key);
+        assert!(meta.external_joiners.contains(&dave_id));
+        assert_eq!(meta.members.len(), 4);
+        assert!(matches!(
+            apply_external_commit(&mut b, &out.content, &ctx(&dave_key, &["$s"])).unwrap(),
+            ApplyOutcome::Applied(_)
+        ));
+
+        // A same-identity join makes OpenMLS Remove the old leaf; refused.
+        let bob_key = bob.member_key();
+        let bob_again = signer(BOB, "BOB1", 22);
+        assert!(matches!(
+            external_commit(&bob_again, &group_id, &target, &info),
+            Err(EngineError::BadArgument("already_member"))
+        ));
+        // Build the same join past the sender-side check: the receiver refuses.
+        let MlsMessageBodyIn::GroupInfo(verifiable) = MlsMessageIn::tls_deserialize_exact(&info)
+            .unwrap()
+            .extract()
+        else {
+            panic!("not a group info");
+        };
+        let provider = OpenMlsRustCrypto::default();
+        let config = MlsGroupJoinConfig::builder()
+            .use_ratchet_tree_extension(true)
+            .build();
+        let (joined, bundle) = MlsGroup::external_commit_builder()
+            .with_config(config)
+            .build_group(&provider, verifiable, bob_again.credential.clone())
+            .unwrap()
+            .load_psks(provider.storage())
+            .unwrap()
+            .build(provider.rand(), provider.crypto(), &bob_again.pair, |_| {
+                true
+            })
+            .unwrap()
+            .finalize(&provider)
+            .unwrap();
+        let forged = ExternalCommitContent {
+            group_id,
+            target: target.clone(),
+            commit: bundle.commit().to_bytes().unwrap(),
+            group_info: joined
+                .export_group_info(provider.crypto(), &bob_again.pair, true)
+                .unwrap()
+                .to_bytes()
+                .unwrap(),
+            joiner: bob_key.clone(),
+        }
+        .to_value()
+        .unwrap();
+        let before = a.export();
+        assert!(matches!(
+            apply_external_commit(&mut a, &forged, &ctx(&bob_key, &["$s"])).unwrap(),
+            ApplyOutcome::Rejected("joiner_has_leaf")
+        ));
+        assert_eq!(a.export(), before);
     }
 
     #[test]

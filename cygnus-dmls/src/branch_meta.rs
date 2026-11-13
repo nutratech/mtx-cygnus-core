@@ -172,6 +172,36 @@ impl BranchMeta {
         Ok(())
     }
 
+    /// Record `joiner`'s external-commit leaf in the post-Commit `group`.
+    ///
+    /// The leaf is an `UpdatePath` leaf at `epoch`, so its generation is the
+    /// epoch that carried it, and the joiner is marked as an external joiner.
+    pub(crate) fn after_external_commit(
+        &mut self,
+        group: &MlsGroup,
+        group_id: &[u8; 32],
+        epoch: u64,
+        joiner: &MemberKey,
+    ) -> Result<(), MergeError> {
+        let member_id = member_id_from_key(joiner);
+        for member in group.members() {
+            let (id, mut leaf) = leaf_from_member(&member, group_id)?;
+            if id != member_id {
+                continue;
+            }
+            leaf.generation = epoch;
+            leaf.source = LeafSource::Commit;
+            self.members.insert(
+                id,
+                LeafRecord::new(leaf)
+                    .with_origin(LeafOrigin::ExternalCommit)
+                    .with_leaf_index(member.index.usize()),
+            );
+        }
+        self.external_joiners.insert(member_id);
+        Ok(())
+    }
+
     /// Build the merge model's branch view for this held state.
     pub(crate) fn to_branch(
         &self,

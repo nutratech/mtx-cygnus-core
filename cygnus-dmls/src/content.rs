@@ -722,8 +722,6 @@ pub struct ExternalCommitContent {
     pub commit: Vec<u8>,
     /// The resulting epoch's `GroupInfo` `MLSMessage`, with the ratchet tree.
     pub group_info: Vec<u8>,
-    /// The joiner's fresh, single-use `KeyPackage` ID.
-    pub key_package_id: [u8; 32],
     /// The joining principal and device.
     pub joiner: MemberKey,
 }
@@ -789,7 +787,6 @@ impl ExternalCommitContent {
             target: ExtremityRef::parse(field(content, "target")?, true)?,
             commit: bytes(content, "commit")?,
             group_info: bytes(content, "group_info")?,
-            key_package_id: id32(content, "key_package_id")?,
             joiner: MemberKey {
                 principal: string(joiner, "principal")?.to_owned(),
                 device_id: string(joiner, "device_id")?.to_owned(),
@@ -823,10 +820,6 @@ impl ExternalCommitContent {
             ("commit", Value::from(b64_encode(&self.commit))),
             ("group_info", Value::from(b64_encode(&self.group_info))),
             ("target", self.target.to_value()?),
-            (
-                "key_package_id",
-                Value::from(b64_encode(&self.key_package_id)),
-            ),
             (
                 "joiner",
                 object([
@@ -1561,7 +1554,6 @@ mod tests {
             target: reference(7, 0x77, "$target"),
             commit: b"external commit".to_vec(),
             group_info: b"group info".to_vec(),
-            key_package_id: [8; 32],
             joiner: member(BOB, "BOB1"),
         }
     }
@@ -1605,7 +1597,7 @@ mod tests {
             ExternalCommitContent::parse(&value, &joiner, &wire::group_id("!other:x")),
             Err(ContentError::Mismatch("group_id"))
         );
-        for name in ["target", "joiner", "key_package_id", "commit", "group_info"] {
+        for name in ["target", "joiner", "commit", "group_info"] {
             assert!(
                 matches!(
                     ExternalCommitContent::parse(&tampered(&value, unset(name)), &joiner, &group),
