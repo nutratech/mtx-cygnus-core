@@ -116,6 +116,14 @@ impl BranchMeta {
                     self.removed.insert(target, record.leaf);
                 }
             }
+            crate::engine::CommitOp::Merge(removes) => {
+                for target in removes {
+                    let target = member_id_from_key(target);
+                    if let Some(record) = self.members.remove(&target) {
+                        self.removed.insert(target, record.leaf);
+                    }
+                }
+            }
             crate::engine::CommitOp::SelfUpdate => {}
         }
 
