@@ -550,6 +550,68 @@ impl<'a> Reader<'a> {
     }
 }
 
+/// Magic for a key-package secrets blob.
+const SECRETS_MAGIC: &[u8; 4] = b"CYKS";
+
+/// Serialize a provider's storage (key-package private material) into the
+/// versioned secrets blob Hydrogen persists per `key_package_id`.
+#[must_use]
+pub fn encode_secrets(provider: &OpenMlsRustCrypto) -> Vec<u8> {
+    let mut out = Vec::new();
+    out.extend_from_slice(SECRETS_MAGIC);
+    out.extend_from_slice(&BLOB_VERSION.to_be_bytes());
+    let entries = snapshot(provider);
+    put_len(&mut out, entries.len());
+    for (k, v) in entries {
+        put_bytes(&mut out, &k);
+        put_bytes(&mut out, &v);
+    }
+    let digest = blake3::hash(&out);
+    out.extend_from_slice(digest.as_bytes());
+    out
+}
+
+/// Rebuild a provider from [`encode_secrets`] output.
+///
+/// # Errors
+///
+/// [`RegistryError::BadState`] or [`RegistryError::UnsupportedVersion`].
+pub fn decode_secrets(blob: &[u8]) -> Result<OpenMlsRustCrypto, RegistryError> {
+    if blob.len() < 4 + 2 + 4 + 32 || blob.len() > MAX_BLOB_BYTES {
+        return Err(RegistryError::BadState("bad length"));
+    }
+    let (body, hash) = blob.split_at(blob.len() - 32);
+    if blake3::hash(body).as_bytes() != hash {
+        return Err(RegistryError::BadState("integrity hash mismatch"));
+    }
+    let mut r = Reader { buf: body };
+    if r.take(4)? != SECRETS_MAGIC {
+        return Err(RegistryError::BadState("bad magic"));
+    }
+    let version = u16::from_be_bytes(r.array()?);
+    if version != BLOB_VERSION {
+        return Err(RegistryError::UnsupportedVersion(version));
+    }
+    let n = r.len()?;
+    let mut entries = Vec::new();
+    for _ in 0..n {
+        let k = r.bytes()?.to_vec();
+        let v = r.bytes()?.to_vec();
+        entries.push((k, v));
+    }
+    if !r.buf.is_empty() {
+        return Err(RegistryError::BadState("trailing bytes"));
+    }
+    let provider = OpenMlsRustCrypto::default();
+    provider
+        .storage()
+        .values
+        .write()
+        .expect("storage lock")
+        .extend(entries);
+    Ok(provider)
+}
+
 /// What [`Registry::import`] reports about the entry it installed.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ImportInfo {

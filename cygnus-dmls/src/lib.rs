@@ -16,6 +16,7 @@ use cygnus_core::{Kind, Principal};
 
 pub mod content;
 pub mod device_root;
+pub mod engine;
 pub mod merge;
 pub mod registry;
 pub mod tree;
