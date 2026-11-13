@@ -360,16 +360,41 @@ pub fn decrypt(
 pub struct CommitOut {
     /// `m.dmls.commit` content, ready to send.
     pub content: Value,
-    /// The Welcome bytes for the added member, to be bound to the Commit event.
-    pub welcome: Vec<u8>,
+    /// The Welcome bytes for an added member, to be bound to the Commit event.
+    /// `None` for Remove and self-update, which add no one.
+    pub welcome: Option<Vec<u8>>,
     /// The new extremity's commit id.
     pub commit_id: [u8; 32],
     /// The state the Commit produced.
     pub summary: GroupSummary,
 }
 
-/// Commit an Add for `key_package` on top of `base` and install the result as
-/// a new tip.
+/// The membership change a locally produced Commit makes.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum CommitOp {
+    /// Add the owner of this serialized `KeyPackage`.
+    Add(Vec<u8>),
+    /// Remove every leaf of this member. Removing the caller is refused.
+    Remove(MemberKey),
+    /// Rotate the caller's own leaf and path secrets.
+    SelfUpdate,
+}
+
+/// Commit an Add for `key_package` on top of `base`; see [`commit`].
+///
+/// # Errors
+///
+/// As [`commit`].
+pub fn commit_add(
+    entry: &mut GroupEntry,
+    signer: &Signer,
+    base: &ExtremityRef,
+    key_package: &[u8],
+) -> Result<CommitOut, EngineError> {
+    commit(entry, signer, base, &CommitOp::Add(key_package.to_vec()))
+}
+
+/// Commit `op` on top of `base` and install the result as a new tip.
 ///
 /// `base` must name a held state (the genesis reference for a fresh group). It
 /// is retained as a non-tip, so a second Commit on the same base still applies
@@ -378,18 +403,17 @@ pub struct CommitOut {
 /// # Errors
 ///
 /// [`EngineError`] for a missing base, a stale base epoch, an invalid key
-/// package, or an `OpenMLS` failure.
-pub fn commit_add(
+/// package, a Remove naming no member (or the caller), or an `OpenMLS` failure.
+pub fn commit(
     entry: &mut GroupEntry,
     signer: &Signer,
     base: &ExtremityRef,
-    key_package: &[u8],
+    op: &CommitOp,
 ) -> Result<CommitOut, EngineError> {
     let group_id = entry.group_id();
     let base_id = base.id.commit_id;
     let resolves = BTreeSet::from([base_id]);
     let base_ref = base.clone();
-    let key_package = key_package.to_vec();
 
     let (commit_id, content, welcome, summary) =
         entry.apply_with(&base_id, None, &resolves, |group, provider| {
@@ -398,23 +422,59 @@ pub fn commit_add(
             }
             let as_reg = |e: EngineError| RegistryError::Mls(e.to_string());
             verify_own_leaf(group, signer).map_err(as_reg)?;
-            let mut bytes = key_package.as_slice();
-            let package = KeyPackageIn::tls_deserialize(&mut bytes)
-                .map_err(mls)
-                .map_err(as_reg)?
-                .validate(provider.crypto(), ProtocolVersion::Mls10)
-                .map_err(mls)
-                .map_err(as_reg)?;
-            let (commit, welcome, _info) = group
-                .add_members(provider, &signer.pair, &[package])
-                .map_err(mls)
-                .map_err(as_reg)?;
+            let (commit, welcome) = match op {
+                CommitOp::Add(key_package) => {
+                    let mut bytes = key_package.as_slice();
+                    let package = KeyPackageIn::tls_deserialize(&mut bytes)
+                        .map_err(mls)
+                        .map_err(as_reg)?
+                        .validate(provider.crypto(), ProtocolVersion::Mls10)
+                        .map_err(mls)
+                        .map_err(as_reg)?;
+                    let (commit, welcome, _info) = group
+                        .add_members(provider, &signer.pair, &[package])
+                        .map_err(mls)
+                        .map_err(as_reg)?;
+                    (commit, Some(welcome))
+                }
+                CommitOp::Remove(target) => {
+                    if *target == signer.member_key() {
+                        return Err(RegistryError::Mls("bad_argument: self_remove".into()));
+                    }
+                    let mut leaves = Vec::new();
+                    for member in group.members() {
+                        let key = member_of(&member.credential).map_err(as_reg)?;
+                        if key == *target {
+                            leaves.push(member.index);
+                        }
+                    }
+                    if leaves.is_empty() {
+                        return Err(RegistryError::Mls("bad_argument: member".into()));
+                    }
+                    let (commit, _welcome, _info) = group
+                        .remove_members(provider, &signer.pair, &leaves)
+                        .map_err(mls)
+                        .map_err(as_reg)?;
+                    (commit, None)
+                }
+                CommitOp::SelfUpdate => {
+                    let bundle = group
+                        .self_update(provider, &signer.pair, LeafNodeParameters::default())
+                        .map_err(mls)
+                        .map_err(as_reg)?;
+                    (bundle.commit().clone(), None)
+                }
+            };
             group
                 .merge_pending_commit(provider)
                 .map_err(mls)
                 .map_err(as_reg)?;
             let commit = commit.to_bytes().map_err(mls).map_err(as_reg)?;
-            let welcome = welcome.to_bytes().map_err(mls).map_err(as_reg)?;
+            let welcome = welcome
+                .map(|w| w.to_bytes())
+                .transpose()
+                .map_err(mls)
+                .map_err(as_reg)?;
             let group_info = group
                 .export_group_info(provider.crypto(), &signer.pair, true)
                 .map_err(mls)
@@ -775,7 +835,7 @@ mod tests {
         let (bob_branch, joined) = join_welcome(
             &bob,
             &bob_secrets,
-            &first.welcome,
+            first.welcome.as_ref().unwrap(),
             &group_id,
             first.commit_id,
         )
@@ -882,7 +942,7 @@ mod tests {
         let (bob_branch, _) = join_welcome(
             &bob,
             &bob_secrets,
-            &first.welcome,
+            first.welcome.as_ref().unwrap(),
             &group_id,
             first.commit_id,
         )
@@ -947,5 +1007,104 @@ mod tests {
         assert_eq!(plain.plaintext, b"on the dave branch");
         assert_eq!(plain.mls_epoch, 2);
         assert_eq!(plain.sender, alice.member_key());
+    }
+
+    /// Alice adds Bob and Carol over two commits; returns Alice's and Bob's
+    /// entries and the ref to the epoch-2 tip. Bob applies the second commit.
+    fn three_member_group() -> (Signer, Signer, GroupEntry, GroupEntry, ExtremityRef) {
+        let alice = signer(ALICE, "ALICE1", 1);
+        let bob = signer(BOB, "BOB1", 2);
+        let group_id = wire::group_id(ROOM);
+        let mut a = alice_entry(&alice, group_id);
+        let genesis = ExtremityRef::genesis(&group_id);
+        let (bob_kp, bob_secrets) = package_bytes(&bob);
+        let (carol_kp, _) = package_bytes(&signer(CAROL, "CAROL1", 3));
+        let first = commit_add(&mut a, &alice, &genesis, &bob_kp).unwrap();
+        let (bob_branch, _) = join_welcome(
+            &bob,
+            &bob_secrets,
+            first.welcome.as_ref().unwrap(),
+            &group_id,
+            first.commit_id,
+        )
+        .unwrap();
+        let mut b = GroupEntry::new(group_id);
+        b.insert_root(first.commit_id, bob_branch).unwrap();
+        let base1 = ExtremityRef::new(ExtremityId::new(1, first.commit_id), "$first");
+        let second = commit_add(&mut a, &alice, &base1, &carol_kp).unwrap();
+        let ctx = ApplyCtx {
+            sender: alice.member_key(),
+            ancestors: BTreeSet::from(["$first".to_owned()]),
+        };
+        assert!(matches!(
+            apply_commit(&mut b, wire::COMMIT_EVENT, &second.content, &ctx).unwrap(),
+            ApplyOutcome::Applied(_)
+        ));
+        let tip = ExtremityRef::new(ExtremityId::new(2, second.commit_id), "$second");
+        (alice, bob, a, b, tip)
+    }
+
+    #[test]
+    fn remove_drops_the_member_and_peers_apply_it() {
+        let (alice, bob, mut a, mut b, tip) = three_member_group();
+        let carol = MemberKey {
+            principal: CAROL.to_owned(),
+            device_id: "CAROL1".to_owned(),
+        };
+        let out = commit(&mut a, &alice, &tip, &CommitOp::Remove(carol.clone())).unwrap();
+        assert!(out.welcome.is_none());
+        assert_eq!(out.summary.mls_epoch, 3);
+        assert!(!out.summary.members.contains(&carol));
+        assert_eq!(out.summary.members.len(), 2);
+
+        let ctx = ApplyCtx {
+            sender: alice.member_key(),
+            ancestors: BTreeSet::from(["$second".to_owned()]),
+        };
+        let ApplyOutcome::Applied(summary) =
+            apply_commit(&mut b, wire::COMMIT_EVENT, &out.content, &ctx).unwrap()
+        else {
+            panic!("bob must apply the remove");
+        };
+        assert_eq!(summary, out.summary);
+        assert!(summary.members.contains(&bob.member_key()));
+    }
+
+    #[test]
+    fn self_update_rotates_without_changing_membership() {
+        let (alice, _bob, mut a, mut b, tip) = three_member_group();
+        let before = a
+            .branch(&tip.id.commit_id)
+            .unwrap()
+            .group()
+            .members()
+            .count();
+        let out = commit(&mut a, &alice, &tip, &CommitOp::SelfUpdate).unwrap();
+        assert!(out.welcome.is_none());
+        assert_eq!(out.summary.mls_epoch, 3);
+        assert_eq!(out.summary.members.len(), before);
+
+        let ctx = ApplyCtx {
+            sender: alice.member_key(),
+            ancestors: BTreeSet::from(["$second".to_owned()]),
+        };
+        assert!(matches!(
+            apply_commit(&mut b, wire::COMMIT_EVENT, &out.content, &ctx).unwrap(),
+            ApplyOutcome::Applied(s) if s == out.summary
+        ));
+    }
+
+    #[test]
+    fn bad_removes_leave_the_entry_byte_identical() {
+        let (alice, _bob, mut a, _b, tip) = three_member_group();
+        let before = a.export();
+        let stranger = MemberKey {
+            principal: CAROL.to_owned(),
+            device_id: "NOPE".to_owned(),
+        };
+        for target in [alice.member_key(), stranger] {
+            assert!(commit(&mut a, &alice, &tip, &CommitOp::Remove(target)).is_err());
+            assert_eq!(a.export(), before);
+        }
     }
 }
