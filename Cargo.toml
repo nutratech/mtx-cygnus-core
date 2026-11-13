@@ -20,12 +20,13 @@ blake3 = { version = "1.5", default-features = false }
 ed25519-zebra = { version = "5", default-features = false }
 rand_core = { version = "0.10", default-features = false }
 sha2 = "0.11"
-# Pinned to a `dev` commit that carries the strict `Value` canonical writer.
-# Bump the rev deliberately; keep it identical across every rezzy dependency.
-rezzy-json = { git = "https://gitlab.com/wombat-foundation/rezzy.git", rev = "ab3aed082b596ef2ab61b327c1b7c65439a4e540" }
+# Tracks the rezzy `dev` branch (the strict `Value` canonical writer landed there);
+# Cargo.lock pins the exact commit.
+# Bump with `cargo update -p rezzy-json`; keep the source identical across every rezzy dependency.
+rezzy-json = { git = "https://gitlab.com/wombat-foundation/rezzy.git", branch = "dev" }
 # Matrix v12 auth and state resolution for the P2-P5 checks. Optional so
 # client and wasm builds do not compile the state engine.
-rezzy = { git = "https://gitlab.com/wombat-foundation/rezzy.git", rev = "ab3aed082b596ef2ab61b327c1b7c65439a4e540", optional = true }
+rezzy = { git = "https://gitlab.com/wombat-foundation/rezzy.git", branch = "dev", optional = true }
 
 [features]
 default = []
