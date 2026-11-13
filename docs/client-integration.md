@@ -19,8 +19,8 @@ The sibling checkouts use different layers:
 | FluffyChat        | Uses the Dart `matrix` SDK (`^10.0.1`).                                                                                                                                                                                                                        | Add Cygnus to that SDK or provide a Dart FFI binding; then account/device and room-creation UI.                                                 |
 
 The requested `matrix-sdk-rust` path is named `matrix-rust-sdk` in this
-workspace. The six sibling projects were inspected read-only; this plan does
-not modify them.
+workspace. The six sibling projects were inspected read-only; this plan does not
+modify them.
 
 ## Protocol APIs the core must expose
 
@@ -36,11 +36,11 @@ small stable API with shared JSON fixtures:
    self-signing → device certificates. `cygnus-wasm` exposes certificate
    creation and device-signature verification; SDKs still need to integrate
    those exports and handle certificate lifecycle flows.
-3. **Event envelope operations**: the core provides room-v12/Cygnus redaction, canonical bytes,
-   content/reference hashes, signing-object construction, and device/custodian
-   signatures are in `envelope`. Verifying a PDU also needs `bundle` (epochs
-   and link bundles), `auth` (authorization), and the caller's selected room
-   state.
+3. **Event envelope operations**: the core provides room-v12/Cygnus redaction,
+   canonical bytes, content/reference hashes, signing-object construction, and
+   device/custodian signatures are in `envelope`. Verifying a PDU also needs
+   `bundle` (epochs and link bundles), `auth` (authorization), and the caller's
+   selected room state.
 4. **Epoch and bundle operations**: parse and verify epoch/burn events, resolve
    link tips and authorization state, and validate supplied link bundles.
 5. **Client flow data**: bootstrap link construction (fresh rotation key,
@@ -74,23 +74,21 @@ small stable API with shared JSON fixtures:
 The core crate implements principal IDs, link encoding/verification and
 bootstrap (caller-CSPRNG rotation keys, commitments, genesis/successor
 builders), device-certificate creation via `DeviceCertificate::issue` and
-verification, the event envelope (redaction,
-hashes, event IDs, device and custodian signatures), epoch/burn/seal/tip-bundle
-verification, Pass 0 resolution, and the Cygnus authorization overlay. With
-`state-res`, it can run Rezzy's Matrix v12 base authorization on
-caller-selected state; state selection and resolution remain the caller's
-responsibility.
+verification, the event envelope (redaction, hashes, event IDs, device and
+custodian signatures), epoch/burn/seal/tip-bundle verification, Pass 0
+resolution, and the Cygnus authorization overlay. With `state-res`, it can run
+Rezzy's Matrix v12 base authorization on caller-selected state; state selection
+and resolution remain the caller's responsibility.
 
 The `cygnus-wasm` crate exposes principal parsing, link and chain inspection,
 bootstrap-response verification, device-certificate creation via
-`createDeviceCertificate`, event hashing,
-device/custodian signature verification, event signing, and user-chain
-rotation. The `wasm32-unknown-unknown` artifact enables Wasm SIMD128 and needs a
-runtime that supports that standard feature. These are usable wasm-bindgen
-exports, not integrations in `matrix-js-sdk` or another client SDK. The exports
-still require the caller to supply and store seeds; they do not provide
-private-key storage/backup, HTTP flows, or client UI. UniFFI and Dart bindings
-remain planned. The bootstrap API
-never derives identity material from Olm or Megolm keys; secret storage and
-recovery remain client responsibilities. Ordinary room-v12 behavior remains
-separate from full Cygnus support.
+`createDeviceCertificate`, event hashing, device/custodian signature
+verification, event signing, and user-chain rotation. The
+`wasm32-unknown-unknown` artifact enables Wasm SIMD128 and needs a runtime that
+supports that standard feature. These are usable wasm-bindgen exports, not
+integrations in `matrix-js-sdk` or another client SDK. The exports still require
+the caller to supply and store seeds; they do not provide private-key
+storage/backup, HTTP flows, or client UI. UniFFI and Dart bindings remain
+planned. The bootstrap API never derives identity material from Olm or Megolm
+keys; secret storage and recovery remain client responsibilities. Ordinary
+room-v12 behavior remains separate from full Cygnus support.

@@ -110,9 +110,9 @@ Status:
 
 `Principal::parse` enforces the sigil, exactly 43 base64url characters, the
 no-padding alphabet, canonical trailing bits, and a 32-byte payload.
-`validate_server_acl_content` applies that parser to `~` entries in ACLs.
-Check 44 is labelled `P1` in the vendored vectors but belongs with these
-encoding rules, so it is listed here.
+`validate_server_acl_content` applies that parser to `~` entries in ACLs. Check
+44 is labelled `P1` in the vendored vectors but belongs with these encoding
+rules, so it is listed here.
 
 | #   | Check                                      | Status | Rust evidence / gap                                                                                                               |
 | --- | ------------------------------------------ | ------ | --------------------------------------------------------------------------------------------------------------------------------- |
@@ -145,9 +145,8 @@ All 53 PDU checks are covered. P1 check 0 and P4 check 21 run through
 `rezzy_integration::authorize_pdu`, which validates `auth_events` citations
 against the state-before, applies v12 base auth where it applies, and then the
 Cygnus overlay. G7 seal authorization (31–34) runs through
-`auth::authorize_seal`, and the merge checks (29–30) are driven from the P1
-PDUs in `p1_g7_fixtures`. The causal filtering predicates remain covered
-separately.
+`auth::authorize_seal`, and the merge checks (29–30) are driven from the P1 PDUs
+in `p1_g7_fixtures`. The causal filtering predicates remain covered separately.
 
 The regenerated PDU fixtures now omit `m.room.create` from `auth_events`, as
 required by room v12. The proposal model and vector source should stay in sync
@@ -163,9 +162,9 @@ senders, and permits `m.room.user_epoch`, `m.room.server_epoch`,
 `m.room.server_seal`, and `m.room.server_acl` in `auth_events`. Epoch and seal
 events are skipped by base auth because §5.3/§5.6 fully define their sender,
 admission, signature, and chain rules; `src/auth.rs` owns those checks. All
-other events run base auth and then the Cygnus overlay. Cygnus event hashing
-and signatures stay in `envelope.rs`; Rezzy's redaction table is not used for
-Cygnus event IDs.
+other events run base auth and then the Cygnus overlay. Cygnus event hashing and
+signatures stay in `envelope.rs`; Rezzy's redaction table is not used for Cygnus
+event IDs.
 
 Limits of the overlay, which callers must account for:
 
@@ -175,20 +174,20 @@ Limits of the overlay, which callers must account for:
   not update state; the caller applies an accepted event to both the
   `RoomAuthState` and the `AuthContext`.
 - Callers that route by hand must pair them correctly. Seal events skip base
-  auth only because `auth::authorize_seal` replaces it; epoch events are
-  checked by `authorize_active_epoch`/`authorize_burn`, and the
-  `*_with_citations` wrappers validate the event's cited auth state first. A
-  caller that skips base auth without running the corresponding Cygnus check
-  has no authorization at all.
+  auth only because `auth::authorize_seal` replaces it; epoch events are checked
+  by `authorize_active_epoch`/`authorize_burn`, and the `*_with_citations`
+  wrappers validate the event's cited auth state first. A caller that skips base
+  auth without running the corresponding Cygnus check has no authorization at
+  all.
 - The raw overlay functions do not validate `auth_events` citations. Callers
-  must use `authorize_pdu` or the `*_with_citations` wrappers (or perform the same state-before
-  validation themselves). `validate_auth_event_citations` rejects stale,
-  missing, duplicate, and non-state citations. The caller still selects the
-  complete required auth-event set under room v12 and §5.1.
+  must use `authorize_pdu` or the `*_with_citations` wrappers (or perform the
+  same state-before validation themselves). `validate_auth_event_citations`
+  rejects stale, missing, duplicate, and non-state citations. The caller still
+  selects the complete required auth-event set under room v12 and §5.1.
 - `AuthContext` trusts the `VerifiedEpoch` values placed in it. Its epoch maps
   are private: `insert_epoch` files each epoch under its own principal, and a
   `VerifiedEpoch` can only come from the verification functions (or
-  `from_parts_unchecked` behind `test-support`). Membership, creators, join
-  rule and ACL are still caller-selected state.
+  `from_parts_unchecked` behind `test-support`). Membership, creators, join rule
+  and ACL are still caller-selected state.
 
 G3–G7 in `known_gaps` are SPEC and intentionally not implemented.
