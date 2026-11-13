@@ -90,32 +90,32 @@ H = handshake (returns `{eventType, content}` ready to send), A = application, S
 = state/utility. "Mutates" means the registry entry changes; Hydrogen must
 re-export after any mutating call.
 
-| JS name              | Args                                                                       | Returns                                                                                  | Mutates                | Kind |
-| -------------------- | -------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- | ---------------------- | ---- |
-| `dmlsKeyPackage`     | `identityJson, deviceSeedB64`                                              | `{eventType, content, keyPackageId, secretsB64}`                                         | no (see §4)            | H    |
-| `dmlsCreateGroup`    | `identityJson, deviceSeedB64, roomId`                                      | `{groupId, commitId, epoch, members, stateB64}` (nothing to publish, see §2.1)           | new entry              | H    |
+| JS name              | Args                                                                       | Returns                                                                        | Mutates                | Kind |
+| -------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------ | ---------------------- | ---- |
+| `dmlsKeyPackage`     | `identityJson, deviceSeedB64`                                              | `{eventType, content, keyPackageId, secretsB64}`                               | no (see §4)            | H    |
+| `dmlsCreateGroup`    | `identityJson, deviceSeedB64, roomId`                                      | `{groupId, commitId, epoch, members, stateB64}` (nothing to publish, see §2.1) | new entry              | H    |
 | `dmlsCommit`         | `groupId, deviceSeedB64, opsJson, baseJson?`                               | `{eventType, content, groupId, commitId, epoch, members, welcome, recipients}` | adds branch            | H    |
-| `dmlsWelcomeContent` | `groupId, commitEventId, commitId, keyPackageId, welcomeB64`               | `{eventType, content}`                                                                   | no                     | H    |
-| `dmlsPlanMerge`      | `groupId, requestedJson, registryJson`                                     | `{status, plan?}` (see §5)                                                               | no                     | S    |
-| `dmlsMerge`          | `groupId, deviceSeedB64, requestedJson, registryJson`                      | `{status, eventType?, content?, commitId?, epoch?, members?, reason?}`                   | adds branch            | H    |
-| `dmlsExternalCommit` | `identityJson, deviceSeedB64, roomId, targetJson, sourceContentJson`       | `{eventType, content, groupId, commitId, epoch, members}`                                | new entry/branch       | H    |
-| `dmlsApplyCommit`    | `groupId, eventType, contentJson, ctxJson, registryJson?`                  | `{status, reason?, groupId?, commitId?, epoch?, members?, extremityCount}`               | on `applied` only      | S    |
-| `dmlsCheckReboot`    | `groupId, contentJson, ctxJson`                                            | `{status, newGroupId?, members?, reason?}`                                               | no                     | S    |
-| `dmlsJoinWelcome`    | `identityJson, deviceSeedB64, welcomeContentJson, secretsB64?`             | `{status, reason?, groupId?, commitId?, epoch?, members?}`                               | new entry on `applied` | S    |
-| `dmlsReboot`         | `groupId, deviceSeedB64, reason, keyPackagesJson, baseJson`                | `{newGroupId, rebootContent, commitContent, commitId, welcome, recipients}`              | new entry              | H    |
-| `dmlsEncrypt`        | `groupId, deviceSeedB64, roomId, innerType, innerContentJson, atCommitId?` | `{eventType, content}`                                                                   | ratchet                | A    |
-| `dmlsDecrypt`        | `groupId, contentJson, roomId`                                             | `{status, innerType?, innerContentJson?, senderMember?, epoch?, commitId?}`              | ratchet on `ok`        | A    |
-| `dmlsExportGroup`    | `groupId`                                                                  | `stateB64`                                                                               | no                     | S    |
-| `dmlsImportGroup`    | `stateB64`                                                                 | `{groupId, seq, extremities, extremityCount}`                                            | new/replace entry      | S    |
-| `dmlsHasGroup`       | `groupId`                                                                  | `bool`                                                                                   | no                     | S    |
-| `dmlsForget`         | `groupId`                                                                  | `void`                                                                                   | drops entry            | S    |
+| `dmlsWelcomeContent` | `groupId, commitEventId, commitId, keyPackageId, welcomeB64`               | `{eventType, content}`                                                         | no                     | H    |
+| `dmlsPlanMerge`      | `groupId, requestedJson, registryJson`                                     | `{status, plan?}` (see §5)                                                     | no                     | S    |
+| `dmlsMerge`          | `groupId, deviceSeedB64, requestedJson, registryJson`                      | `{status, eventType?, content?, commitId?, epoch?, members?, reason?}`         | adds branch            | H    |
+| `dmlsExternalCommit` | `identityJson, deviceSeedB64, roomId, targetJson, sourceContentJson`       | `{eventType, content, groupId, commitId, epoch, members}`                      | new entry/branch       | H    |
+| `dmlsApplyCommit`    | `groupId, eventType, contentJson, ctxJson, registryJson?`                  | `{status, reason?, groupId?, commitId?, epoch?, members?, extremityCount}`     | on `applied` only      | S    |
+| `dmlsCheckReboot`    | `groupId, contentJson, ctxJson`                                            | `{status, newGroupId?, members?, reason?}`                                     | no                     | S    |
+| `dmlsJoinWelcome`    | `identityJson, deviceSeedB64, welcomeContentJson, secretsB64?`             | `{status, reason?, groupId?, commitId?, epoch?, members?}`                     | new entry on `applied` | S    |
+| `dmlsReboot`         | `groupId, deviceSeedB64, reason, keyPackagesJson, baseJson`                | `{newGroupId, rebootContent, commitContent, commitId, welcome, recipients}`    | new entry              | H    |
+| `dmlsEncrypt`        | `groupId, deviceSeedB64, roomId, innerType, innerContentJson, atCommitId?` | `{eventType, content}`                                                         | ratchet                | A    |
+| `dmlsDecrypt`        | `groupId, contentJson, roomId`                                             | `{status, innerType?, innerContentJson?, senderMember?, epoch?, commitId?}`    | ratchet on `ok`        | A    |
+| `dmlsExportGroup`    | `groupId`                                                                  | `stateB64`                                                                     | no                     | S    |
+| `dmlsImportGroup`    | `stateB64`                                                                 | `{groupId, seq, extremities, extremityCount}`                                  | new/replace entry      | S    |
+| `dmlsHasGroup`       | `groupId`                                                                  | `bool`                                                                         | no                     | S    |
+| `dmlsForget`         | `groupId`                                                                  | `void`                                                                         | drops entry            | S    |
 
 Notes:
 
-- `identityJson` is `{"principal": "@...", "deviceId": "D1"}`. It is needed
-  only when the device is not yet represented by a held state (key package,
-  create, external join, welcome). Calls on a loaded group read the caller's
-  identity back from the group's own leaf, so they take only `deviceSeedB64`.
+- `identityJson` is `{"principal": "@...", "deviceId": "D1"}`. It is needed only
+  when the device is not yet represented by a held state (key package, create,
+  external join, welcome). Calls on a loaded group read the caller's identity
+  back from the group's own leaf, so they take only `deviceSeedB64`.
 - `opsJson` for `dmlsCommit` is exactly one operation:
   `{"op":"add","keyPackage":"<b64url>"}`,
   `{"op":"remove","member":"<principal:device>"}`, or `{"op":"self_update"}`.

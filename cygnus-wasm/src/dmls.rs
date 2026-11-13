@@ -1,8 +1,8 @@
 //! `wasm-bindgen` wrappers over `cygnus_dmls::api`.
 //!
 //! The string-level API is implemented and tested natively; these exports only
-//! own the process-wide [`Registry`] and translate [`ApiError`] into a thrown
-//! JavaScript `Error`.
+//! own the process-wide [`Registry`] and translate [`api::ApiError`] into a
+//! thrown JavaScript `Error`.
 
 use std::sync::{Mutex, MutexGuard, OnceLock};
 
