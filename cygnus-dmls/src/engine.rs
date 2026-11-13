@@ -18,7 +18,7 @@ use crate::{
         CommitContent, ContentError, EncryptedContent, ExtremityRef, KeyPackageContent, PlanSummary,
     },
     device_root::{plan_with_device_roots, DeviceRootRegistry},
-    merge::{Branch, ExtremityId, MergeError, MergePlan},
+    merge::{Branch, ExtremityId, MemberId, MergeError, MergePlan},
     registry::{decode_secrets, encode_secrets, GroupEntry, HeldBranch, RegistryError},
     tree::LeafSource,
     wire::{self, MemberKey},
@@ -675,7 +675,6 @@ pub enum ApplyOutcome {
 ///
 /// [`EngineError::BadArgument`] for an event type this slice does not handle.
 /// Every protocol failure is returned as an [`ApplyOutcome`], not an error.
-#[allow(clippy::too_many_lines)]
 pub fn apply_commit(
     entry: &mut GroupEntry,
     event_type: &str,
@@ -685,6 +684,41 @@ pub fn apply_commit(
     if event_type != wire::COMMIT_EVENT {
         return Err(EngineError::BadArgument("event_type"));
     }
+    apply_event(entry, event_type, content, ctx, None)
+}
+
+/// Apply a received `m.dmls.merge`: everything [`apply_commit`] checks, plus a
+/// recomputed [`PlanSummary`] and merged membership that must match the event.
+///
+/// `registry` is supplied per call and never cached (see §5.1). A merge whose
+/// plan this device cannot reproduce is `rejected` with `mismatch:plan`; one
+/// whose resolved states are not all held is `deferred`.
+///
+/// # Errors
+///
+/// [`EngineError::BadArgument`] if `event_type` is not `m.dmls.merge`, or
+/// [`EngineError`] for corrupt stored metadata.
+pub fn apply_merge(
+    entry: &mut GroupEntry,
+    event_type: &str,
+    content: &Value,
+    ctx: &ApplyCtx,
+    registry: &DeviceRootRegistry,
+) -> Result<ApplyOutcome, EngineError> {
+    if event_type != wire::MERGE_EVENT {
+        return Err(EngineError::BadArgument("event_type"));
+    }
+    apply_event(entry, event_type, content, ctx, Some(registry))
+}
+
+#[allow(clippy::too_many_lines)]
+fn apply_event(
+    entry: &mut GroupEntry,
+    event_type: &str,
+    content: &Value,
+    ctx: &ApplyCtx,
+    registry: Option<&DeviceRootRegistry>,
+) -> Result<ApplyOutcome, EngineError> {
     let group_id = entry.group_id();
     let parsed = match CommitContent::parse(event_type, content, &group_id) {
         Ok(parsed) => parsed,
@@ -701,6 +735,22 @@ pub fn apply_commit(
     let base_id = parsed.base.id.commit_id;
     let new_id = parsed.commit_id();
     let resolves: BTreeSet<[u8; 32]> = parsed.resolves.iter().map(|r| r.id.commit_id).collect();
+    let expected_members: Option<BTreeSet<MemberId>> = match registry {
+        None => None,
+        Some(registry) => {
+            let ids: Vec<[u8; 32]> = resolves.iter().copied().collect();
+            let plan = match plan_merge(entry, &ids, registry)? {
+                PlanOutcome::Planned(plan) => plan,
+                PlanOutcome::Deferred(reason) => return Ok(ApplyOutcome::Deferred(reason)),
+                PlanOutcome::Rejected(reason) => return Ok(ApplyOutcome::Rejected(reason)),
+            };
+            let summary = PlanSummary::from_plan(&plan)?;
+            if plan.base != parsed.base.id || summary != parsed.plan {
+                return Ok(ApplyOutcome::Rejected("mismatch:plan"));
+            }
+            Some(plan.members.keys().cloned().collect())
+        }
+    };
     let base_epoch = parsed.base.id.mls_epoch;
     let target_epoch = parsed.mls_epoch();
     let commit = parsed.commit;
@@ -751,7 +801,19 @@ pub fn apply_commit(
         if group.epoch().as_u64() != target_epoch {
             return Err(RegistryError::Rejected("mismatch:mls_epoch"));
         }
-        summarize(group, group_id, new_id).map_err(|e| RegistryError::Mls(e.to_string()))
+        let summary =
+            summarize(group, group_id, new_id).map_err(|e| RegistryError::Mls(e.to_string()))?;
+        if let Some(expected) = &expected_members {
+            let actual: BTreeSet<MemberId> = summary
+                .members
+                .iter()
+                .map(crate::branch_meta::member_id_from_key)
+                .collect();
+            if &actual != expected {
+                return Err(RegistryError::Rejected("mismatch:plan"));
+            }
+        }
+        Ok(summary)
     });
 
     Ok(match result {
@@ -1577,5 +1639,81 @@ mod tests {
         let outcome = merge(&mut a, &alice, &[tip], &registry).unwrap();
         assert!(matches!(outcome, MergeOutcome::Rejected(_)), "{outcome:?}");
         assert_eq!(a.export(), before);
+    }
+
+    #[test]
+    fn a_peer_applies_a_merge_only_when_it_reproduces_the_plan() {
+        let (alice, bob, mut a, mut b, tip) = three_member_group();
+        let registry =
+            device_registry(&[(ALICE, 1, "ALICE1"), (BOB, 2, "BOB1"), (CAROL, 3, "CAROL1")]);
+        let s1 = commit(&mut b, &bob, &tip, &CommitOp::SelfUpdate).unwrap();
+        let ctx = |sender: &Signer, events: &[&str]| ApplyCtx {
+            sender: sender.member_key(),
+            ancestors: events.iter().map(|e| (*e).to_owned()).collect(),
+        };
+        apply_commit(
+            &mut a,
+            wire::COMMIT_EVENT,
+            &s1.content,
+            &ctx(&bob, &["$second"]),
+        )
+        .unwrap();
+        let s2 = commit(&mut a, &alice, &tip, &CommitOp::Remove(carol_key())).unwrap();
+        let r1 = ExtremityRef::new(ExtremityId::new(3, s1.commit_id), "$s1");
+        let r2 = ExtremityRef::new(ExtremityId::new(3, s2.commit_id), "$s2");
+        let MergeOutcome::Merged(out) = merge(&mut a, &alice, &[r1, r2], &registry).unwrap() else {
+            panic!("alice must merge");
+        };
+        let merge_ctx = ctx(&alice, &["$s1", "$s2", "$second"]);
+
+        // Bob lacks Alice's sibling state: deferred, nothing changes.
+        assert_eq!(
+            apply_merge(
+                &mut b,
+                wire::MERGE_EVENT,
+                &out.content,
+                &merge_ctx,
+                &registry
+            )
+            .unwrap(),
+            ApplyOutcome::Deferred("missing_base_state")
+        );
+        apply_commit(
+            &mut b,
+            wire::COMMIT_EVENT,
+            &s2.content,
+            &ctx(&alice, &["$second"]),
+        )
+        .unwrap();
+
+        // A registry that revokes Bob yields a different plan: rejected, no change.
+        let mut other =
+            device_registry(&[(ALICE, 1, "ALICE1"), (BOB, 2, "BOB1"), (CAROL, 3, "CAROL1")]);
+        other.revoke(&public(&key(2)));
+        let before = b.export();
+        assert_eq!(
+            apply_merge(&mut b, wire::MERGE_EVENT, &out.content, &merge_ctx, &other).unwrap(),
+            ApplyOutcome::Rejected("mismatch:plan")
+        );
+        assert_eq!(b.export(), before);
+        // The plain commit entry point refuses a merge event outright.
+        assert!(apply_commit(&mut b, wire::MERGE_EVENT, &out.content, &merge_ctx).is_err());
+
+        let ApplyOutcome::Applied(summary) = apply_merge(
+            &mut b,
+            wire::MERGE_EVENT,
+            &out.content,
+            &merge_ctx,
+            &registry,
+        )
+        .unwrap() else {
+            panic!("bob must apply the merge");
+        };
+        assert_eq!(summary, out.summary);
+        assert_eq!(b.extremity_count(), 1);
+        assert!(matches!(
+            plan_merge(&b, &[out.commit_id], &registry).unwrap(),
+            PlanOutcome::Planned(plan) if plan.members.len() == 2
+        ));
     }
 }
