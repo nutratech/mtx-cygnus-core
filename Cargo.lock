@@ -342,6 +342,7 @@ dependencies = [
 name = "cygnus-dmls"
 version = "0.0.1"
 dependencies = [
+ "base64",
  "blake3",
  "cygnus-core",
  "ed25519-zebra",

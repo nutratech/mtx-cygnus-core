@@ -14,6 +14,7 @@ use std::fmt::Debug;
 
 use cygnus_core::{Kind, Principal};
 
+pub mod content;
 pub mod device_root;
 pub mod merge;
 pub mod tree;
