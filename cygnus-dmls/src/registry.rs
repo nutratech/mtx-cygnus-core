@@ -20,6 +20,11 @@ use crate::merge::ExtremityId;
 /// Most extremities held per group. The cap applies to the *post-update* set.
 pub const MAX_HELD_EXTREMITIES: usize = 8;
 
+/// Most held states (tips plus retained ancestors) per group. Non-tip states
+/// are kept so a late sibling commit can still apply; the oldest is evicted
+/// first, and a sibling whose base was evicted defers as `missing_base_state`.
+pub const MAX_HELD_STATES: usize = 16;
+
 /// Blob magic.
 const MAGIC: &[u8; 4] = b"CYDM";
 /// Current blob version.
@@ -94,6 +99,7 @@ pub struct HeldBranch {
     provider: OpenMlsRustCrypto,
     group: MlsGroup,
     resolves: BTreeSet<ExtremityId>,
+    born: u64,
 }
 
 impl std::fmt::Debug for HeldBranch {
@@ -136,6 +142,7 @@ impl HeldBranch {
             provider,
             group,
             resolves: BTreeSet::new(),
+            born: 0,
         }
     }
 
@@ -169,6 +176,7 @@ impl HeldBranch {
             provider,
             group,
             resolves: self.resolves.clone(),
+            born: self.born,
         })
     }
 
@@ -191,6 +199,8 @@ fn group_id_of(group: &MlsGroup) -> Result<[u8; 32], RegistryError> {
 pub struct GroupEntry {
     group_id: [u8; 32],
     seq: u64,
+    next_born: u64,
+    tips: BTreeSet<[u8; 32]>,
     branches: BTreeMap<[u8; 32], HeldBranch>,
 }
 
@@ -201,6 +211,8 @@ impl GroupEntry {
         Self {
             group_id,
             seq: 0,
+            next_born: 0,
+            tips: BTreeSet::new(),
             branches: BTreeMap::new(),
         }
     }
@@ -218,16 +230,45 @@ impl GroupEntry {
         self.seq
     }
 
-    /// Held extremity commit ids.
+    /// Current extremity (tip) commit ids.
     #[must_use]
     pub fn extremities(&self) -> Vec<[u8; 32]> {
-        self.branches.keys().copied().collect()
+        self.tips.iter().copied().collect()
     }
 
-    /// Number of held extremities.
+    /// Number of extremities (tips).
     #[must_use]
     pub fn extremity_count(&self) -> usize {
+        self.tips.len()
+    }
+
+    /// Number of held states, tips and retained ancestors.
+    #[must_use]
+    pub fn state_count(&self) -> usize {
         self.branches.len()
+    }
+
+    fn install(&mut self, commit_id: [u8; 32], mut branch: HeldBranch, tip: bool) {
+        branch.born = self.next_born;
+        self.next_born += 1;
+        self.branches.insert(commit_id, branch);
+        if tip {
+            self.tips.insert(commit_id);
+        }
+        while self.branches.len() > MAX_HELD_STATES {
+            let oldest = self
+                .branches
+                .iter()
+                .filter(|(id, _)| !self.tips.contains(*id))
+                .min_by_key(|(_, b)| b.born)
+                .map(|(id, _)| *id);
+            match oldest {
+                Some(id) => {
+                    self.branches.remove(&id);
+                }
+                None => break,
+            }
+        }
     }
 
     /// A held branch.
@@ -251,7 +292,7 @@ impl GroupEntry {
                 Err(RegistryError::MissingBase)
             };
         }
-        let mut keys = self.branches.keys();
+        let mut keys = self.tips.iter();
         match (keys.next(), keys.next()) {
             (Some(id), None) => Ok(*id),
             (None, _) => Err(RegistryError::UnknownGroup),
@@ -272,10 +313,10 @@ impl GroupEntry {
         if self.branches.contains_key(&commit_id) {
             return Err(RegistryError::AlreadyHeld);
         }
-        if self.branches.len() + 1 > MAX_HELD_EXTREMITIES {
-            return Err(RegistryError::ExtremityCap(self.branches.len() + 1));
+        if self.tips.len() + 1 > MAX_HELD_EXTREMITIES {
+            return Err(RegistryError::ExtremityCap(self.tips.len() + 1));
         }
-        self.branches.insert(commit_id, branch);
+        self.install(commit_id, branch, true);
         self.seq += 1;
         Ok(())
     }
@@ -309,7 +350,7 @@ impl GroupEntry {
             let held = self.branches.get(id).ok_or(RegistryError::MissingBranch)?;
             consumed.insert(ExtremityId::new(held.epoch(), *id));
         }
-        let next = self.branches.len() - resolves.len() + 1;
+        let next = self.tips.difference(resolves).count() + 1;
         if next > MAX_HELD_EXTREMITIES {
             return Err(RegistryError::ExtremityCap(next));
         }
@@ -320,9 +361,9 @@ impl GroupEntry {
         copy.resolves = consumed;
 
         for id in resolves {
-            self.branches.remove(id);
+            self.tips.remove(id);
         }
-        self.branches.insert(new_commit_id, copy);
+        self.install(new_commit_id, copy, true);
         self.seq += 1;
         Ok(out)
     }
@@ -346,6 +387,7 @@ impl GroupEntry {
             .fork()?;
         let (group, provider) = copy.parts_mut();
         let out = f(group, provider)?;
+        copy.born = self.branches.get(commit_id).map_or(copy.born, |b| b.born);
         self.branches.insert(*commit_id, copy);
         self.seq += 1;
         Ok(out)
@@ -359,9 +401,12 @@ impl GroupEntry {
         out.extend_from_slice(&BLOB_VERSION.to_be_bytes());
         out.extend_from_slice(&self.seq.to_be_bytes());
         out.extend_from_slice(&self.group_id);
+        out.extend_from_slice(&self.next_born.to_be_bytes());
         put_len(&mut out, self.branches.len());
         for (commit_id, branch) in &self.branches {
             out.extend_from_slice(commit_id);
+            out.extend_from_slice(&branch.born.to_be_bytes());
+            out.push(u8::from(self.tips.contains(commit_id)));
             put_len(&mut out, branch.resolves.len());
             for r in &branch.resolves {
                 out.extend_from_slice(&r.mls_epoch.to_be_bytes());
@@ -387,7 +432,7 @@ impl GroupEntry {
     /// [`RegistryError::BadState`] for truncation, a hash mismatch, or any
     /// structural problem; [`RegistryError::UnsupportedVersion`].
     pub fn import(blob: &[u8]) -> Result<Self, RegistryError> {
-        if blob.len() < MAGIC.len() + 2 + 8 + 32 + 4 + 32 || blob.len() > MAX_BLOB_BYTES {
+        if blob.len() < MAGIC.len() + 2 + 8 + 32 + 8 + 4 + 32 || blob.len() > MAX_BLOB_BYTES {
             return Err(RegistryError::BadState("bad length"));
         }
         let (body, hash) = blob.split_at(blob.len() - 32);
@@ -405,13 +450,23 @@ impl GroupEntry {
         let seq = u64::from_be_bytes(r.array()?);
         let group_id: [u8; 32] = r.array()?;
 
+        let next_born = u64::from_be_bytes(r.array()?);
         let count = r.len()?;
-        if count > MAX_HELD_EXTREMITIES {
+        if count > MAX_HELD_STATES {
             return Err(RegistryError::BadState("too many branches"));
         }
         let mut branches = BTreeMap::new();
+        let mut tips = BTreeSet::new();
         for _ in 0..count {
             let commit_id: [u8; 32] = r.array()?;
+            let born = u64::from_be_bytes(r.array()?);
+            match r.array::<1>()?[0] {
+                0 => {}
+                1 => {
+                    tips.insert(commit_id);
+                }
+                _ => return Err(RegistryError::BadState("bad tip flag")),
+            }
             let n_resolves = r.len()?;
             let mut resolves = BTreeSet::new();
             for _ in 0..n_resolves {
@@ -432,15 +487,21 @@ impl GroupEntry {
                     provider,
                     group,
                     resolves,
+                    born,
                 },
             );
         }
         if !r.buf.is_empty() {
             return Err(RegistryError::BadState("trailing bytes"));
         }
+        if tips.len() > MAX_HELD_EXTREMITIES {
+            return Err(RegistryError::BadState("too many tips"));
+        }
         Ok(Self {
             group_id,
             seq,
+            next_born,
+            tips,
             branches,
         })
     }
@@ -903,5 +964,45 @@ mod tests {
             )
             .unwrap();
         assert_eq!(entry.resolve_tip(None).unwrap(), [0xDE; 32]);
+    }
+
+    #[test]
+    fn sibling_commits_on_one_base_both_apply_and_old_states_are_bounded() {
+        let (base, _) = new_group(8);
+        let mut entry = GroupEntry::new(GID);
+        entry.insert_root([0; 32], base).unwrap();
+        // Two commits on the same base: each resolves the base, which stays
+        // held as a non-tip so the second can still apply.
+        let base_only = BTreeSet::from([[0; 32]]);
+        entry
+            .apply(&[0; 32], [1; 32], &base_only, |_, _| Ok(()))
+            .unwrap();
+        assert_eq!(entry.extremities(), vec![[1; 32]]);
+        entry
+            .apply(&[0; 32], [2; 32], &base_only, |_, _| Ok(()))
+            .unwrap();
+        assert_eq!(entry.extremities(), vec![[1; 32], [2; 32]]);
+        assert_eq!(entry.state_count(), 3);
+
+        // A long linear chain keeps only MAX_HELD_STATES, never evicting a tip.
+        let mut tip = [2_u8; 32];
+        for i in 10..40_u8 {
+            entry
+                .apply(&tip, [i; 32], &BTreeSet::from([tip]), |_, _| Ok(()))
+                .unwrap();
+            tip = [i; 32];
+        }
+        assert_eq!(entry.state_count(), MAX_HELD_STATES);
+        assert!(entry.extremities().contains(&[1; 32]));
+        assert!(entry.extremities().contains(&tip));
+        // The evicted ancestor is a deferral, not a crash.
+        assert_eq!(
+            entry
+                .apply(&[0; 32], [0x77; 32], &base_only, |_, _| Ok(()))
+                .unwrap_err(),
+            RegistryError::MissingBase
+        );
+        let blob = entry.export();
+        assert_eq!(GroupEntry::import(&blob).unwrap().export(), blob);
     }
 }

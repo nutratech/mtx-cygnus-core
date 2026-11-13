@@ -60,6 +60,12 @@ Consequences:
   it enter the §11 reboot path. No tip is ever silently evicted. Apply and
   import results carry the current `extremityCount` so Hydrogen sees pressure
   coming.
+- **Tips vs held states.** A commit's `resolves` includes its `base`, so applying
+  it retires the base as a _tip_ but the base _state_ stays held; otherwise a
+  concurrent sibling commit on the same base could never apply. Held states
+  are bounded by `MAX_HELD_STATES = 16` (oldest non-tip evicted first, tips
+  never). A sibling whose base was evicted returns `deferred`
+  `missing_base_state`. The cap of 8 counts tips only.
 - **`seq`.** Every mutating call increments the entry's `seq` (create, join,
   apply, commit, merge, encrypt, **decrypt**). `dmlsExportGroup` serializes the
   current value without changing it; Hydrogen's CAS expects the stored `seq` to
@@ -153,8 +159,8 @@ magic "CYDM" | version u16 | seq u64 | group_id 32 | body | blake3(all preceding
 - `branches`: for each held extremity, `commit_id` and the serialized
   `MlsGroup` plus its OpenMLS storage entries (epoch secrets, ratchet tree,
   own leaf private keys, encryption key pairs).
-- per branch, its `resolves` list (`mls_epoch`, `commit_id`). The extremity set
-  is exactly the set of held branches. `Branch` values for `merge.rs` are
+- per branch, its `resolves` list (`mls_epoch`, `commit_id`). Each branch is flagged tip or
+  retained ancestor (with an insertion counter for eviction). `Branch` values for `merge.rs` are
   **derived from the held groups at plan time**, not persisted, so there is no
   second copy to drift.
 - `own_member` (`principal:device`).
