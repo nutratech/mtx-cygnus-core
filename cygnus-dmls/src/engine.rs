@@ -10,9 +10,13 @@ use openmls_basic_credential::SignatureKeyPair;
 use openmls_rust_crypto::OpenMlsRustCrypto;
 use rezzy_json::Value;
 
+use std::collections::BTreeSet;
+
 use crate::{
-    content::{ContentError, EncryptedContent, KeyPackageContent},
-    registry::{decode_secrets, encode_secrets, HeldBranch, RegistryError},
+    content::{
+        CommitContent, ContentError, EncryptedContent, ExtremityRef, KeyPackageContent, PlanSummary,
+    },
+    registry::{decode_secrets, encode_secrets, GroupEntry, HeldBranch, RegistryError},
     wire::{self, MemberKey},
     MemberIdentity, CIPHERSUITE,
 };
@@ -351,10 +355,201 @@ pub fn decrypt(
     }
 }
 
+/// The output of a locally produced Commit.
+#[derive(Debug)]
+pub struct CommitOut {
+    /// `m.dmls.commit` content, ready to send.
+    pub content: Value,
+    /// The Welcome bytes for the added member, to be bound to the Commit event.
+    pub welcome: Vec<u8>,
+    /// The new extremity's commit id.
+    pub commit_id: [u8; 32],
+    /// The state the Commit produced.
+    pub summary: GroupSummary,
+}
+
+/// Commit an Add for `key_package` on top of `base` and install the result as
+/// a new tip.
+///
+/// `base` must name a held state (the genesis reference for a fresh group). It
+/// is retained as a non-tip, so a second Commit on the same base still applies
+/// and the two can later be merged. On any error the entry is unchanged.
+///
+/// # Errors
+///
+/// [`EngineError`] for a missing base, a stale base epoch, an invalid key
+/// package, or an `OpenMLS` failure.
+pub fn commit_add(
+    entry: &mut GroupEntry,
+    signer: &Signer,
+    base: &ExtremityRef,
+    key_package: &[u8],
+) -> Result<CommitOut, EngineError> {
+    let group_id = entry.group_id();
+    let base_id = base.id.commit_id;
+    let resolves = BTreeSet::from([base_id]);
+    let base_ref = base.clone();
+    let key_package = key_package.to_vec();
+
+    let (commit_id, content, welcome, summary) =
+        entry.apply_with(&base_id, None, &resolves, |group, provider| {
+            if group.epoch().as_u64() != base_ref.id.mls_epoch {
+                return Err(RegistryError::Rejected("stale_epoch"));
+            }
+            let as_reg = |e: EngineError| RegistryError::Mls(e.to_string());
+            verify_own_leaf(group, signer).map_err(as_reg)?;
+            let mut bytes = key_package.as_slice();
+            let package = KeyPackageIn::tls_deserialize(&mut bytes)
+                .map_err(mls)
+                .map_err(as_reg)?
+                .validate(provider.crypto(), ProtocolVersion::Mls10)
+                .map_err(mls)
+                .map_err(as_reg)?;
+            let (commit, welcome, _info) = group
+                .add_members(provider, &signer.pair, &[package])
+                .map_err(mls)
+                .map_err(as_reg)?;
+            group
+                .merge_pending_commit(provider)
+                .map_err(mls)
+                .map_err(as_reg)?;
+            let commit = commit.to_bytes().map_err(mls).map_err(as_reg)?;
+            let welcome = welcome.to_bytes().map_err(mls).map_err(as_reg)?;
+            let group_info = group
+                .export_group_info(provider.crypto(), &signer.pair, true)
+                .map_err(mls)
+                .map_err(as_reg)?
+                .to_bytes()
+                .map_err(mls)
+                .map_err(as_reg)?;
+            let commit_id = wire::commit_id(&commit);
+            let content = CommitContent {
+                group_id,
+                base: base_ref.clone(),
+                resolves: vec![base_ref],
+                commit,
+                group_info,
+                proposals: Vec::new(),
+                plan: PlanSummary::default(),
+            }
+            .to_value()
+            .map_err(|e| RegistryError::Mls(e.to_string()))?;
+            let summary = summarize(group, group_id, commit_id).map_err(as_reg)?;
+            Ok((commit_id, (commit_id, content, welcome, summary)))
+        })?;
+    Ok(CommitOut {
+        content,
+        welcome,
+        commit_id,
+        summary,
+    })
+}
+
+/// Caller-supplied facts about a received Commit event that wasm cannot know.
+#[derive(Debug, Clone)]
+pub struct ApplyCtx {
+    /// The member the 00FC envelope authenticated as the event's sender.
+    pub sender: MemberKey,
+    /// Event ids known to be ancestors of the Commit event in the room DAG.
+    pub ancestors: BTreeSet<String>,
+}
+
+/// The protocol outcome of applying a received Commit.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ApplyOutcome {
+    /// A new extremity was installed (or was already held).
+    Applied(GroupSummary),
+    /// A dependency is not held yet; retry after more events. State untouched.
+    Deferred(&'static str),
+    /// Permanently invalid; the code is stable. State untouched.
+    Rejected(&'static str),
+}
+
+/// Apply a received `m.dmls.commit`: stateless checks first, then the
+/// registry's copy-then-swap apply.
+///
+/// # Errors
+///
+/// [`EngineError::BadArgument`] for an event type this slice does not handle.
+/// Every protocol failure is returned as an [`ApplyOutcome`], not an error.
+pub fn apply_commit(
+    entry: &mut GroupEntry,
+    event_type: &str,
+    content: &Value,
+    ctx: &ApplyCtx,
+) -> Result<ApplyOutcome, EngineError> {
+    if event_type != wire::COMMIT_EVENT {
+        return Err(EngineError::BadArgument("event_type"));
+    }
+    let group_id = entry.group_id();
+    let parsed = match CommitContent::parse(event_type, content, &group_id) {
+        Ok(parsed) => parsed,
+        Err(error) => return Ok(ApplyOutcome::Rejected(error.code())),
+    };
+    for reference in parsed.resolves.iter().chain([&parsed.base]) {
+        if let Some(event) = &reference.event_id {
+            if !ctx.ancestors.contains(event) {
+                return Ok(ApplyOutcome::Deferred("unheld_ancestor"));
+            }
+        }
+    }
+
+    let base_id = parsed.base.id.commit_id;
+    let new_id = parsed.commit_id();
+    let resolves: BTreeSet<[u8; 32]> = parsed.resolves.iter().map(|r| r.id.commit_id).collect();
+    let base_epoch = parsed.base.id.mls_epoch;
+    let target_epoch = parsed.mls_epoch();
+    let commit = parsed.commit;
+    let sender = ctx.sender.clone();
+
+    let result = entry.apply(&base_id, new_id, &resolves, |group, provider| {
+        if group.epoch().as_u64() != base_epoch {
+            return Err(RegistryError::Rejected("mismatch:base"));
+        }
+        let message = MlsMessageIn::tls_deserialize_exact(&commit)
+            .map_err(|e| RegistryError::Mls(format!("{e:?}")))?;
+        let protocol = ProtocolMessage::try_from(message)
+            .map_err(|_| RegistryError::Rejected("malformed:commit"))?;
+        let processed = group
+            .process_message(provider, protocol)
+            .map_err(|e| RegistryError::Mls(format!("{e:?}")))?;
+        let committer = member_of(processed.credential())
+            .map_err(|_| RegistryError::Rejected("malformed:credential"))?;
+        if committer != sender {
+            return Err(RegistryError::Rejected("mismatch:sender"));
+        }
+        let ProcessedMessageContent::StagedCommitMessage(staged) = processed.into_content() else {
+            return Err(RegistryError::Rejected("malformed:commit"));
+        };
+        group
+            .merge_staged_commit(provider, *staged)
+            .map_err(|e| RegistryError::Mls(format!("{e:?}")))?;
+        if group.epoch().as_u64() != target_epoch {
+            return Err(RegistryError::Rejected("mismatch:mls_epoch"));
+        }
+        summarize(group, group_id, new_id).map_err(|e| RegistryError::Mls(e.to_string()))
+    });
+
+    Ok(match result {
+        Ok(summary) => ApplyOutcome::Applied(summary),
+        Err(RegistryError::AlreadyHeld) => {
+            let held = entry
+                .branch(&new_id)
+                .ok_or(EngineError::BadArgument("state"))?;
+            ApplyOutcome::Applied(summarize(held.group(), group_id, new_id)?)
+        }
+        Err(RegistryError::MissingBase) => ApplyOutcome::Deferred("missing_base_state"),
+        Err(RegistryError::MissingBranch) => ApplyOutcome::Deferred("missing_branch"),
+        Err(RegistryError::ExtremityCap(_)) => ApplyOutcome::Deferred("extremity_cap"),
+        Err(error) => ApplyOutcome::Rejected(error.code()),
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::content::EncryptedContent;
+    use crate::merge::ExtremityId;
     use crate::registry::decode_secrets;
 
     const ALICE: &str = "@Cl5rPGgj2s7JHMwFxSEOHfFYM_K0PDpnhXEMYwMgQuo";
@@ -526,5 +721,145 @@ mod tests {
         )
         .unwrap_err();
         assert_eq!(error.code(), "bad_argument");
+    }
+
+    const CAROL: &str = "@QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ";
+
+    fn package_bytes(signer: &Signer) -> (Vec<u8>, Vec<u8>) {
+        let (package, secrets) = bob_key_package(signer);
+        (package.tls_serialize_detached().unwrap(), secrets)
+    }
+
+    fn alice_entry(alice: &Signer, group_id: [u8; 32]) -> GroupEntry {
+        let (branch, summary) = create_group(alice, group_id).unwrap();
+        let mut entry = GroupEntry::new(group_id);
+        entry.insert_root(summary.commit_id, branch).unwrap();
+        entry
+    }
+
+    #[test]
+    fn two_adds_on_the_genesis_base_are_sibling_tips() {
+        let alice = signer(ALICE, "ALICE1", 1);
+        let group_id = wire::group_id(ROOM);
+        let mut entry = alice_entry(&alice, group_id);
+        let genesis = ExtremityRef::genesis(&group_id);
+        let (bob_kp, _) = package_bytes(&signer(BOB, "BOB1", 2));
+        let (carol_kp, _) = package_bytes(&signer(CAROL, "CAROL1", 3));
+
+        let one = commit_add(&mut entry, &alice, &genesis, &bob_kp).unwrap();
+        let two = commit_add(&mut entry, &alice, &genesis, &carol_kp).unwrap();
+
+        assert_ne!(one.commit_id, two.commit_id);
+        assert_eq!(entry.extremity_count(), 2);
+        assert_eq!(entry.state_count(), 3, "genesis is retained as a non-tip");
+        assert_eq!(one.summary.mls_epoch, 1);
+        assert_eq!(two.summary.mls_epoch, 1);
+        for out in [&one, &two] {
+            let parsed = CommitContent::parse(wire::COMMIT_EVENT, &out.content, &group_id).unwrap();
+            assert!(parsed.base.is_genesis(&group_id));
+            assert_eq!(parsed.commit_id(), out.commit_id);
+        }
+    }
+
+    #[test]
+    fn a_member_applies_the_next_commit_and_defers_or_rejects_without_mutation() {
+        let alice = signer(ALICE, "ALICE1", 1);
+        let bob = signer(BOB, "BOB1", 2);
+        let group_id = wire::group_id(ROOM);
+        let mut alice_entry = alice_entry(&alice, group_id);
+        let genesis = ExtremityRef::genesis(&group_id);
+        let (bob_kp, bob_secrets) = package_bytes(&bob);
+        let (carol_kp, _) = package_bytes(&signer(CAROL, "CAROL1", 3));
+
+        let first = commit_add(&mut alice_entry, &alice, &genesis, &bob_kp).unwrap();
+        let (bob_branch, joined) = join_welcome(
+            &bob,
+            &bob_secrets,
+            &first.welcome,
+            &group_id,
+            first.commit_id,
+        )
+        .unwrap();
+        assert_eq!(joined.mls_epoch, 1);
+        let mut bob_entry = GroupEntry::new(group_id);
+        bob_entry.insert_root(first.commit_id, bob_branch).unwrap();
+
+        let base = ExtremityRef::new(ExtremityId::new(1, first.commit_id), "$first");
+        let second = commit_add(&mut alice_entry, &alice, &base, &carol_kp).unwrap();
+        let ctx = |sender: &Signer, ancestors: &[&str]| ApplyCtx {
+            sender: sender.member_key(),
+            ancestors: ancestors.iter().map(|e| (*e).to_owned()).collect(),
+        };
+        let before = bob_entry.export();
+
+        // Unknown ancestor: deferred, nothing changes.
+        assert_eq!(
+            apply_commit(
+                &mut bob_entry,
+                wire::COMMIT_EVENT,
+                &second.content,
+                &ctx(&alice, &[])
+            )
+            .unwrap(),
+            ApplyOutcome::Deferred("unheld_ancestor")
+        );
+        // Wrong authenticated sender: rejected, nothing changes.
+        assert_eq!(
+            apply_commit(
+                &mut bob_entry,
+                wire::COMMIT_EVENT,
+                &second.content,
+                &ctx(&bob, &["$first"])
+            )
+            .unwrap(),
+            ApplyOutcome::Rejected("mismatch:sender")
+        );
+        assert_eq!(bob_entry.export(), before);
+
+        // A group that does not hold the base defers.
+        let mut empty = GroupEntry::new(group_id);
+        assert_eq!(
+            apply_commit(
+                &mut empty,
+                wire::COMMIT_EVENT,
+                &second.content,
+                &ctx(&alice, &["$first"])
+            )
+            .unwrap(),
+            ApplyOutcome::Deferred("missing_base_state")
+        );
+
+        // The real apply installs epoch 2 with three members.
+        let ApplyOutcome::Applied(summary) = apply_commit(
+            &mut bob_entry,
+            wire::COMMIT_EVENT,
+            &second.content,
+            &ctx(&alice, &["$first"]),
+        )
+        .unwrap() else {
+            panic!("expected applied")
+        };
+        assert_eq!(summary.mls_epoch, 2);
+        assert_eq!(summary.commit_id, second.commit_id);
+        assert_eq!(summary.members.len(), 3);
+        assert_eq!(bob_entry.extremities(), vec![second.commit_id]);
+        assert!(
+            bob_entry.branch(&first.commit_id).is_some(),
+            "parent retained"
+        );
+
+        // Re-applying is idempotent and does not bump seq.
+        let after = bob_entry.export();
+        assert!(matches!(
+            apply_commit(
+                &mut bob_entry,
+                wire::COMMIT_EVENT,
+                &second.content,
+                &ctx(&alice, &["$first"])
+            )
+            .unwrap(),
+            ApplyOutcome::Applied(_)
+        ));
+        assert_eq!(bob_entry.export(), after);
     }
 }

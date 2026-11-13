@@ -79,6 +79,9 @@ pub enum RegistryError {
     /// `OpenMLS` failed.
     #[error("crypto: {0}")]
     Mls(String),
+    /// The operation is permanently invalid; the payload is the stable code.
+    #[error("{0}")]
+    Rejected(&'static str),
 }
 
 impl RegistryError {
@@ -95,8 +98,10 @@ impl RegistryError {
             Self::ForkUnresolved => "fork_unresolved",
             Self::StaleState { .. } => "stale_state",
             Self::BaseNotResolved => "mismatch:resolves",
+            Self::WrongGroup => "mismatch:group_id",
             Self::AlreadyHeld => "already_held",
             Self::Mls(_) => "crypto",
+            Self::Rejected(code) => code,
         }
     }
 }
@@ -329,6 +334,8 @@ impl GroupEntry {
     ///
     /// # Errors
     ///
+    /// [`RegistryError::WrongGroup`] if the branch was built for another group,
+    /// [`RegistryError::AlreadyHeld`] if the commit id is already held, or
     /// [`RegistryError::ExtremityCap`] if the cap would be exceeded.
     pub fn insert_root(
         &mut self,
@@ -336,7 +343,7 @@ impl GroupEntry {
         branch: HeldBranch,
     ) -> Result<(), RegistryError> {
         if group_id_of(&branch.group)? != self.group_id {
-            return Err(RegistryError::BadState("branch is for a different group"));
+            return Err(RegistryError::WrongGroup);
         }
         if self.branches.contains_key(&commit_id) {
             return Err(RegistryError::AlreadyHeld);
@@ -370,7 +377,25 @@ impl GroupEntry {
         resolves: &BTreeSet<[u8; 32]>,
         f: impl FnOnce(&mut MlsGroup, &OpenMlsRustCrypto) -> Result<T, RegistryError>,
     ) -> Result<T, RegistryError> {
-        if self.branches.contains_key(&new_commit_id) {
+        self.apply_with(base, Some(new_commit_id), resolves, |g, p| {
+            Ok((new_commit_id, f(g, p)?))
+        })
+    }
+
+    /// Like [`Self::apply`] for a Commit this device produces: the new commit
+    /// id is only known once `f` has built the Commit, so `f` returns it.
+    ///
+    /// # Errors
+    ///
+    /// As [`Self::apply`].
+    pub fn apply_with<T>(
+        &mut self,
+        base: &[u8; 32],
+        known_new: Option<[u8; 32]>,
+        resolves: &BTreeSet<[u8; 32]>,
+        f: impl FnOnce(&mut MlsGroup, &OpenMlsRustCrypto) -> Result<([u8; 32], T), RegistryError>,
+    ) -> Result<T, RegistryError> {
+        if known_new.is_some_and(|id| self.branches.contains_key(&id)) {
             return Err(RegistryError::AlreadyHeld);
         }
         let next_seq = self.next_seq()?;
@@ -390,7 +415,10 @@ impl GroupEntry {
 
         let mut copy = base_branch.fork()?;
         let (group, provider) = copy.parts_mut();
-        let out = f(group, provider)?;
+        let (new_commit_id, out) = f(group, provider)?;
+        if self.branches.contains_key(&new_commit_id) {
+            return Err(RegistryError::AlreadyHeld);
+        }
         copy.resolves = consumed;
 
         for id in resolves {
@@ -821,6 +849,18 @@ mod tests {
     }
 
     #[test]
+    fn insert_root_refuses_a_branch_for_another_group() {
+        let (branch, _) = new_group(0x11);
+        let mut entry = GroupEntry::new([0x22; 32]);
+        assert_eq!(
+            entry.insert_root([1; 32], branch).unwrap_err(),
+            RegistryError::WrongGroup
+        );
+        assert_eq!(entry.extremity_count(), 0);
+        assert_eq!(entry.state_count(), 0);
+    }
+
+    #[test]
     fn export_import_export_is_byte_identical_and_seed_free() {
         let (branch, _) = new_group(0x5A);
         let mut entry = GroupEntry::new(GID);
@@ -1149,7 +1189,7 @@ mod tests {
         };
         assert_eq!(
             entry.insert_root([2; 32], other).unwrap_err().code(),
-            "bad_state"
+            "mismatch:group_id"
         );
 
         // Same seq, different content: a conflict, not an idempotent replace.
