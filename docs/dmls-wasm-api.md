@@ -24,8 +24,9 @@ Consequences:
   construction. An error mid-apply drops the copy.
 - Encrypt/decrypt name a branch (`atCommitId`), defaulting to the sole tip. With
   several tips, `dmlsEncrypt` without `atCommitId` throws `fork_unresolved`.
-- `dmlsDecrypt` selects the branch by the ciphertext's `mls_epoch` among held
-  branches; none held ⇒ status `missing_state` (buffer per §13.4).
+- `dmlsDecrypt` selects branches by the ciphertext's `mls_epoch`. Sibling tips can
+  share an epoch, so it tries each held branch at that epoch (only the right
+  epoch secrets succeed) and persists the one that decrypts; none held ⇒ status `missing_state` (buffer per §13.4).
 
 ## 1. Lifecycle and ownership
 
@@ -74,7 +75,9 @@ Consequences:
 - **Import over a loaded entry.** If the group is loaded and the blob's `seq` is
   lower than the loaded one, `dmlsImportGroup` throws `stale_state` instead of
   replacing it, so a lock bug is a visible error and not a ratchet fork. An equal
-  `seq` replaces idempotently.
+  `seq` is idempotent only if the blob is byte-identical to the loaded export;
+  a different blob at the same `seq` is two writers diverging and also throws
+  `stale_state`.
 
 ## 2. Function table
 
@@ -175,8 +178,7 @@ of its `values`, restored by extending a fresh provider's map. The spike
 restores a group this way and encrypts from it.
 **`SignatureKeyPair::store` is never called**: operations take `&SignatureKeyPair`
 built from the per-call seed, so the seed never enters `values`. A test asserts
-the seed bytes do not appear in any exported blob. (`DmlsClient::new` currently
-calls `store`; that is removed in the refactor.)
+the seed bytes do not appear in any exported blob. (`DmlsClient::new` no longer calls `store`; the engine `Signer` is built per call.)
 
 `dmlsExportGroup` returns base64url of a versioned binary container:
 

@@ -70,6 +70,9 @@ pub enum RegistryError {
     /// `base` is not among `resolves`.
     #[error("mismatch:resolves")]
     BaseNotResolved,
+    /// A branch's MLS group id is not the entry's group id.
+    #[error("mismatch:group_id")]
+    WrongGroup,
     /// The new commit is already held (idempotent re-apply).
     #[error("already_held")]
     AlreadyHeld,
@@ -265,6 +268,13 @@ impl GroupEntry {
         self.branches.len()
     }
 
+    fn next_seq(&self) -> Result<u64, RegistryError> {
+        self.seq
+            .checked_add(1)
+            .filter(|n| *n != u64::MAX)
+            .ok_or(RegistryError::BadState("seq exhausted"))
+    }
+
     fn install(&mut self, commit_id: [u8; 32], branch: HeldBranch, tip: bool) {
         self.branches.insert(commit_id, branch);
         if tip {
@@ -325,14 +335,18 @@ impl GroupEntry {
         commit_id: [u8; 32],
         branch: HeldBranch,
     ) -> Result<(), RegistryError> {
+        if group_id_of(&branch.group)? != self.group_id {
+            return Err(RegistryError::BadState("branch is for a different group"));
+        }
         if self.branches.contains_key(&commit_id) {
             return Err(RegistryError::AlreadyHeld);
         }
         if self.tips.len() + 1 > MAX_HELD_EXTREMITIES {
             return Err(RegistryError::ExtremityCap(self.tips.len() + 1));
         }
+        let next_seq = self.next_seq()?;
         self.install(commit_id, branch, true);
-        self.seq += 1;
+        self.seq = next_seq;
         Ok(())
     }
 
@@ -359,6 +373,7 @@ impl GroupEntry {
         if self.branches.contains_key(&new_commit_id) {
             return Err(RegistryError::AlreadyHeld);
         }
+        let next_seq = self.next_seq()?;
         if !resolves.contains(base) {
             return Err(RegistryError::BaseNotResolved);
         }
@@ -382,7 +397,7 @@ impl GroupEntry {
             self.tips.remove(id);
         }
         self.install(new_commit_id, copy, true);
-        self.seq += 1;
+        self.seq = next_seq;
         Ok(out)
     }
 
@@ -398,6 +413,7 @@ impl GroupEntry {
         commit_id: &[u8; 32],
         f: impl FnOnce(&mut MlsGroup, &OpenMlsRustCrypto) -> Result<T, RegistryError>,
     ) -> Result<T, RegistryError> {
+        let next_seq = self.next_seq()?;
         let mut copy = self
             .branches
             .get(commit_id)
@@ -406,7 +422,7 @@ impl GroupEntry {
         let (group, provider) = copy.parts_mut();
         let out = f(group, provider)?;
         self.branches.insert(*commit_id, copy);
-        self.seq += 1;
+        self.seq = next_seq;
         Ok(out)
     }
 
@@ -466,7 +482,7 @@ impl GroupEntry {
         let seq = u64::from_be_bytes(r.array()?);
         let group_id: [u8; 32] = r.array()?;
 
-        let count = r.len()?;
+        let count = r.len(32 + 1 + 4 + 4 + 4)?;
         if count > MAX_RETAINED_STATES {
             return Err(RegistryError::BadState("too many branches"));
         }
@@ -482,13 +498,13 @@ impl GroupEntry {
                 }
                 _ => return Err(RegistryError::BadState("bad tip flag")),
             }
-            let n_resolves = r.len()?;
+            let n_resolves = r.len(8 + 32)?;
             let mut resolves = BTreeSet::new();
             for _ in 0..n_resolves {
                 let epoch = u64::from_be_bytes(r.array()?);
                 resolves.insert(ExtremityId::new(epoch, r.array()?));
             }
-            let n_entries = r.len()?;
+            let n_entries = r.len(8)?;
             let mut entries = Vec::new();
             for _ in 0..n_entries {
                 let k = r.bytes()?.to_vec();
@@ -496,6 +512,9 @@ impl GroupEntry {
                 entries.push((k, v));
             }
             let (provider, group) = restore(entries, &group_id)?;
+            if branches.contains_key(&commit_id) {
+                return Err(RegistryError::BadState("duplicate branch"));
+            }
             branches.insert(
                 commit_id,
                 HeldBranch {
@@ -508,6 +527,9 @@ impl GroupEntry {
         }
         if !r.buf.is_empty() {
             return Err(RegistryError::BadState("trailing bytes"));
+        }
+        if seq == u64::MAX {
+            return Err(RegistryError::BadState("seq exhausted"));
         }
         if tips.len() > MAX_HELD_EXTREMITIES {
             return Err(RegistryError::BadState("too many tips"));
@@ -548,11 +570,12 @@ impl<'a> Reader<'a> {
         Ok(self.take(N)?.try_into().expect("length checked"))
     }
 
-    fn len(&mut self) -> Result<usize, RegistryError> {
+    /// Read a count of items that each occupy at least `min_item` bytes.
+    fn len(&mut self, min_item: usize) -> Result<usize, RegistryError> {
         let n = u32::from_be_bytes(self.array()?) as usize;
-        // Every counted item occupies at least one byte, so a count beyond the
-        // remaining input is corrupt; this bounds loop and allocation size.
-        if n > self.buf.len() {
+        // A count beyond what the remaining input could hold is corrupt; this
+        // bounds both the loop and the allocation.
+        if n.saturating_mul(min_item) > self.buf.len() {
             return Err(RegistryError::BadState("count exceeds input"));
         }
         Ok(n)
@@ -606,7 +629,7 @@ pub fn decode_secrets(blob: &[u8]) -> Result<OpenMlsRustCrypto, RegistryError> {
     if version != BLOB_VERSION {
         return Err(RegistryError::UnsupportedVersion(version));
     }
-    let n = r.len()?;
+    let n = r.len(8)?;
     let mut entries = Vec::new();
     for _ in 0..n {
         let k = r.bytes()?.to_vec();
@@ -700,7 +723,9 @@ impl Registry {
     pub fn import(&mut self, blob: &[u8]) -> Result<ImportInfo, RegistryError> {
         let entry = GroupEntry::import(blob)?;
         if let Some(loaded) = self.groups.get(&entry.group_id) {
-            if entry.seq < loaded.seq {
+            // An equal seq is idempotent only if the content is identical; a
+            // different blob at the same seq is two writers diverging.
+            if entry.seq < loaded.seq || (entry.seq == loaded.seq && loaded.export() != blob) {
                 return Err(RegistryError::StaleState {
                     loaded: loaded.seq,
                     incoming: entry.seq,
@@ -1097,5 +1122,64 @@ mod tests {
         );
         let blob = entry.export();
         assert_eq!(GroupEntry::import(&blob).unwrap().export(), blob);
+    }
+
+    #[test]
+    fn hostile_blobs_and_conflicting_imports_are_refused() {
+        let (branch, _) = new_group(9);
+        let mut entry = GroupEntry::new(GID);
+        entry.insert_root([1; 32], branch).unwrap();
+
+        // A branch for another group cannot be installed.
+        let other = {
+            let (pair, cred) = signer([9; 32]);
+            let provider = OpenMlsRustCrypto::default();
+            let config = MlsGroupCreateConfig::builder()
+                .ciphersuite(CIPHERSUITE)
+                .build();
+            let group = MlsGroup::new_with_group_id(
+                &provider,
+                &pair,
+                &config,
+                GroupId::from_slice(&[0xAB; 32]),
+                cred,
+            )
+            .unwrap();
+            HeldBranch::new(provider, group)
+        };
+        assert_eq!(
+            entry.insert_root([2; 32], other).unwrap_err().code(),
+            "bad_state"
+        );
+
+        // Same seq, different content: a conflict, not an idempotent replace.
+        let blob = entry.export();
+        let mut registry = Registry::new();
+        registry.import(&blob).unwrap();
+        assert!(
+            registry.import(&blob).is_ok(),
+            "identical blob is idempotent"
+        );
+        let mut diverged = GroupEntry::import(&blob).unwrap();
+        diverged
+            .apply(&[1; 32], [5; 32], &BTreeSet::from([[1; 32]]), |_, _| Ok(()))
+            .unwrap();
+        let mut forged = GroupEntry::import(&blob).unwrap();
+        forged
+            .apply(&[1; 32], [6; 32], &BTreeSet::from([[1; 32]]), |_, _| Ok(()))
+            .unwrap();
+        registry.import(&diverged.export()).unwrap();
+        assert!(matches!(
+            registry.import(&forged.export()),
+            Err(RegistryError::StaleState { .. })
+        ));
+
+        // A count that cannot fit in the remaining input is rejected up front.
+        let mut huge = blob[..blob.len() - 32].to_vec();
+        let count_at = 4 + 2 + 8 + 32;
+        huge[count_at..count_at + 4].copy_from_slice(&u32::MAX.to_be_bytes());
+        let hash = blake3::hash(&huge);
+        huge.extend_from_slice(hash.as_bytes());
+        assert_eq!(GroupEntry::import(&huge).unwrap_err().code(), "bad_state");
     }
 }
