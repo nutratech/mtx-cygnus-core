@@ -372,6 +372,17 @@ fn op_from_json(value: &Value) -> ApiResult<CommitOp> {
     }
 }
 
+/// A JSON array of base64url `KeyPackage`s.
+fn key_package_list(json: &str) -> ApiResult<Vec<Vec<u8>>> {
+    let Value::Array(items) = parse_json(json, "key_packages_json")? else {
+        return Err(bad("key_packages_json"));
+    };
+    items
+        .iter()
+        .map(|v| decode_bytes(v.as_str().ok_or_else(|| bad("keyPackage"))?, "keyPackage"))
+        .collect()
+}
+
 fn welcome_recipients(op: &CommitOp) -> ApiResult<Vec<RebootRecipient>> {
     let packages: &[Vec<u8>] = match op {
         CommitOp::Add(package) => std::slice::from_ref(package),
@@ -515,9 +526,12 @@ pub fn merge(
     seed_b64: &str,
     requested_json: &str,
     registry_json: &str,
+    key_packages_json: Option<&str>,
 ) -> ApiResult {
     let entry = entry_mut(registry, group_id)?;
     let signer = signer(engine::own_identity(entry)?, seed_b64)?;
+    let packages = key_packages_json.map_or(Ok(Vec::new()), key_package_list)?;
+    let recipients = welcome_recipients(&CommitOp::AddAll(packages.clone()))?;
     let Some(requested) = requested_refs(entry, requested_json)? else {
         return reason("deferred", "missing_base_state");
     };
@@ -527,7 +541,7 @@ pub fn merge(
         .map(|r| r.id)
         .collect::<BTreeSet<_>>()
         .len();
-    match engine::merge(entry, &signer, &requested, &roots)? {
+    match engine::merge(entry, &signer, &requested, &roots, &packages)? {
         MergeOutcome::Merged(out) => {
             let event_type = if distinct > 1 {
                 wire::MERGE_EVENT
@@ -540,6 +554,8 @@ pub fn merge(
                 ("content", out.content.clone()),
             ];
             fields.extend(summary_fields(&out.summary));
+            fields.push(("welcome", out.welcome.as_deref().map_or(Value::Null, b64)));
+            fields.push(("recipients", recipients_value(&recipients)));
             text(&obj(fields))
         }
         MergeOutcome::Deferred(why) => reason("deferred", why),
@@ -742,13 +758,7 @@ pub fn reboot(
 ) -> ApiResult {
     let old_id = decode32(group_id, "group_id")?;
     let base = extremity_ref(&parse_json(base_json, "base_json")?, true)?;
-    let Value::Array(items) = parse_json(key_packages_json, "key_packages_json")? else {
-        return Err(bad("key_packages_json"));
-    };
-    let packages = items
-        .iter()
-        .map(|v| decode_bytes(v.as_str().ok_or_else(|| bad("keyPackage"))?, "keyPackage"))
-        .collect::<ApiResult<Vec<_>>>()?;
+    let packages = key_package_list(key_packages_json)?;
     let old = registry.get(&old_id).ok_or(ApiError {
         code: "unknown_group",
         detail: String::new(),

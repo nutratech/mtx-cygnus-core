@@ -148,11 +148,12 @@ pub fn dmls_plan_merge(
 /// Plan and build an `m.dmls.merge` Commit.
 ///
 /// Inputs are as `dmlsPlanMerge`. The Commit resolves every requested state and
-/// uses the plan's base. Plans that need an Add are `rejected` with
-/// `unsupported_add`.
+/// uses the plan's base. `keyPackagesJson` is an optional JSON array of
+/// base64url KeyPackages, exactly one per member the plan Adds; a plan that
+/// needs an Add without it is `rejected` with `missing_key_package`.
 ///
 /// Returns `{status:"merged", eventType, content, groupId, commitId, epoch,
-/// members}` or `{status, reason}`.
+/// members, welcome, recipients}` or `{status, reason}`.
 ///
 /// # Errors
 /// Throws for a malformed argument or an MLS failure.
@@ -162,6 +163,7 @@ pub fn dmls_merge(
     device_seed_b64: &str,
     requested_json: &str,
     registry_json: &str,
+    key_packages_json: Option<String>,
 ) -> Result<String, JsError> {
     api::merge(
         &mut registry(),
@@ -169,6 +171,7 @@ pub fn dmls_merge(
         device_seed_b64,
         requested_json,
         registry_json,
+        key_packages_json.as_deref(),
     )
     .map_err(js)
 }

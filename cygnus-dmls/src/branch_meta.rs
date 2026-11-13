@@ -81,6 +81,13 @@ impl BranchMeta {
         })
     }
 
+    fn drop_member(&mut self, target: &MemberKey) {
+        let target = member_id_from_key(target);
+        if let Some(record) = self.members.remove(&target) {
+            self.removed.insert(target, record.leaf);
+        }
+    }
+
     /// Fold a locally produced Commit's effect into a copy of the base metadata.
     ///
     /// `group` is the post-Commit group and `epoch` is its MLS epoch.
@@ -93,7 +100,14 @@ impl BranchMeta {
         op: &crate::engine::CommitOp,
     ) -> Result<(), MergeError> {
         match op {
-            crate::engine::CommitOp::Add(_) | crate::engine::CommitOp::AddAll(_) => {
+            crate::engine::CommitOp::Add(_)
+            | crate::engine::CommitOp::AddAll(_)
+            | crate::engine::CommitOp::Merge { .. } => {
+                if let crate::engine::CommitOp::Merge { removes, .. } = op {
+                    for target in removes {
+                        self.drop_member(target);
+                    }
+                }
                 // The post-Commit group has the new leaf with its real slot.
                 for member in group.members() {
                     let (member_id, leaf) = leaf_from_member(&member, group_id)?;
@@ -110,20 +124,7 @@ impl BranchMeta {
                     );
                 }
             }
-            crate::engine::CommitOp::Remove(target) => {
-                let target = member_id_from_key(target);
-                if let Some(record) = self.members.remove(&target) {
-                    self.removed.insert(target, record.leaf);
-                }
-            }
-            crate::engine::CommitOp::Merge(removes) => {
-                for target in removes {
-                    let target = member_id_from_key(target);
-                    if let Some(record) = self.members.remove(&target) {
-                        self.removed.insert(target, record.leaf);
-                    }
-                }
-            }
+            crate::engine::CommitOp::Remove(target) => self.drop_member(target),
             crate::engine::CommitOp::SelfUpdate => {}
         }
 

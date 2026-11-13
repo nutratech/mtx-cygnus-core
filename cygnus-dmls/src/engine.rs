@@ -498,8 +498,14 @@ pub enum CommitOp {
     AddAll(Vec<Vec<u8>>),
     /// Rotate the caller's own leaf and path secrets.
     SelfUpdate,
-    /// Apply a merge plan's removals (possibly none) in one Commit.
-    Merge(Vec<MemberKey>),
+    /// Apply a merge plan's removals and adds (either may be empty) in one
+    /// Commit; with neither, a bare path update.
+    Merge {
+        /// Members whose every leaf is removed.
+        removes: Vec<MemberKey>,
+        /// One serialized `KeyPackage` per planned Add.
+        adds: Vec<Vec<u8>>,
+    },
 }
 
 /// Commit an Add for `key_package` on top of `base`; see [`commit`].
@@ -543,6 +549,22 @@ pub fn commit(
     )
 }
 
+fn parse_key_packages(
+    provider: &OpenMlsRustCrypto,
+    encoded: &[Vec<u8>],
+) -> Result<Vec<KeyPackage>, EngineError> {
+    encoded
+        .iter()
+        .map(|key_package| {
+            let mut bytes = key_package.as_slice();
+            KeyPackageIn::tls_deserialize(&mut bytes)
+                .map_err(mls)?
+                .validate(provider.crypto(), ProtocolVersion::Mls10)
+                .map_err(mls)
+        })
+        .collect()
+}
+
 #[allow(clippy::too_many_lines)]
 fn commit_inner(
     entry: &mut GroupEntry,
@@ -579,18 +601,7 @@ fn commit_inner(
                     if encoded.is_empty() {
                         return Err(RegistryError::BadArgument("key_packages"));
                     }
-                    let mut packages = Vec::with_capacity(encoded.len());
-                    for key_package in encoded {
-                        let mut bytes = key_package.as_slice();
-                        packages.push(
-                            KeyPackageIn::tls_deserialize(&mut bytes)
-                                .map_err(mls)
-                                .map_err(as_reg)?
-                                .validate(provider.crypto(), ProtocolVersion::Mls10)
-                                .map_err(mls)
-                                .map_err(as_reg)?,
-                        );
-                    }
+                    let packages = parse_key_packages(provider, encoded).map_err(as_reg)?;
                     let (commit, welcome, _info) = group
                         .add_members(provider, &signer.pair, &packages)
                         .map_err(mls)
@@ -605,15 +616,26 @@ fn commit_inner(
                         .map_err(as_reg)?;
                     (commit, None)
                 }
-                CommitOp::Merge(removes) if !removes.is_empty() => {
+                CommitOp::Merge { removes, adds } if !removes.is_empty() || !adds.is_empty() => {
                     let leaves = leaves_of(group, signer, removes)?;
-                    let (commit, _welcome, _info) = group
-                        .remove_members(provider, &signer.pair, &leaves)
+                    let packages = parse_key_packages(provider, adds).map_err(as_reg)?;
+                    let bundle = group
+                        .commit_builder()
+                        .propose_adds(packages)
+                        .propose_removals(leaves)
+                        .load_psks(provider.storage())
+                        .map_err(mls)
+                        .map_err(as_reg)?
+                        .build(provider.rand(), provider.crypto(), &signer.pair, |_| true)
+                        .map_err(mls)
+                        .map_err(as_reg)?
+                        .stage_commit(provider)
                         .map_err(mls)
                         .map_err(as_reg)?;
-                    (commit, None)
+                    let (commit, welcome, _info) = bundle.into_messages();
+                    (commit, welcome)
                 }
-                CommitOp::SelfUpdate | CommitOp::Merge(_) => {
+                CommitOp::SelfUpdate | CommitOp::Merge { .. } => {
                     let bundle = group
                         .self_update(provider, &signer.pair, LeafNodeParameters::default())
                         .map_err(mls)
@@ -724,8 +746,10 @@ pub enum MergeOutcome {
 /// The Commit is made on the plan's base state, applies the plan's Removes
 /// (or a bare path update when there are none), and resolves every requested
 /// extremity, so a single requested tip yields a plain `m.dmls.commit`. Plans
-/// that need an Add are refused (`unsupported_add`): the merge input carries no
-/// `KeyPackage`, so the member must rejoin. Required self-updates stay with the
+/// that need an Add also add those members: `key_packages` must hold exactly one
+/// `KeyPackage` per planned Add (a missing one is refused as
+/// `missing_key_package`, so the caller can fetch it and retry; one for an
+/// unplanned or repeated member is a `BadArgument`). Required self-updates stay with the
 /// named members; this never fabricates an `UpdateOther`.
 ///
 /// # Errors
@@ -736,6 +760,7 @@ pub fn merge(
     signer: &Signer,
     requested: &[ExtremityRef],
     registry: &DeviceRootRegistry,
+    key_packages: &[Vec<u8>],
 ) -> Result<MergeOutcome, EngineError> {
     let ids: Vec<[u8; 32]> = requested.iter().map(|r| r.id.commit_id).collect();
     let plan = match plan_merge(entry, &ids, registry)? {
@@ -743,10 +768,20 @@ pub fn merge(
         PlanOutcome::Deferred(reason) => return Ok(MergeOutcome::Deferred(reason)),
         PlanOutcome::Rejected(reason) => return Ok(MergeOutcome::Rejected(reason)),
     };
-    if !plan.adds.is_empty() {
-        return Ok(MergeOutcome::Rejected("unsupported_add"));
-    }
     let summary = PlanSummary::from_plan(&plan)?;
+    let mut supplied = BTreeSet::new();
+    for package in key_packages {
+        if !supplied.insert(key_package_owner(package)?) {
+            return Err(EngineError::BadArgument("key_packages"));
+        }
+    }
+    let planned: BTreeSet<MemberKey> = summary.adds.iter().cloned().collect();
+    if !supplied.is_subset(&planned) {
+        return Err(EngineError::BadArgument("key_packages"));
+    }
+    if supplied != planned {
+        return Ok(MergeOutcome::Rejected("missing_key_package"));
+    }
     if summary.removes.contains(&signer.member_key()) {
         return Ok(MergeOutcome::Rejected("self_removed"));
     }
@@ -756,7 +791,10 @@ pub fn merge(
     let Some(base) = resolved.iter().find(|r| r.id == plan.base).cloned() else {
         return Ok(MergeOutcome::Rejected("mismatch:base"));
     };
-    let op = CommitOp::Merge(summary.removes.clone());
+    let op = CommitOp::Merge {
+        removes: summary.removes.clone(),
+        adds: key_packages.to_vec(),
+    };
     match commit_inner(entry, signer, &base, &resolved, &op, &summary) {
         Ok(out) => Ok(MergeOutcome::Merged(out)),
         Err(EngineError::Registry(RegistryError::MissingBase)) => {
@@ -2131,6 +2169,103 @@ mod tests {
         }
     }
 
+    const DAVE: &str = "@wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww";
+
+    #[test]
+    fn merge_adds_a_planned_member_from_a_supplied_key_package() {
+        // The plan's base is whichever sibling sorts first, which depends on the
+        // random commit ids; only the sibling without Dave makes the plan Add
+        // him, so rebuild until the merge needs the Add.
+        let registry = device_registry(&[
+            (ALICE, 1, "ALICE1"),
+            (BOB, 2, "BOB1"),
+            (CAROL, 3, "CAROL1"),
+            (DAVE, 4, "DAVE1"),
+        ]);
+        let dave = signer(DAVE, "DAVE1", 4);
+        let mut attempt = None;
+        for _ in 0..32 {
+            let (alice, bob, mut a, mut b, tip) = three_member_group();
+            let (dave_kp, dave_secrets) = package_bytes(&dave);
+            // Bob adds Dave on the base Alice removes Carol on.
+            let s1 = commit_add(&mut b, &bob, &tip, &dave_kp).unwrap();
+            let ctx = ApplyCtx {
+                sender: bob.member_key(),
+                ancestors: BTreeSet::from(["$second".to_owned()]),
+            };
+            assert!(matches!(
+                apply_commit(&mut a, wire::COMMIT_EVENT, &s1.content, &ctx).unwrap(),
+                ApplyOutcome::Applied(_)
+            ));
+            let s2 = commit(&mut a, &alice, &tip, &CommitOp::Remove(carol_key())).unwrap();
+            let r1 = ExtremityRef::new(ExtremityId::new(3, s1.commit_id), "$s1");
+            let r2 = ExtremityRef::new(ExtremityId::new(3, s2.commit_id), "$s2");
+            let ids = [s1.commit_id, s2.commit_id];
+            let PlanOutcome::Planned(plan) = plan_merge(&a, &ids, &registry).unwrap() else {
+                panic!("siblings must plan");
+            };
+            if !plan.adds.is_empty() {
+                attempt = Some((alice, bob, a, b, s2, [r1, r2], dave_kp, dave_secrets));
+                break;
+            }
+        }
+        let (alice, bob, mut a, mut b, s2, both, dave_kp, dave_secrets) =
+            attempt.expect("half of the attempts plan the Add");
+        let group_id = a.group_id();
+
+        // Without the Add's KeyPackage the merge is refused and nothing changes.
+        let before = a.export();
+        let refused = merge(&mut a, &alice, &both, &registry, &[]);
+        assert!(
+            matches!(refused, Ok(MergeOutcome::Rejected("missing_key_package"))),
+            "{refused:?}"
+        );
+        // A KeyPackage for a member the plan does not add is a bad argument.
+        let (carol_kp, _) = package_bytes(&signer(CAROL, "CAROL1", 3));
+        let error = merge(&mut a, &alice, &both, &registry, &[carol_kp]).unwrap_err();
+        assert_eq!(error.code(), "bad_argument");
+        assert_eq!(a.export(), before);
+
+        let outcome = merge(&mut a, &alice, &both, &registry, &[dave_kp]);
+        let Ok(MergeOutcome::Merged(out)) = outcome else {
+            panic!("a supplied KeyPackage must let the Add merge: {outcome:?}");
+        };
+        let mut members = out.summary.members.clone();
+        members.sort();
+        let mut expected = vec![alice.member_key(), bob.member_key(), dave.member_key()];
+        expected.sort();
+        assert_eq!(members, expected);
+        let welcome = out.welcome.as_ref().expect("the merge adds Dave");
+        let (_, joined) =
+            join_welcome(&dave, &dave_secrets, welcome, &group_id, out.commit_id).unwrap();
+        assert_eq!(joined.members.len(), 3);
+
+        // Bob, who made the Add, receives Alice's removal and then the merge.
+        let alice_ctx = ApplyCtx {
+            sender: alice.member_key(),
+            ancestors: BTreeSet::from(["$second".to_owned()]),
+        };
+        assert!(matches!(
+            apply_commit(&mut b, wire::COMMIT_EVENT, &s2.content, &alice_ctx).unwrap(),
+            ApplyOutcome::Applied(_)
+        ));
+        let alice_ctx = ApplyCtx {
+            sender: alice.member_key(),
+            ancestors: BTreeSet::from(["$second".to_owned(), "$s1".to_owned(), "$s2".to_owned()]),
+        };
+        let merged = apply_merge(
+            &mut b,
+            wire::MERGE_EVENT,
+            &out.content,
+            &alice_ctx,
+            &registry,
+        );
+        assert!(
+            matches!(merged, Ok(ApplyOutcome::Applied(ref m)) if m.members.len() == 3),
+            "{merged:?}"
+        );
+    }
+
     #[test]
     fn merge_resolves_both_siblings_and_drops_the_removed_member() {
         let (alice, bob, mut a, mut b, tip) = three_member_group();
@@ -2152,7 +2287,7 @@ mod tests {
         let r1 = ExtremityRef::new(ExtremityId::new(3, s1.commit_id), "$s1");
         let r2 = ExtremityRef::new(ExtremityId::new(3, s2.commit_id), "$s2");
 
-        let outcome = merge(&mut a, &alice, &[r1, r2], &registry);
+        let outcome = merge(&mut a, &alice, &[r1, r2], &registry, &[]);
         let Ok(MergeOutcome::Merged(out)) = outcome else {
             panic!("certified siblings must merge: {outcome:?}");
         };
@@ -2184,7 +2319,7 @@ mod tests {
             device_registry(&[(ALICE, 1, "ALICE1"), (BOB, 2, "BOB1"), (CAROL, 3, "CAROL1")]);
         registry.revoke(&public(&key(3)));
         let MergeOutcome::Merged(out) =
-            merge(&mut a, &alice, std::slice::from_ref(&tip), &registry).unwrap()
+            merge(&mut a, &alice, std::slice::from_ref(&tip), &registry, &[]).unwrap()
         else {
             panic!("a revoked member must be removable");
         };
@@ -2199,7 +2334,14 @@ mod tests {
         let before = a.export();
         let unknown = ExtremityRef::new(ExtremityId::new(3, [0xAA; 32]), "$x");
         assert!(matches!(
-            merge(&mut a, &alice, &[unknown], &DeviceRootRegistry::default()).unwrap(),
+            merge(
+                &mut a,
+                &alice,
+                &[unknown],
+                &DeviceRootRegistry::default(),
+                &[]
+            )
+            .unwrap(),
             MergeOutcome::Deferred("missing_base_state")
         ));
         assert!(matches!(
@@ -2207,7 +2349,8 @@ mod tests {
                 &mut a,
                 &alice,
                 std::slice::from_ref(&tip),
-                &DeviceRootRegistry::default()
+                &DeviceRootRegistry::default(),
+                &[]
             )
             .unwrap(),
             MergeOutcome::Rejected("uncertified_device")
@@ -2216,7 +2359,7 @@ mod tests {
         let mut registry =
             device_registry(&[(ALICE, 1, "ALICE1"), (BOB, 2, "BOB1"), (CAROL, 3, "CAROL1")]);
         registry.revoke(&public(&key(1)));
-        let outcome = merge(&mut a, &alice, &[tip], &registry).unwrap();
+        let outcome = merge(&mut a, &alice, &[tip], &registry, &[]).unwrap();
         assert!(matches!(outcome, MergeOutcome::Rejected(_)), "{outcome:?}");
         assert_eq!(a.export(), before);
     }
@@ -2241,7 +2384,8 @@ mod tests {
         let s2 = commit(&mut a, &alice, &tip, &CommitOp::Remove(carol_key())).unwrap();
         let r1 = ExtremityRef::new(ExtremityId::new(3, s1.commit_id), "$s1");
         let r2 = ExtremityRef::new(ExtremityId::new(3, s2.commit_id), "$s2");
-        let MergeOutcome::Merged(out) = merge(&mut a, &alice, &[r1, r2], &registry).unwrap() else {
+        let MergeOutcome::Merged(out) = merge(&mut a, &alice, &[r1, r2], &registry, &[]).unwrap()
+        else {
             panic!("alice must merge");
         };
         let merge_ctx = ctx(&alice, &["$s1", "$s2", "$second"]);
