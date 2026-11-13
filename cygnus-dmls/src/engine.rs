@@ -862,4 +862,90 @@ mod tests {
         ));
         assert_eq!(bob_entry.export(), after);
     }
+
+    #[test]
+    fn decrypt_tries_each_sibling_tip_at_the_same_epoch() {
+        let alice = signer(ALICE, "ALICE1", 1);
+        let bob = signer(BOB, "BOB1", 2);
+        let dave_principal = format!("@{}", "w".repeat(43));
+        let dave = signer(&dave_principal, "DAVE1", 4);
+        let group_id = wire::group_id(ROOM);
+
+        let mut alice_entry = alice_entry(&alice, group_id);
+        let genesis = ExtremityRef::genesis(&group_id);
+        let (bob_kp, bob_secrets) = package_bytes(&bob);
+        let (carol_kp, _) = package_bytes(&signer(CAROL, "CAROL1", 3));
+        let (dave_kp, _) = package_bytes(&dave);
+
+        // Epoch 1: Alice and Bob.
+        let first = commit_add(&mut alice_entry, &alice, &genesis, &bob_kp).unwrap();
+        let (bob_branch, _) = join_welcome(
+            &bob,
+            &bob_secrets,
+            &first.welcome,
+            &group_id,
+            first.commit_id,
+        )
+        .unwrap();
+        let mut bob_entry = GroupEntry::new(group_id);
+        bob_entry.insert_root(first.commit_id, bob_branch).unwrap();
+
+        // Two epoch-2 Commits from the same epoch-1 base: Add Carol, Add Dave.
+        let base = ExtremityRef::new(ExtremityId::new(1, first.commit_id), "$first");
+        let add_carol = commit_add(&mut alice_entry, &alice, &base, &carol_kp).unwrap();
+        let add_dave = commit_add(&mut alice_entry, &alice, &base, &dave_kp).unwrap();
+        assert_ne!(add_carol.commit_id, add_dave.commit_id);
+        assert_eq!(alice_entry.extremity_count(), 2);
+
+        let ctx = ApplyCtx {
+            sender: alice.member_key(),
+            ancestors: ["$first".to_owned()].into_iter().collect(),
+        };
+        for out in [&add_carol, &add_dave] {
+            assert!(matches!(
+                apply_commit(&mut bob_entry, wire::COMMIT_EVENT, &out.content, &ctx).unwrap(),
+                ApplyOutcome::Applied(_)
+            ));
+        }
+        assert_eq!(bob_entry.extremity_count(), 2);
+        for id in bob_entry.extremities() {
+            assert_eq!(bob_entry.branch(&id).unwrap().epoch(), 2);
+        }
+
+        // Alice speaks on the Add-Dave branch.
+        let content = alice_entry
+            .update(&add_dave.commit_id, |group, provider| {
+                encrypt(&alice, group, provider, &group_id, b"on the dave branch")
+                    .map_err(|e| RegistryError::Mls(e.to_string()))
+            })
+            .unwrap();
+
+        // Bob holds both epoch-2 branches. The other one cannot decrypt, and
+        // because update() is copy-then-swap the failed trial leaves the blob
+        // byte-identical rather than advancing the wrong ratchet.
+        let before = bob_entry.export();
+        assert!(bob_entry
+            .update(&add_carol.commit_id, |group, provider| {
+                decrypt(group, provider, &group_id, &content)
+                    .map(|_| ())
+                    .map_err(|e| RegistryError::Mls(e.to_string()))
+            })
+            .is_err());
+        assert_eq!(
+            bob_entry.export(),
+            before,
+            "a failed trial must not persist"
+        );
+
+        // The second held branch at that epoch is the right one.
+        let plain = bob_entry
+            .update(&add_dave.commit_id, |group, provider| {
+                decrypt(group, provider, &group_id, &content)
+                    .map_err(|e| RegistryError::Mls(e.to_string()))
+            })
+            .unwrap();
+        assert_eq!(plain.plaintext, b"on the dave branch");
+        assert_eq!(plain.mls_epoch, 2);
+        assert_eq!(plain.sender, alice.member_key());
+    }
 }
