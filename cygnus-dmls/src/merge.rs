@@ -1107,4 +1107,147 @@ mod tests {
         let cycle = held(&[&cycle_a, &cycle_b]);
         assert_eq!(descends_from(a_id, absent, &cycle), None);
     }
+    fn plan_verified(
+        branches: &[&Branch],
+        verify: LeafVerifier<'_>,
+    ) -> Result<MergePlan, MergeError> {
+        plan_merge(
+            branches.iter().map(|b| b.extremity),
+            &held(branches),
+            GROUP,
+            &principal_of,
+            Some(verify),
+        )
+    }
+
+    #[test]
+    fn resync_base_ignores_stale_pre_resync_slot_and_demands_reissue() {
+        let old = leaf("alice:D1", "a1", 1);
+        let resynced = leaf("alice:D1", "a2", 2);
+        let alice = id(&old);
+
+        let base = branch(
+            2,
+            1,
+            [(
+                alice.clone(),
+                LeafRecord::new(resynced.clone())
+                    .with_origin(LeafOrigin::ExternalCommit)
+                    .with_leaf_index(3),
+            )],
+        );
+        // Older copy at the old slot: stale, base leaf kept.
+        let stale = branch(
+            2,
+            2,
+            [(
+                alice.clone(),
+                LeafRecord::new(old.clone()).with_leaf_index(0),
+            )],
+        );
+        let result = plan(&[&base, &stale]).unwrap();
+        assert_eq!(result.base, base.extremity);
+        assert_eq!(result.members[&alice].leaf, resynced);
+        assert_eq!(result.members[&alice].leaf_index, Some(3));
+        assert!(result.required_self_updates.is_empty());
+
+        // An update at the old slot that is at least as new cannot be moved.
+        let fresh = leaf("alice:D1", "a3", 2);
+        let newer = branch(
+            2,
+            2,
+            [(alice.clone(), LeafRecord::new(fresh).with_leaf_index(0))],
+        );
+        assert!(matches!(
+            plan(&[&base, &newer]),
+            Err(MergeError::MembershipConflict(_))
+        ));
+
+        // Without an external-commit base, a moved index is invalid.
+        let plain = branch(
+            2,
+            1,
+            [(alice.clone(), LeafRecord::new(resynced).with_leaf_index(3))],
+        );
+        assert!(matches!(
+            plan(&[&plain, &stale]),
+            Err(MergeError::MembershipConflict(_))
+        ));
+    }
+
+    #[test]
+    fn verifier_rejects_bad_leaves_and_requires_an_index() {
+        let alice_old = leaf("alice:D1", "a1", 1);
+        let alice_new = leaf("alice:D1", "a2", 2);
+        let alice = id(&alice_old);
+
+        let base = branch(
+            2,
+            1,
+            [(
+                alice.clone(),
+                LeafRecord::new(alice_old.clone()).with_leaf_index(0),
+            )],
+        );
+        let other = branch(
+            2,
+            2,
+            [(
+                alice.clone(),
+                LeafRecord::new(alice_new.clone()).with_leaf_index(0),
+            )],
+        );
+
+        let accept = |_: &LeafNode, _: Option<usize>, _: bool| true;
+        let reject = |_: &LeafNode, _: Option<usize>, _: bool| false;
+        let planned = plan_verified(&[&base, &other], &accept).unwrap();
+        assert_eq!(planned.required_self_updates, vec![alice.clone()]);
+        assert!(matches!(
+            plan_verified(&[&base, &other], &reject),
+            Err(MergeError::Signature(_))
+        ));
+
+        // The verifier receives the record's slot and the require_newer flag.
+        let seen = std::cell::Cell::new(None);
+        let spy = |_: &LeafNode, index: Option<usize>, newer: bool| {
+            seen.set(Some((index, newer)));
+            true
+        };
+        plan_verified(&[&base, &other], &spy).unwrap();
+        assert_eq!(seen.get(), Some((Some(0), true)));
+
+        // A non-KeyPackage leaf without a slot cannot be verified.
+        let updated = alice_new.clone().with_source(LeafSource::Update);
+        let slotless = branch(2, 2, [(alice.clone(), LeafRecord::new(updated))]);
+        assert!(matches!(
+            plan_verified(&[&base, &slotless], &accept),
+            Err(MergeError::Signature(_))
+        ));
+        // A KeyPackage-sourced leaf is verifiable without a slot.
+        let kp = alice_new.with_source(LeafSource::KeyPackage);
+        assert!(validate_update_candidate(
+            &alice_old,
+            &kp,
+            GROUP,
+            &principal_of,
+            true,
+            None,
+            Some(&accept)
+        )
+        .is_ok());
+
+        // Stale (lower-generation) branches are verified too.
+        let stale = branch(
+            2,
+            3,
+            [(
+                alice.clone(),
+                LeafRecord::new(leaf("alice:D1", "a0", 0)).with_leaf_index(0),
+            )],
+        );
+        assert!(matches!(
+            plan_verified(&[&other, &stale], &reject),
+            Err(MergeError::Signature(_))
+        ));
+    }
 }
