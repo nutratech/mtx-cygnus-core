@@ -14,11 +14,13 @@ use std::fmt::Debug;
 
 use cygnus_core::{Kind, Principal};
 
+mod branch_meta;
 pub mod content;
 pub mod device_root;
 pub mod engine;
 pub mod merge;
 pub mod registry;
+pub mod registry_json;
 pub mod tree;
 pub mod wire;
 use ed25519_zebra::SigningKey;

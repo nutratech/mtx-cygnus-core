@@ -311,6 +311,16 @@ impl GroupEntry {
         self.branches.get(commit_id)
     }
 
+    /// A held branch, for engine metadata updates after a successful mutation.
+    pub(crate) fn branch_mut(&mut self, commit_id: &[u8; 32]) -> Option<&mut HeldBranch> {
+        self.branches.get_mut(commit_id)
+    }
+
+    /// Every held state, tips and retained ancestors.
+    pub(crate) fn branches(&self) -> impl Iterator<Item = (&[u8; 32], &HeldBranch)> {
+        self.branches.iter()
+    }
+
     /// Choose a branch: the named one, or the sole tip.
     ///
     /// # Errors

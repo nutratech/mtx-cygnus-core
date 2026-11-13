@@ -10,13 +10,17 @@ use openmls_basic_credential::SignatureKeyPair;
 use openmls_rust_crypto::OpenMlsRustCrypto;
 use rezzy_json::Value;
 
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 
 use crate::{
+    branch_meta::BranchMeta,
     content::{
         CommitContent, ContentError, EncryptedContent, ExtremityRef, KeyPackageContent, PlanSummary,
     },
+    device_root::{plan_with_device_roots, DeviceRootRegistry},
+    merge::{Branch, ExtremityId, MergeError, MergePlan},
     registry::{decode_secrets, encode_secrets, GroupEntry, HeldBranch, RegistryError},
+    tree::LeafSource,
     wire::{self, MemberKey},
     MemberIdentity, CIPHERSUITE,
 };
@@ -247,7 +251,13 @@ pub fn create_group(
     )
     .map_err(mls)?;
     let summary = summarize(&group, group_id, wire::genesis_commit_id(&group_id))?;
-    Ok((HeldBranch::new(provider, group), summary))
+    let mut branch = HeldBranch::new(provider, group);
+    branch.set_meta(
+        BranchMeta::from_group(branch.group(), &group_id)
+            .map_err(|e| EngineError::Mls(e.to_string()))?
+            .encode(),
+    );
+    Ok((branch, summary))
 }
 
 /// Redeem a Welcome using the secrets blob stored for its `KeyPackage`.
@@ -283,7 +293,13 @@ pub fn join_welcome(
     }
     verify_own_leaf(&group, signer)?;
     let summary = summarize(&group, *group_id, commit_id)?;
-    Ok((HeldBranch::new(provider, group), summary))
+    let mut branch = HeldBranch::new(provider, group);
+    branch.set_meta(
+        BranchMeta::from_group(branch.group(), group_id)
+            .map_err(|e| EngineError::Mls(e.to_string()))?
+            .encode(),
+    );
+    Ok((branch, summary))
 }
 
 /// Encrypt one application message at the branch's current epoch.
@@ -404,6 +420,7 @@ pub fn commit_add(
 ///
 /// [`EngineError`] for a missing base, a stale base epoch, an invalid key
 /// package, a Remove naming no member (or the caller), or an `OpenMLS` failure.
+#[allow(clippy::too_many_lines)]
 pub fn commit(
     entry: &mut GroupEntry,
     signer: &Signer,
@@ -497,6 +514,28 @@ pub fn commit(
             let summary = summarize(group, group_id, commit_id).map_err(as_reg)?;
             Ok((commit_id, (commit_id, content, welcome, summary)))
         })?;
+
+    let encoded = {
+        let branch = entry
+            .branch(&commit_id)
+            .ok_or(EngineError::BadArgument("state"))?;
+        let mut meta =
+            BranchMeta::decode(branch.meta()).map_err(|e| EngineError::Mls(e.to_string()))?;
+        meta.after_local_commit(
+            branch.group(),
+            &group_id,
+            branch.epoch(),
+            &signer.member_key(),
+            op,
+        )
+        .map_err(|e| EngineError::Mls(e.to_string()))?;
+        meta.encode()
+    };
+    entry
+        .branch_mut(&commit_id)
+        .ok_or(EngineError::BadArgument("state"))?
+        .set_meta(encoded);
+
     Ok(CommitOut {
         content,
         welcome,
@@ -532,6 +571,7 @@ pub enum ApplyOutcome {
 ///
 /// [`EngineError::BadArgument`] for an event type this slice does not handle.
 /// Every protocol failure is returned as an [`ApplyOutcome`], not an error.
+#[allow(clippy::too_many_lines)]
 pub fn apply_commit(
     entry: &mut GroupEntry,
     event_type: &str,
@@ -561,6 +601,10 @@ pub fn apply_commit(
     let target_epoch = parsed.mls_epoch();
     let commit = parsed.commit;
     let sender = ctx.sender.clone();
+    let mut adds: Vec<KeyPackage> = Vec::new();
+    let mut updates: Vec<LeafNode> = Vec::new();
+    let mut removes: Vec<usize> = Vec::new();
+    let mut update_path: Option<LeafNode> = None;
 
     let result = entry.apply(&base_id, new_id, &resolves, |group, provider| {
         if group.epoch().as_u64() != base_epoch {
@@ -581,6 +625,22 @@ pub fn apply_commit(
         let ProcessedMessageContent::StagedCommitMessage(staged) = processed.into_content() else {
             return Err(RegistryError::Rejected("malformed:commit"));
         };
+        adds.extend(
+            staged
+                .add_proposals()
+                .map(|proposal| proposal.add_proposal().key_package().clone()),
+        );
+        updates.extend(
+            staged
+                .update_proposals()
+                .map(|proposal| proposal.update_proposal().leaf_node().clone()),
+        );
+        removes.extend(
+            staged
+                .remove_proposals()
+                .map(|proposal| proposal.remove_proposal().removed().usize()),
+        );
+        update_path = staged.update_path_leaf_node().cloned();
         group
             .merge_staged_commit(provider, *staged)
             .map_err(|e| RegistryError::Mls(format!("{e:?}")))?;
@@ -591,7 +651,32 @@ pub fn apply_commit(
     });
 
     Ok(match result {
-        Ok(summary) => ApplyOutcome::Applied(summary),
+        Ok(summary) => {
+            let encoded = {
+                let branch = entry
+                    .branch(&new_id)
+                    .ok_or(EngineError::BadArgument("state"))?;
+                let mut meta = BranchMeta::decode(branch.meta())
+                    .map_err(|e| EngineError::Mls(e.to_string()))?;
+                meta.after_remote_commit(&crate::branch_meta::RemoteCommit {
+                    group: branch.group(),
+                    group_id: &group_id,
+                    epoch: target_epoch,
+                    sender: &sender,
+                    adds: &adds,
+                    updates: &updates,
+                    removes: &removes,
+                    update_path: update_path.as_ref(),
+                })
+                .map_err(|e| EngineError::Mls(e.to_string()))?;
+                meta.encode()
+            };
+            entry
+                .branch_mut(&new_id)
+                .ok_or(EngineError::BadArgument("state"))?
+                .set_meta(encoded);
+            ApplyOutcome::Applied(summary)
+        }
         Err(RegistryError::AlreadyHeld) => {
             let held = entry
                 .branch(&new_id)
@@ -605,12 +690,108 @@ pub fn apply_commit(
     })
 }
 
+/// The result of planning a merge over locally held states.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum PlanOutcome {
+    /// A plan was produced; `dmlsMerge` can build the Commit from it.
+    Planned(MergePlan),
+    /// At least one requested state is not held; retry after more events.
+    Deferred(&'static str),
+    /// The request cannot be planned; the code is stable.
+    Rejected(&'static str),
+}
+
+/// Plan a merge over the held branches named by `requested` commit ids.
+///
+/// The device-root registry is supplied per call and is never cached. Leaf
+/// signatures are not re-checked here because `OpenMLS` verified them when the
+/// branches were received; the callback enforces the model's group and
+/// update-source rules.
+///
+/// # Errors
+///
+/// [`EngineError`] if stored branch metadata is corrupt or the group is
+/// malformed.
+pub fn plan_merge(
+    entry: &GroupEntry,
+    requested: &[[u8; 32]],
+    registry: &DeviceRootRegistry,
+) -> Result<PlanOutcome, EngineError> {
+    let group_id = entry.group_id();
+    let mut held: BTreeMap<ExtremityId, Branch> = BTreeMap::new();
+    for (commit_id, branch) in entry.branches() {
+        let meta =
+            BranchMeta::decode(branch.meta()).map_err(|e| EngineError::Mls(e.to_string()))?;
+        held.insert(
+            ExtremityId::new(branch.epoch(), *commit_id),
+            meta.to_branch(*commit_id, branch.epoch(), branch.resolves().clone()),
+        );
+    }
+
+    let mut requested_ids = Vec::with_capacity(requested.len());
+    for commit_id in requested {
+        match held.keys().find(|ext| ext.commit_id == *commit_id) {
+            Some(ext) => requested_ids.push(*ext),
+            None => return Ok(PlanOutcome::Deferred("missing_base_state")),
+        }
+    }
+
+    let verify = |leaf: &crate::tree::LeafNode, _index: Option<usize>, for_update: bool| {
+        leaf.group_id == group_id && !(for_update && leaf.source == LeafSource::KeyPackage)
+    };
+    match plan_with_device_roots(requested_ids, &held, &group_id, registry, &verify) {
+        Ok(plan) => Ok(PlanOutcome::Planned(plan)),
+        Err(MergeError::MissingBaseState { .. }) => Ok(PlanOutcome::Deferred("missing_base_state")),
+        Err(MergeError::UncertifiedDevice(_)) => Ok(PlanOutcome::Rejected("uncertified_device")),
+        Err(_) => Ok(PlanOutcome::Rejected("merge")),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::content::EncryptedContent;
+    use crate::device_root::DeviceRoot;
     use crate::merge::ExtremityId;
     use crate::registry::decode_secrets;
+    use cygnus_core::DeviceCertificate;
+    use ed25519_zebra::SigningKey;
+
+    fn key(seed: u8) -> SigningKey {
+        SigningKey::from([seed; 32])
+    }
+
+    fn public(key: &SigningKey) -> [u8; 32] {
+        <[u8; 32]>::from(key.verification_key())
+    }
+
+    /// Certify each (principal, signer seed, device id) under a generated root.
+    fn device_registry(users: &[(&str, u8, &str)]) -> DeviceRootRegistry {
+        let masters = users
+            .iter()
+            .map(|(principal, seed, _)| {
+                ((*principal).to_owned(), public(&key(seed.wrapping_add(10))))
+            })
+            .collect::<Vec<_>>();
+        let mut registry = DeviceRootRegistry::new(masters);
+        for (principal, seed, device_id) in users {
+            let master = key(seed.wrapping_add(10));
+            let self_signing = key(seed.wrapping_add(20));
+            registry
+                .install_root(DeviceRoot {
+                    principal: (*principal).to_owned(),
+                    user_epoch_height: 1,
+                    generation: 1,
+                    self_signing_key: public(&self_signing),
+                })
+                .unwrap();
+            let certificate =
+                DeviceCertificate::issue(principal, &master, &self_signing, device_id, &key(*seed))
+                    .unwrap();
+            registry.certify(principal, &certificate).unwrap();
+        }
+        registry
+    }
 
     const ALICE: &str = "@Cl5rPGgj2s7JHMwFxSEOHfFYM_K0PDpnhXEMYwMgQuo";
     const BOB: &str = "@AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
@@ -1092,6 +1273,94 @@ mod tests {
             apply_commit(&mut b, wire::COMMIT_EVENT, &out.content, &ctx).unwrap(),
             ApplyOutcome::Applied(s) if s == out.summary
         ));
+    }
+
+    #[test]
+    fn branch_metadata_tracks_add_remove_and_self_update() {
+        let (alice, _bob, mut a, _b, tip) = three_member_group();
+        let meta_at = |entry: &GroupEntry, id: &[u8; 32]| {
+            BranchMeta::decode(entry.branch(id).unwrap().meta()).unwrap()
+        };
+
+        let base = meta_at(&a, &tip.id.commit_id);
+        assert_eq!(base.members.len(), 3);
+
+        let carol = MemberKey {
+            principal: CAROL.to_owned(),
+            device_id: "CAROL1".to_owned(),
+        };
+        let removed = commit(&mut a, &alice, &tip, &CommitOp::Remove(carol)).unwrap();
+        let after_remove = meta_at(&a, &removed.commit_id);
+        assert_eq!(after_remove.members.len(), 2);
+        assert_eq!(after_remove.removed.len(), 1);
+
+        let base = ExtremityRef::new(
+            ExtremityId::new(removed.summary.mls_epoch, removed.commit_id),
+            "$removed",
+        );
+        let updated = commit(&mut a, &alice, &base, &CommitOp::SelfUpdate).unwrap();
+        let after_update = meta_at(&a, &updated.commit_id);
+        let own = crate::branch_meta::member_id_from_key(&alice.member_key());
+        assert_eq!(after_update.members[&own].leaf.generation, 4);
+        assert_eq!(after_update.members[&own].leaf.source, LeafSource::Update);
+    }
+
+    #[test]
+    fn plan_merge_uses_the_held_branch_metadata() {
+        let (_alice, _bob, a, _b, tip) = three_member_group();
+        let unknown = [0xAA; 32];
+        assert_eq!(
+            plan_merge(&a, &[unknown], &DeviceRootRegistry::default()).unwrap(),
+            PlanOutcome::Deferred("missing_base_state")
+        );
+        assert_eq!(
+            plan_merge(&a, &[tip.id.commit_id], &DeviceRootRegistry::default()).unwrap(),
+            PlanOutcome::Rejected("uncertified_device")
+        );
+    }
+
+    #[test]
+    fn plan_merge_accepts_certified_members_and_removes_revoked_ones() {
+        let (alice, _bob, mut a, _b, tip) = three_member_group();
+        let users = [
+            (ALICE, 1_u8, "ALICE1"),
+            (BOB, 2, "BOB1"),
+            (CAROL, 3, "CAROL1"),
+        ];
+        let registry = device_registry(&users);
+
+        let PlanOutcome::Planned(plan) = plan_merge(&a, &[tip.id.commit_id], &registry).unwrap()
+        else {
+            panic!("certified branches must plan");
+        };
+        assert_eq!(plan.members.len(), 3);
+        assert!(plan.removes.is_empty());
+
+        let carol = MemberKey {
+            principal: CAROL.to_owned(),
+            device_id: "CAROL1".to_owned(),
+        };
+        let removed = commit(&mut a, &alice, &tip, &CommitOp::Remove(carol)).unwrap();
+        let PlanOutcome::Planned(plan) = plan_merge(&a, &[removed.commit_id], &registry).unwrap()
+        else {
+            panic!("the post-remove branch must plan");
+        };
+        assert_eq!(plan.members.len(), 2);
+
+        // Revoking a still-present device turns the plan into a Remove.
+        let mut registry = device_registry(&users);
+        registry.revoke(&public(&key(2)));
+        let PlanOutcome::Planned(plan) = plan_merge(&a, &[tip.id.commit_id], &registry).unwrap()
+        else {
+            panic!("a revoked member must still plan");
+        };
+        assert_eq!(
+            plan.removes,
+            vec![crate::branch_meta::member_id_from_key(&MemberKey {
+                principal: BOB.to_owned(),
+                device_id: "BOB1".to_owned(),
+            })]
+        );
     }
 
     #[test]
