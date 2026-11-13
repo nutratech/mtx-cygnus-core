@@ -93,7 +93,7 @@ impl BranchMeta {
         op: &crate::engine::CommitOp,
     ) -> Result<(), MergeError> {
         match op {
-            crate::engine::CommitOp::Add(_) => {
+            crate::engine::CommitOp::Add(_) | crate::engine::CommitOp::AddAll(_) => {
                 // The post-Commit group has the new leaf with its real slot.
                 for member in group.members() {
                     let (member_id, leaf) = leaf_from_member(&member, group_id)?;

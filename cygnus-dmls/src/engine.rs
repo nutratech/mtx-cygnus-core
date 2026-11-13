@@ -16,7 +16,7 @@ use crate::{
     branch_meta::BranchMeta,
     content::{
         CommitContent, ContentError, EncryptedContent, ExternalCommitContent, ExtremityRef,
-        KeyPackageContent, PlanSummary,
+        KeyPackageContent, PlanSummary, RebootContent,
     },
     device_root::{plan_with_device_roots, DeviceRootRegistry},
     merge::{Branch, ExtremityId, MemberId, MergeError, MergePlan},
@@ -393,6 +393,8 @@ pub enum CommitOp {
     Add(Vec<u8>),
     /// Remove every leaf of this member. Removing the caller is refused.
     Remove(MemberKey),
+    /// Add several members, each by its own `KeyPackage`, in one Commit.
+    AddAll(Vec<Vec<u8>>),
     /// Rotate the caller's own leaf and path secrets.
     SelfUpdate,
     /// Apply a merge plan's removals (possibly none) in one Commit.
@@ -463,16 +465,33 @@ fn commit_inner(
             let as_reg = |e: EngineError| RegistryError::Mls(e.to_string());
             verify_own_leaf(group, signer).map_err(as_reg)?;
             let (commit, welcome) = match op {
-                CommitOp::Add(key_package) => {
-                    let mut bytes = key_package.as_slice();
-                    let package = KeyPackageIn::tls_deserialize(&mut bytes)
-                        .map_err(mls)
-                        .map_err(as_reg)?
-                        .validate(provider.crypto(), ProtocolVersion::Mls10)
-                        .map_err(mls)
-                        .map_err(as_reg)?;
+                CommitOp::Add(_) | CommitOp::AddAll(_) => {
+                    let one;
+                    let encoded: &[Vec<u8>] = match op {
+                        CommitOp::Add(key_package) => {
+                            one = [key_package.clone()];
+                            &one
+                        }
+                        CommitOp::AddAll(all) => all,
+                        _ => unreachable!(),
+                    };
+                    if encoded.is_empty() {
+                        return Err(RegistryError::BadArgument("key_packages"));
+                    }
+                    let mut packages = Vec::with_capacity(encoded.len());
+                    for key_package in encoded {
+                        let mut bytes = key_package.as_slice();
+                        packages.push(
+                            KeyPackageIn::tls_deserialize(&mut bytes)
+                                .map_err(mls)
+                                .map_err(as_reg)?
+                                .validate(provider.crypto(), ProtocolVersion::Mls10)
+                                .map_err(mls)
+                                .map_err(as_reg)?,
+                        );
+                    }
                     let (commit, welcome, _info) = group
-                        .add_members(provider, &signer.pair, &[package])
+                        .add_members(provider, &signer.pair, &packages)
                         .map_err(mls)
                         .map_err(as_reg)?;
                     (commit, Some(welcome))
@@ -753,6 +772,171 @@ pub fn external_commit(
             summary,
         },
     ))
+}
+
+/// One recipient of a reboot's Welcome.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RebootRecipient {
+    /// The member added to the replacement group.
+    pub member: MemberKey,
+    /// The consumed `KeyPackage`'s ID; the Welcome content names it.
+    pub key_package_id: [u8; 32],
+}
+
+/// Output of [`reboot`].
+#[derive(Debug)]
+pub struct RebootOut {
+    /// The `m.dmls.reboot` content, in the old group's room.
+    pub reboot: Value,
+    /// The replacement group's id.
+    pub new_group_id: [u8; 32],
+    /// The replacement group, holding the epoch-1 Commit as its only tip.
+    pub entry: GroupEntry,
+    /// The `m.dmls.commit` that adds every recipient (base: the new genesis).
+    pub commit: CommitOut,
+    /// Who the one Welcome in `commit.welcome` is for.
+    pub recipients: Vec<RebootRecipient>,
+}
+
+fn key_package_owner(bytes: &[u8]) -> Result<MemberKey, EngineError> {
+    let mut slice = bytes;
+    let package = KeyPackageIn::tls_deserialize(&mut slice)
+        .map_err(mls)?
+        .validate(
+            OpenMlsRustCrypto::default().crypto(),
+            ProtocolVersion::Mls10,
+        )
+        .map_err(mls)?;
+    member_of(package.leaf_node().credential())
+}
+
+/// Start a replacement group from `base` after unrecoverable state loss
+/// (00FD §11).
+///
+/// The caller must be an active member of `base`, which must be held. Each
+/// `KeyPackage` names one member to carry over, and every such member must be
+/// in `base` and appear once. The new group is
+/// `reboot_group_id(old, base.commit_id)`; the caller creates it and adds the
+/// members in a single Commit on its genesis. The old entry is left alone: a
+/// reboot abandons old epochs, it does not resolve them.
+///
+/// # Errors
+///
+/// [`EngineError::BadArgument`] for an empty reason or member list, a base that
+/// is not held, a caller or member that is not in `base`, or a `KeyPackage`
+/// that is the caller's, a duplicate, or not for a `base` member.
+pub fn reboot(
+    old: &GroupEntry,
+    signer: &Signer,
+    reason: &str,
+    base: &ExtremityRef,
+    key_packages: &[Vec<u8>],
+) -> Result<RebootOut, EngineError> {
+    let old_group_id = old.group_id();
+    let held = old
+        .branch(&base.id.commit_id)
+        .filter(|branch| branch.epoch() == base.id.mls_epoch)
+        .ok_or(EngineError::BadArgument("base"))?;
+    let old_members: BTreeSet<MemberKey> = held
+        .group()
+        .members()
+        .map(|m| member_of(&m.credential))
+        .collect::<Result<_, _>>()?;
+    let me = signer.member_key();
+    if !old_members.contains(&me) {
+        return Err(EngineError::BadArgument("not_a_member"));
+    }
+    if key_packages.is_empty() {
+        return Err(EngineError::BadArgument("members"));
+    }
+    let mut recipients = Vec::with_capacity(key_packages.len());
+    let mut seen = BTreeSet::new();
+    for package in key_packages {
+        let member = key_package_owner(package)?;
+        if member == me || !old_members.contains(&member) || !seen.insert(member.clone()) {
+            return Err(EngineError::BadArgument("members"));
+        }
+        recipients.push(RebootRecipient {
+            member,
+            key_package_id: wire::key_package_id(package),
+        });
+    }
+    let content = RebootContent {
+        old_group_id,
+        reason: reason.to_owned(),
+        members: recipients.iter().map(|r| r.member.clone()).collect(),
+        base: base.clone(),
+    };
+    let reboot_value = content.to_value()?;
+    let new_group_id = content.new_group_id();
+
+    let (branch, summary) = create_group(signer, new_group_id)?;
+    let mut entry = GroupEntry::new(new_group_id);
+    entry
+        .insert_root(summary.commit_id, branch)
+        .map_err(EngineError::Registry)?;
+    let genesis = ExtremityRef::genesis(&new_group_id);
+    let commit = commit(
+        &mut entry,
+        signer,
+        &genesis,
+        &CommitOp::AddAll(key_packages.to_vec()),
+    )?;
+    Ok(RebootOut {
+        reboot: reboot_value,
+        new_group_id,
+        entry,
+        commit,
+        recipients,
+    })
+}
+
+/// The outcome of checking a received `m.dmls.reboot`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum RebootCheck {
+    /// The reboot is authorized; the replacement group is `new_group_id`.
+    Accepted(RebootContent),
+    /// `base` is not held, or its event is not a known ancestor. Retry later.
+    Deferred(&'static str),
+    /// Permanently invalid; the code is stable.
+    Rejected(&'static str),
+}
+
+/// Check a received `m.dmls.reboot` against the old group (00FD §11): the
+/// sender must be an active member of `base` and the listed members must all
+/// be members of it. No state changes: a reboot abandons the old epochs.
+#[must_use]
+pub fn check_reboot(entry: &GroupEntry, content: &Value, ctx: &ApplyCtx) -> RebootCheck {
+    let parsed = match RebootContent::parse(content, &entry.group_id()) {
+        Ok(parsed) => parsed,
+        Err(error) => return RebootCheck::Rejected(error.code()),
+    };
+    if let Some(event) = &parsed.base.event_id {
+        if !ctx.ancestors.contains(event) {
+            return RebootCheck::Deferred("unheld_ancestor");
+        }
+    }
+    let Some(held) = entry.branch(&parsed.base.id.commit_id) else {
+        return RebootCheck::Deferred("missing_base_state");
+    };
+    if held.epoch() != parsed.base.id.mls_epoch {
+        return RebootCheck::Rejected("mismatch:base");
+    }
+    let Ok(members) = held
+        .group()
+        .members()
+        .map(|m| member_of(&m.credential))
+        .collect::<Result<BTreeSet<_>, _>>()
+    else {
+        return RebootCheck::Rejected("malformed:credential");
+    };
+    if !members.contains(&ctx.sender) {
+        return RebootCheck::Rejected("mismatch:sender");
+    }
+    if parsed.members.is_empty() || !parsed.members.iter().all(|m| members.contains(m)) {
+        return RebootCheck::Rejected("mismatch:members");
+    }
+    RebootCheck::Accepted(parsed)
 }
 
 /// Caller-supplied facts about a received Commit event that wasm cannot know.
@@ -1967,6 +2151,106 @@ mod tests {
         assert!(matches!(
             plan_merge(&b, &[out.commit_id], &registry).unwrap(),
             PlanOutcome::Planned(plan) if plan.members.len() == 2
+        ));
+    }
+
+    #[test]
+    #[allow(clippy::too_many_lines)]
+    fn reboot_starts_a_replacement_group_and_receivers_check_it() {
+        let (alice, bob, a, b, tip) = three_member_group();
+        let old_id = a.group_id();
+        let base = ExtremityRef::new(tip.id, "$second");
+        let carol = signer(CAROL, "CAROL1", 3);
+        let (bob_kp, bob_secrets) = package_bytes(&bob);
+        let (carol_kp, carol_secrets) = package_bytes(&carol);
+        let ctx = |sender: &MemberKey| ApplyCtx {
+            sender: sender.clone(),
+            ancestors: BTreeSet::from(["$second".to_owned()]),
+        };
+
+        let out = reboot(
+            &a,
+            &alice,
+            "state-loss",
+            &base,
+            &[bob_kp.clone(), carol_kp.clone()],
+        )
+        .unwrap();
+        assert_eq!(
+            out.new_group_id,
+            wire::reboot_group_id(&old_id, &tip.id.commit_id)
+        );
+        assert_eq!(out.entry.group_id(), out.new_group_id);
+        assert_eq!(out.commit.summary.mls_epoch, 1);
+        assert_eq!(out.commit.summary.members.len(), 3);
+        assert_eq!(out.recipients.len(), 2);
+        assert_eq!(a.group_id(), old_id);
+        assert_eq!(a.branch(&tip.id.commit_id).unwrap().epoch(), 2);
+
+        let welcome = out.commit.welcome.as_ref().unwrap();
+        for (who, secrets) in [(&bob, &bob_secrets), (&carol, &carol_secrets)] {
+            let (_, summary) = join_welcome(
+                who,
+                secrets,
+                welcome,
+                &out.new_group_id,
+                out.commit.commit_id,
+            )
+            .unwrap();
+            assert_eq!(summary.mls_epoch, 1);
+            assert_eq!(summary.members.len(), 3);
+        }
+
+        let accepted = check_reboot(&b, &out.reboot, &ctx(&alice.member_key()));
+        assert!(
+            matches!(&accepted, RebootCheck::Accepted(c) if c.new_group_id() == out.new_group_id)
+        );
+        let no_ancestors = ApplyCtx {
+            sender: alice.member_key(),
+            ancestors: BTreeSet::new(),
+        };
+        assert_eq!(
+            check_reboot(&b, &out.reboot, &no_ancestors),
+            RebootCheck::Deferred("unheld_ancestor")
+        );
+        let stranger = MemberKey {
+            principal: "@ggggggggggggggggggggggggggggggggggggggggggg".to_owned(),
+            device_id: "DAVE1".to_owned(),
+        };
+        assert_eq!(
+            check_reboot(&b, &out.reboot, &ctx(&stranger)),
+            RebootCheck::Rejected("mismatch:sender")
+        );
+
+        let dave = signer(&stranger.principal, "DAVE1", 4);
+        let (dave_kp, _) = package_bytes(&dave);
+        let (alice_kp, _) = package_bytes(&alice);
+        for bad in [
+            vec![],
+            vec![dave_kp],
+            vec![alice_kp],
+            vec![bob_kp.clone(), bob_kp],
+        ] {
+            assert!(matches!(
+                reboot(&a, &alice, "state-loss", &base, &bad),
+                Err(EngineError::BadArgument("members"))
+            ));
+        }
+        assert!(reboot(&a, &alice, "", &base, std::slice::from_ref(&carol_kp)).is_err());
+        let unheld = ExtremityRef::new(ExtremityId::new(2, [9; 32]), "$second");
+        assert!(matches!(
+            reboot(
+                &a,
+                &alice,
+                "state-loss",
+                &unheld,
+                std::slice::from_ref(&carol_kp)
+            ),
+            Err(EngineError::BadArgument("base"))
+        ));
+        assert!(matches!(
+            reboot(&a, &dave, "state-loss", &base, &[carol_kp]),
+            Err(EngineError::BadArgument("not_a_member"))
         ));
     }
 
