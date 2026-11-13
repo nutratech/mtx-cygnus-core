@@ -17,6 +17,7 @@ use cygnus_core::{Kind, Principal};
 pub mod content;
 pub mod device_root;
 pub mod merge;
+pub mod registry;
 pub mod tree;
 pub mod wire;
 use ed25519_zebra::SigningKey;
@@ -171,7 +172,7 @@ impl DmlsClient {
     ///
     /// # Errors
     ///
-    /// Returns [`Error::Mls`] if `OpenMLS` cannot store the signature key.
+    /// Currently infallible; the `Result` is kept for future validation.
     pub fn new(identity: MemberIdentity, device_seed: [u8; 32]) -> Result<Self> {
         let provider = OpenMlsRustCrypto::default();
         let signing_key = SigningKey::from(device_seed);
@@ -181,7 +182,8 @@ impl DmlsClient {
             device_seed.to_vec(),
             public_key.to_vec(),
         );
-        signer.store(provider.storage()).map_err(mls)?;
+        // Never `signer.store(..)`: it would write the device private key into
+        // the storage map that registry snapshots serialize.
 
         let credential = BasicCredential::new(identity.credential_bytes());
         let credential = CredentialWithKey {

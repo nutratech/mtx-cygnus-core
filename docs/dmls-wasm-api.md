@@ -50,10 +50,24 @@ Consequences:
   under the lock and is persisted. If `navigator.locks` is unavailable, claim a
   single-writer tab via `BroadcastChannel`/`localStorage`, or refuse DMLS sends in
   secondary tabs.
-- **Extremity cap.** Wasm holds at most `MAX_HELD_EXTREMITIES` branches per group
-  (proposed 8). Past the cap, `dmlsApplyCommit` returns `deferred` with reason
-  `extremity_cap` and Hydrogen enters the §11 recovery path; no tip is ever
-  silently evicted.
+- **Extremity cap.** Wasm holds at most `MAX_HELD_EXTREMITIES = 8` branches per
+  group. The cap is checked on the **post-update** set
+  `next = (held − resolves) ∪ {new}`; only `next.len() > 8` is refused, so a
+  merge that resolves six tips and adds one is accepted at eight. Past the cap,
+  `dmlsApplyCommit` returns `deferred` with reason `extremity_cap` and **no
+  state change**. Hydrogen's first response is `dmlsPlanMerge` on the held tips
+  (that usually lowers the count); only if no held subset can make progress does
+  it enter the §11 reboot path. No tip is ever silently evicted. Apply and
+  import results carry the current `extremityCount` so Hydrogen sees pressure
+  coming.
+- **`seq`.** Every mutating call increments the entry's `seq` (create, join,
+  apply, commit, merge, encrypt, **decrypt**). `dmlsExportGroup` serializes the
+  current value without changing it; Hydrogen's CAS expects the stored `seq` to
+  be exactly the pre-call value, writing the post-call one.
+- **Import over a loaded entry.** If the group is loaded and the blob's `seq` is
+  lower than the loaded one, `dmlsImportGroup` throws `stale_state` instead of
+  replacing it, so a lock bug is a visible error and not a ratchet fork. An equal
+  `seq` replaces idempotently.
 
 ## 2. Function table
 
@@ -75,7 +89,7 @@ re-export after any mutating call.
 | `dmlsEncrypt`        | `groupId, deviceSeedB64, roomId, innerType, innerContentJson, atCommitId?` | `{eventType, content}`                                                         | ratchet                | A    |
 | `dmlsDecrypt`        | `groupId, contentJson, roomId`                                             | `{status, innerType?, innerContentJson?, senderMember?, epoch?}`               | ratchet on `ok`        | A    |
 | `dmlsExportGroup`    | `groupId`                                                                  | `stateB64`                                                                     | no                     | S    |
-| `dmlsImportGroup`    | `stateB64`                                                                 | `{groupId, seq, extremities}`                                                  | new/replace entry      | S    |
+| `dmlsImportGroup`    | `stateB64`                                                                 | `{groupId, seq, extremities, extremityCount}`                                  | new/replace entry      | S    |
 | `dmlsHasGroup`       | `groupId`                                                                  | `bool`                                                                         | no                     | S    |
 | `dmlsForget`         | `groupId`                                                                  | `void`                                                                         | drops entry            | S    |
 
@@ -105,7 +119,8 @@ Notes:
 
 ### Error codes (thrown, `code: detail`)
 
-`bad_argument`, `bad_state` (blob unparsable), `unsupported_version`,
+`bad_argument`, `bad_state` (blob unparsable), `stale_state` (import older than
+loaded), `unsupported_version`,
 `unknown_group`, `fork_unresolved`, `content_too_large` (>60 000 B),
 `mismatch` (+`:field`), `malformed` (+`:field`), `missing` (+`:field`),
 `stale_epoch`, `not_a_member`, `crypto` (MLS/OpenMLS failure), `internal`.
@@ -138,8 +153,10 @@ magic "CYDM" | version u16 | seq u64 | group_id 32 | body | blake3(all preceding
 - `branches`: for each held extremity, `commit_id` and the serialized
   `MlsGroup` plus its OpenMLS storage entries (epoch secrets, ratchet tree,
   own leaf private keys, encryption key pairs).
-- `extremities` and the `Branch` values (`members`, retained removals,
-  external joiners, `resolves`) from `merge.rs`.
+- per branch, its `resolves` list (`mls_epoch`, `commit_id`). The extremity set
+  is exactly the set of held branches. `Branch` values for `merge.rs` are
+  **derived from the held groups at plan time**, not persisted, so there is no
+  second copy to drift.
 - `own_member` (`principal:device`).
 - **Unredeemed KeyPackage secrets** are _not_ here; they are per-device, not
   per-group (§4).
