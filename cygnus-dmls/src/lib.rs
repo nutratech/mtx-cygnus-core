@@ -17,6 +17,7 @@ use cygnus_core::{Kind, Principal};
 pub mod device_root;
 pub mod merge;
 pub mod tree;
+pub mod wire;
 use ed25519_zebra::SigningKey;
 use openmls::prelude::{
     tls_codec::{Deserialize, Serialize},
