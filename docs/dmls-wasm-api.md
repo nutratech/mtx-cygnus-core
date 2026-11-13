@@ -98,7 +98,7 @@ re-export after any mutating call.
 | `dmlsPlanMerge`      | `groupId, requestedJson, registryJson`                                     | `{status, plan?}` (see §5)                                                     | no                     | S    |
 | `dmlsMerge`          | `groupId, deviceSeedB64, requestedJson, registryJson`                      | `{eventType, content, welcomes}`                                               | adds branch            | H    |
 | `dmlsExternalCommit` | `identityJson, deviceSeedB64, roomId, groupInfoContentJson`                | `{groupId, eventType, content}` (checked against `wire::group_id(roomId)`)     | new entry/branch       | H    |
-| `dmlsApplyCommit`    | `groupId, eventType, contentJson, ctxJson`                                 | `{status, reason?, commitId?, epoch?, members?}`                               | on `applied` only      | S    |
+| `dmlsApplyCommit`    | `groupId, eventType, contentJson, ctxJson, registryJson?`                  | `{status, reason?, commitId?, epoch?, members?}`                               | on `applied` only      | S    |
 | `dmlsJoinWelcome`    | `identityJson, deviceSeedB64, roomId, welcomeContentJson, secretsB64?`     | `{status, groupId?, epoch?, members?}`                                         | new entry on `applied` | S    |
 | `dmlsReboot`         | `groupId, deviceSeedB64, reason, membersJson, baseEventId`                 | `{newGroupId, eventType, content, welcomes}`                                   | new entry              | H    |
 | `dmlsEncrypt`        | `groupId, deviceSeedB64, roomId, innerType, innerContentJson, atCommitId?` | `{eventType, content}`                                                         | ratchet                | A    |
@@ -114,6 +114,11 @@ Notes:
   and wasm cannot: `{"roomId", "senderMember", "ancestors": [event_id...]}` —
   the DAG ancestry check (§9.2 step 4) and the sender's auth are Hydrogen's.
   Wasm checks that every `base`/`resolves` event_id is in `ancestors`.
+- `registryJson` is **required** when `eventType` is `m.dmls.merge` and ignored
+  otherwise. This is the same per-call registry used by `dmlsPlanMerge`; the
+  merge apply path is exactly the plan-verifying one (`apply_merge` natively).
+  Omitting it for a merge is `bad_argument` (`registry_required`), never an
+  unchecked apply. A plain `m.dmls.commit` does not need it.
 - `dmlsApplyCommit.status`:
     - `applied` — new branch stored, extremities updated.
     - `deferred` — a `base`/`resolves` state is not held, or a referenced event
@@ -124,7 +129,9 @@ Notes:
       (§9.4 ORPHANED); caller re-issues via `dmlsExternalCommit`.
     - `rejected` — permanently invalid (bad `commit_id`, wrong `mls_epoch`, MLS
       verification failure, plan mismatch). `reason` carries the error code
-      below. Never retried.
+      below. Never retried. For `m.dmls.merge`, `mismatch:plan` means the
+      recomputed base, plan summary or merged member set disagrees with the
+      event; `uncertified_device` means the registry cannot certify a leaf.
 - `dmlsDecrypt.status`: `ok`, `missing_state` (epoch not held; buffer),
   `rejected` (bad MLS message, inactive leaf, `room_id` mismatch).
 - `dmlsJoinWelcome.status`: `applied`, `wrong_key_package` (no retained secret
@@ -264,7 +271,7 @@ then builds the MLS Commit and returns the `m.dmls.merge` content
 merge inputs retain the original KeyPackages, a plan that needs an Add returns
 `unsupported_add`; the affected member must rejoin.
 
-On receive, `m.dmls.merge` must use the plan-verifying apply path with a fresh
+On receive, `m.dmls.merge` must go through `dmlsApplyCommit` with a fresh
 `registryJson`. It recomputes the plan and rejects a mismatch in the base, plan
 summary or resulting member set. The plain `m.dmls.commit` apply path does not
 accept merge events.
@@ -349,9 +356,9 @@ Rules:
 
 The native crate has snapshot/restore storage, per-extremity group state,
 version-1 blob persistence, create/join/encrypt/decrypt, Add/Remove/self-update
-commits, apply, merge planning, and merge Commit construction. Native tests
-cover the commit and merge paths, including failed operations leaving exported
-state unchanged.
+commits, apply, merge planning, merge Commit construction, and plan-verifying
+received merges. Native tests cover the commit and merge paths, including failed
+operations leaving exported state unchanged.
 
 Remaining work: implement the wasm exports and update the generated `.d.ts`; add
 a blob-format conformance vector; then run `make install` and announce the final
