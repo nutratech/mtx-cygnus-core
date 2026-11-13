@@ -36,6 +36,7 @@ pub const ENCRYPTED_EVENT: &str = "m.room.encrypted";
 pub const CREATE_CAPABILITY: &str = "tk.nutra.cygnus.dmls";
 
 const GROUP_TAG: &[u8] = b"cygnus-dmls-group-v1\0";
+const GENESIS_TAG: &[u8] = b"cygnus-dmls-genesis-v1\0";
 const COMMIT_TAG: &[u8] = b"cygnus-dmls-commit-v1\0";
 const KEY_PACKAGE_TAG: &[u8] = b"cygnus-dmls-key-package-v1\0";
 const WELCOME_TAG: &[u8] = b"cygnus-dmls-welcome-v1\0";
@@ -64,6 +65,17 @@ fn tagged(tag: &[u8], bytes: &[u8]) -> [u8; 32] {
 #[must_use]
 pub fn group_id(room_id: &str) -> [u8; 32] {
     tagged(GROUP_TAG, room_id.as_bytes())
+}
+
+/// `BLAKE3("cygnus-dmls-genesis-v1\0" ‖ group_id)`.
+///
+/// The synthetic `commit_id` of the epoch-0 state a creator holds before it
+/// publishes anything. Every member can recompute it from the room, so the
+/// genesis extremity needs no `event_id` DAG hint. It is never a real Commit
+/// digest: the tag differs from [`commit_id`]'s.
+#[must_use]
+pub fn genesis_commit_id(group_id: &[u8; 32]) -> [u8; 32] {
+    tagged(GENESIS_TAG, group_id)
 }
 
 /// `BLAKE3("cygnus-dmls-commit-v1\0" ‖ mls_message_bytes)`.
@@ -170,6 +182,19 @@ mod tests {
         assert_eq!(first, group_id(ROOM));
         assert_ne!(first, group_id("!other:example.org"));
         assert_eq!(first.len(), 32);
+    }
+
+    #[test]
+    fn genesis_id_is_group_scoped_and_not_a_commit() {
+        let group = group_id(ROOM);
+        assert_eq!(genesis_commit_id(&group), genesis_commit_id(&group));
+        assert_ne!(genesis_commit_id(&group), group);
+        assert_ne!(
+            genesis_commit_id(&group),
+            genesis_commit_id(&group_id("!other:example.org"))
+        );
+        // Never equal to a real Commit digest over the same input.
+        assert_ne!(genesis_commit_id(&[1; 32]), commit_id(&[1; 32]));
     }
 
     #[test]

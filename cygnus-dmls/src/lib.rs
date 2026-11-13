@@ -126,6 +126,43 @@ impl MemberIdentity {
         out.extend_from_slice(device_id);
         out
     }
+
+    /// Decode the bytes [`Self::credential_bytes`] wrote.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`Error::Identity`] if the tag is wrong, the lengths do not add
+    /// up, or the decoded fields fail the same validation as [`Self::new`].
+    pub fn from_credential_bytes(bytes: &[u8]) -> Result<Self> {
+        const TAG: &[u8] = b"cygnus-dmls-credential-v1\0";
+        fn field<'a>(rest: &mut &'a [u8]) -> Result<&'a [u8]> {
+            if rest.len() < 2 {
+                return Err(Error::Identity("credential"));
+            }
+            let len = usize::from(u16::from_be_bytes([rest[0], rest[1]]));
+            let end = 2 + len;
+            if rest.len() < end {
+                return Err(Error::Identity("credential"));
+            }
+            let value = &rest[2..end];
+            *rest = &rest[end..];
+            Ok(value)
+        }
+
+        let mut rest = bytes
+            .strip_prefix(TAG)
+            .ok_or(Error::Identity("credential"))?;
+        let principal = field(&mut rest)?;
+        let device_id = field(&mut rest)?;
+        if !rest.is_empty() {
+            return Err(Error::Identity("credential"));
+        }
+        let principal =
+            std::str::from_utf8(principal).map_err(|_| Error::Identity("credential"))?;
+        let device_id =
+            std::str::from_utf8(device_id).map_err(|_| Error::Identity("credential"))?;
+        Self::new(principal, device_id)
+    }
 }
 
 /// One Cygnus/DMLS participant and its local MLS state.
@@ -398,6 +435,23 @@ mod tests {
         assert!(MemberIdentity::new("@nope", "D").is_err());
         assert!(MemberIdentity::new(ALICE, "").is_err());
         assert!(MemberIdentity::new(ALICE, "bad id").is_err());
+    }
+
+    #[test]
+    fn credential_bytes_round_trip_and_reject_tampering() {
+        let identity = MemberIdentity::new(ALICE, "ALICE1").unwrap();
+        let bytes = identity.credential_bytes();
+        assert_eq!(
+            MemberIdentity::from_credential_bytes(&bytes).unwrap(),
+            identity
+        );
+        assert!(MemberIdentity::from_credential_bytes(b"not a credential").is_err());
+        for cut in 1..4 {
+            assert!(MemberIdentity::from_credential_bytes(&bytes[..bytes.len() - cut]).is_err());
+        }
+        let mut trailing = bytes.clone();
+        trailing.push(0);
+        assert!(MemberIdentity::from_credential_bytes(&trailing).is_err());
     }
 
     #[test]

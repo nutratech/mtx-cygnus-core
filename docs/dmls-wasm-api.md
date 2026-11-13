@@ -85,7 +85,7 @@ re-export after any mutating call.
 | JS name              | Args                                                                       | Returns                                                                        | Mutates                | Kind |
 | -------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------ | ---------------------- | ---- |
 | `dmlsKeyPackage`     | `identityJson, deviceSeedB64`                                              | `{eventType, content, keyPackageId, secretsB64}`                               | no (see §4)            | H    |
-| `dmlsCreateGroup`    | `identityJson, deviceSeedB64, roomId`                                      | `{groupId, eventType, content, stateB64}` (`groupId = wire::group_id(roomId)`) | new entry              | H    |
+| `dmlsCreateGroup`    | `identityJson, deviceSeedB64, roomId`                                      | `{groupId, commitId, epoch, members, stateB64}` (nothing to publish, see §2.1) | new entry              | H    |
 | `dmlsCommit`         | `groupId, deviceSeedB64, opsJson, atCommitId?`                             | `{eventType, content, welcomes: [{toDevice, eventType, content}]}`             | adds branch            | H    |
 | `dmlsPlanMerge`      | `groupId, requestedJson, registryJson`                                     | `{status, plan?}` (see §5)                                                     | no                     | S    |
 | `dmlsMerge`          | `groupId, deviceSeedB64, requestedJson, registryJson`                      | `{eventType, content, welcomes}`                                               | adds branch            | H    |
@@ -123,6 +123,35 @@ Notes:
 - `deviceSeedB64` is an argument, not retained (see §3).
 - `dmlsEncrypt` `innerType`/`innerContentJson` are wrapped with `room_id` into
   the §13 plaintext inside wasm; Hydrogen does not build it.
+
+### 2.1 Creation and the genesis base
+
+`dmlsCreateGroup` **publishes nothing**. It builds the epoch-0 `MlsGroup` for
+`wire::group_id(roomId)` and installs it locally as the group's genesis
+extremity:
+
+```text
+commit_id = BLAKE3("cygnus-dmls-genesis-v1\0" ‖ group_id)
+extremity = (mls_epoch 0, commit_id)
+```
+
+This synthetic id is derivable from the room, so the first published event is
+the epoch-1 Commit (`dmlsCommit`) whose `base`, and sole `resolves` entry, is
+that genesis reference **with no `event_id`**. `CommitContent` is unchanged in
+shape; the only rule is that a reference may omit its DAG hint when it names
+the group's genesis, and `dmlsApplyCommit` accepts that base only from the
+state this client created. Every other reference still requires an `event_id`
+and an `ancestors` match.
+
+Consequences:
+
+- A creator that loses its local state before adding anyone simply creates the
+  group again; the genesis id is deterministic and no peer holds epoch 0.
+- The genesis state is retained as a non-tip state after the first Commit, so
+  two epoch-1 Commits from the same creator (Add Bob, Add Carol) both apply and
+  can be merged.
+- No `m.dmls.commit` with `mls_epoch: 0` exists, so there is no ingest path
+  that initialises a group from an unauthenticated epoch-0 event.
 
 ### Error codes (thrown, `code: detail`)
 

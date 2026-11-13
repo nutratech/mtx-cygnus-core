@@ -60,6 +60,21 @@ impl From<WireError> for ContentError {
     }
 }
 
+impl ContentError {
+    /// The stable error code surfaced to JavaScript; the `Display` text is the
+    /// detail after the colon.
+    #[must_use]
+    pub fn code(&self) -> &'static str {
+        match self {
+            Self::Missing(_) => "missing_field",
+            Self::Malformed(_) => "malformed",
+            Self::Mismatch(_) => "mismatch",
+            Self::TooLarge => "too_large",
+            Self::Canonical => "bad_content",
+        }
+    }
+}
+
 type Result<T> = core::result::Result<T, ContentError>;
 
 /// Encode bytes as unpadded base64url.
@@ -190,6 +205,22 @@ impl ExtremityRef {
         }
     }
 
+    /// The genesis extremity of `group_id`: epoch 0, the synthetic
+    /// [`wire::genesis_commit_id`], and no DAG hint.
+    #[must_use]
+    pub fn genesis(group_id: &[u8; 32]) -> Self {
+        Self {
+            id: ExtremityId::new(0, wire::genesis_commit_id(group_id)),
+            event_id: None,
+        }
+    }
+
+    /// Whether this is `group_id`'s genesis reference.
+    #[must_use]
+    pub fn is_genesis(&self, group_id: &[u8; 32]) -> bool {
+        self.event_id.is_none() && self.id == ExtremityId::new(0, wire::genesis_commit_id(group_id))
+    }
+
     /// Parse `{mls_epoch, commit_id, event_id?}`.
     ///
     /// # Errors
@@ -231,11 +262,16 @@ impl ExtremityRef {
     }
 }
 
-fn parse_refs(value: &Value, name: &'static str, min: usize) -> Result<Vec<ExtremityRef>> {
+fn parse_refs(
+    value: &Value,
+    name: &'static str,
+    min: usize,
+    require_event_id: bool,
+) -> Result<Vec<ExtremityRef>> {
     let mut seen = BTreeSet::new();
     let mut out = Vec::new();
     for item in array(value, name)? {
-        let reference = ExtremityRef::parse(item, true)?;
+        let reference = ExtremityRef::parse(item, require_event_id)?;
         // Duplicate references to one `(epoch, commit_id)` collapse to one.
         if seen.insert(reference.id) {
             out.push(reference);
@@ -413,6 +449,9 @@ impl CommitContent {
         for reference in self.resolves.iter().chain([&self.base]) {
             match &reference.event_id {
                 Some(event) => event_id(event, "event_id")?,
+                // The genesis base is derivable from the room, so it is the one
+                // reference that may omit a DAG hint.
+                None if reference.is_genesis(&self.group_id) => {}
                 None => return Err(ContentError::Missing("event_id")),
             }
         }
@@ -435,8 +474,8 @@ impl CommitContent {
         if &group_id != expected_group_id {
             return Err(ContentError::Mismatch("group_id"));
         }
-        let base = ExtremityRef::parse(field(content, "base")?, true)?;
-        let resolves = parse_refs(content, "resolves", 1)?;
+        let base = ExtremityRef::parse(field(content, "base")?, false)?;
+        let resolves = parse_refs(content, "resolves", 1, false)?;
         let proposals = array(content, "proposals")?
             .iter()
             .map(|item| {
@@ -1106,6 +1145,46 @@ mod tests {
         let text = to_canonical_string(&value).unwrap();
         let reparsed = Value::parse_strict(&text).unwrap();
         assert_eq!(to_canonical_string(&reparsed).unwrap(), text);
+    }
+
+    #[test]
+    fn first_commit_may_name_the_genesis_base_without_an_event_id() {
+        let group = wire::group_id(ROOM);
+        let genesis = ExtremityRef::genesis(&group);
+        assert!(genesis.is_genesis(&group));
+        let content = CommitContent {
+            group_id: group,
+            base: genesis.clone(),
+            resolves: vec![genesis],
+            commit: b"first commit".to_vec(),
+            group_info: b"group info".to_vec(),
+            proposals: vec![],
+            plan: PlanSummary::default(),
+        };
+        let value = content.to_value().unwrap();
+        assert_eq!(value["mls_epoch"].as_u64(), Some(1));
+        assert!(value["base"].get("event_id").is_none());
+        assert_eq!(
+            CommitContent::parse(wire::COMMIT_EVENT, &value, &group).unwrap(),
+            content
+        );
+
+        // Only the group's genesis may omit the hint: another epoch-0 id, or
+        // the genesis id in a non-genesis slot, is rejected.
+        let forged = ExtremityRef {
+            id: ExtremityId::new(0, [0x11; 32]),
+            event_id: None,
+        };
+        let mut bad = content.clone();
+        bad.base = forged.clone();
+        bad.resolves = vec![forged];
+        assert_eq!(bad.to_value(), Err(ContentError::Missing("event_id")));
+
+        // A genesis reference is still group-scoped.
+        let mut foreign = content.clone();
+        foreign.base = ExtremityRef::genesis(&wire::group_id("!other:x"));
+        foreign.resolves = vec![foreign.base.clone()];
+        assert_eq!(foreign.to_value(), Err(ContentError::Missing("event_id")));
     }
 
     #[test]
