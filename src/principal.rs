@@ -10,7 +10,7 @@ use base64::{engine::general_purpose::URL_SAFE_NO_PAD as B64, Engine};
 pub struct Principal {
     /// Server (`~`) or user (`@`).
     pub kind: Kind,
-    /// SHA-256 of the genesis link body.
+    /// BLAKE3 of the genesis link body.
     pub root: [u8; 32],
 }
 

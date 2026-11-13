@@ -16,6 +16,7 @@ members = [".", "cygnus-dmls", "cygnus-wasm"]
 
 [dependencies]
 base64 = "0.23"
+blake3 = { version = "1.5", default-features = false }
 ed25519-zebra = { version = "5", default-features = false }
 rand_core = { version = "0.10", default-features = false }
 sha2 = "0.11"

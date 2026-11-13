@@ -9,7 +9,7 @@ use crate::{
     Error, Principal,
 };
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD as B64, Engine};
-use sha2::{Digest, Sha256};
+
 use std::collections::BTreeMap;
 
 /// Unstable room-version identifier used by the current MSC00FC vectors.
@@ -612,7 +612,7 @@ impl VerifiedEpoch {
         }
         let parent_bytes = decode_b64(string(content.get("parent"))?)?;
         let parent_body = Body::parse_exact(&parent_bytes)?;
-        let parent_digest: [u8; 32] = Sha256::digest(&parent_bytes).into();
+        let parent_digest: [u8; 32] = *blake3::hash(&parent_bytes).as_bytes();
         let parent = Link {
             body: parent_body,
             body_bytes: parent_bytes,

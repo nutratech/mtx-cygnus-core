@@ -1400,7 +1400,7 @@ def run():
         ),
         False,
     )
-    outsider = "@" + p.b64u(p.sha256(b"nobody"))
+    outsider = "@" + p.b64u(p.blake3_digest(b"nobody"))
     attempt(
         Q,
         "P4 a non-member cannot relay (relay requires join)",

@@ -11,12 +11,12 @@ maintained here.
 
 | File                   | Source path                      | SHA-256                                                            |
 | ---------------------- | -------------------------------- | ------------------------------------------------------------------ |
-| `pid_vectors.json`     | `proposals/pid_vectors.json`     | `d8a66c5fbd28607a58e997ee8203a4bb402f75d71d5d2dbbe1db1b2f63451dbf` |
-| `pid_pdu_vectors.json` | `proposals/pid_pdu_vectors.json` | `d787b1a6aab5d5527ab28d3810dcfff9ef7a0e2bab0826b626bc0268a4b660c0` |
+| `pid_vectors.json`     | `proposals/pid_vectors.json`     | `2f51dc3f6efe73858cb4af13e6c3feff270f620d029b5faeb39fcdec786ce432` |
+| `pid_pdu_vectors.json` | `proposals/pid_pdu_vectors.json` | `54923a7100e9e0566cb46c0d2557a35f017a78bfdbe69ba7702368789034376d` |
 | `pid_known_gaps.json`  | `proposals/pid_known_gaps.json`  | `61159a3aac4536fc85d62c86a5acbda0d438c05920b5d60ee2a678d42c9cc9cb` |
 
 - Source: `https://gitlab.com/wombat-foundation/proposals` (or the
-  `../proposals` checkout), commit `25df79c4cbd51eed2cb2ccfbc88ddd0e299468ca`.
+  `../proposals` checkout), commit `4e14a372dbfd5fb5f2aad0aa2a6c1275b6739b19`.
 - License: Apache License 2.0. See `LICENSE-APACHE`, copied from the source
   repository's `LICENSE`.
 - Regenerating: the vectors are produced by `proposals/pid_ref.py` and

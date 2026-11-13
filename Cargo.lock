@@ -328,6 +328,7 @@ name = "cygnus-core"
 version = "0.0.1"
 dependencies = [
  "base64",
+ "blake3",
  "cygnus-core",
  "ed25519-zebra",
  "hex",

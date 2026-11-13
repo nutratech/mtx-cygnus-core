@@ -1,2 +1,3 @@
 # Needed by the upstream MSC00FC Python reference models.
 cryptography==50.0.0
+blake3==1.0.11

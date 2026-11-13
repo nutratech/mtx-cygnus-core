@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 """Conformance checks and vector generation for the DMLS reference models.
 
-Run from any directory with ``python3 proposals/test_dmls.py``. The vendored
-upstream tree-math fixture is the conformance oracle; ``dmls_vectors.json``
-stores compact derived metadata, fixture provenance, and DMLS scenarios.
+Run from any directory with ``python3 proposals/test_dmls.py`` (the model
+digests require the ``blake3`` package). The vendored upstream tree-math
+fixture is the conformance oracle; ``dmls_vectors.json`` stores compact derived
+metadata, fixture provenance, and DMLS scenarios.
 """
 
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import math
 import shutil
@@ -18,6 +18,7 @@ import sys
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
+import blake3
 import pid_ref as pid_crypto
 from dmls_00fc import (
     DeviceRoot,
@@ -112,9 +113,9 @@ def _make_branch(
 
 
 def _json_digest(value: object) -> str:
-    """Hash canonical compact JSON for reproducible, compact vector records."""
+    """Hash canonical compact JSON with BLAKE3 for reproducible vector records."""
     encoded = json.dumps(value, sort_keys=True, separators=(",", ":")).encode()
-    return hashlib.sha256(encoded).hexdigest()
+    return blake3.blake3(encoded).hexdigest()
 
 
 def build_official_tree_math_vectors() -> List[dict]:
@@ -197,9 +198,9 @@ def build_official_tree_math_vectors() -> List[dict]:
                 "leaf_capacity": leaf_count,
                 "node_count": len(tree.nodes),
                 "root": tree.root,
-                "tree_sha256": _json_digest(shape),
-                "paths_sha256": _json_digest(paths),
-                "vector_sha256": _json_digest(vector),
+                "tree_blake3": _json_digest(shape),
+                "paths_blake3": _json_digest(paths),
+                "vector_blake3": _json_digest(vector),
             }
         )
     return generated
@@ -247,7 +248,7 @@ def build_draft11_tree_math_vectors() -> List[dict]:
                 "leaf_count": leaf_count,
                 "root": tree.root,
                 "node_count": len(tree.nodes),
-                "topology_sha256": _json_digest(
+                "topology_blake3": _json_digest(
                     [
                         {
                             "node": node,
@@ -1810,7 +1811,7 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
         "tree_math_source": "mlswg/mls-implementations tree-math vectors",
         "tree_math_fixture": {
             "file": OFFICIAL_TREE_MATH.name,
-            "sha256": hashlib.sha256(OFFICIAL_TREE_MATH.read_bytes()).hexdigest(),
+            "blake3": blake3.blake3(OFFICIAL_TREE_MATH.read_bytes()).hexdigest(),
         },
         "official_tree_math": build_official_tree_math_vectors(),
         "draft11_tree_math": build_draft11_tree_math_vectors(),

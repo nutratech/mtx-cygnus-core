@@ -72,7 +72,7 @@ fn p1_create_rejects_a_modified_required_signature() {
     let server_signer = signatures
         .as_object_mut()
         .unwrap()
-        .get_mut("~soEUx9hiteZoLx9OwBJ94-GCuVrDksXROkIYuLn8Lb0")
+        .get_mut("~1AreHGP7Cv7EMZkhE3ChnfH_mR6pqDmBL9CPpBr87yA")
         .unwrap();
     let signature = server_signer
         .as_object_mut()

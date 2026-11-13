@@ -20,10 +20,11 @@ rather than MLS TLS encoding.
 
 from __future__ import annotations
 
-import hashlib
 import struct
 from dataclasses import dataclass
 from typing import Dict, Iterable, List, Optional, Set, Tuple, Union
+
+import blake3
 
 
 class InvalidTree(ValueError):
@@ -74,7 +75,7 @@ def _lp(data: bytes) -> bytes:
 
 
 def _digest(tag: bytes, *parts: bytes) -> bytes:
-    h = hashlib.sha256()
+    h = blake3.blake3()
     h.update(tag)
     for part in parts:
         h.update(_lp(part))

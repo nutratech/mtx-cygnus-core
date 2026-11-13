@@ -29,6 +29,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, TypedDict
 
+import blake3
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import (
     Ed25519PrivateKey,
@@ -59,7 +60,12 @@ class Invalid(Exception):
 
 
 def sha256(b: bytes) -> bytes:
+    """PDU-layer hashing. 00FC link digests use ``blake3_digest`` below."""
     return hashlib.sha256(b).digest()
+
+
+def blake3_digest(b: bytes) -> bytes:
+    return blake3.blake3(b).digest()
 
 
 def b64u(b: bytes) -> str:
@@ -109,7 +115,7 @@ def pub(sk: Ed25519PrivateKey) -> bytes:
 
 
 def commitment(rot_pub: bytes) -> bytes:
-    return sha256(TAG_COMMIT + rot_pub)
+    return blake3_digest(TAG_COMMIT + rot_pub)
 
 
 def verify_sig(pk: bytes, msg: bytes, sig: bytes) -> bool:
@@ -142,7 +148,7 @@ class Link:
 
     @property
     def digest(self) -> bytes:
-        return sha256(self.body)
+        return blake3_digest(self.body)
 
     @property
     def raw(self) -> bytes:

@@ -24,7 +24,7 @@ use rezzy_json::{Object, Value};
 
 /// A private rotation key the client keeps until it signs the next link.
 ///
-/// The custodian receives only `SHA-256(ROT_TAG ‖ public_key)`.
+/// The custodian receives only `BLAKE3(ROT_TAG ‖ public_key)`.
 pub struct RotationKey {
     key: SigningKey,
 }
@@ -79,7 +79,7 @@ impl RotationKey {
         <[u8; 32]>::from(self.key.verification_key())
     }
 
-    /// `SHA-256(ROT_TAG ‖ public_key)`, the value given to the custodian.
+    /// `BLAKE3(ROT_TAG ‖ public_key)`, the value given to the custodian.
     #[must_use]
     pub fn commitment(&self) -> [u8; 32] {
         commitment(&self.public_key())

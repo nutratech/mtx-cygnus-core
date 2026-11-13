@@ -7,7 +7,6 @@
 use crate::{commitment, principal::Principal, Error, LINK_TAG};
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD as B64, Engine};
 use ed25519_zebra::{Signature, SigningKey, VerificationKey};
-use sha2::{Digest, Sha256};
 
 const ZERO: [u8; 32] = [0; 32];
 
@@ -292,10 +291,10 @@ impl Link {
         B64.encode(self.to_bytes())
     }
 
-    /// `D_h = SHA-256(body)`.
+    /// `D_h = BLAKE3(body)`.
     #[must_use]
     pub fn digest(&self) -> [u8; 32] {
-        Sha256::digest(&self.body_bytes).into()
+        *blake3::hash(&self.body_bytes).as_bytes()
     }
 
     /// The principal this link belongs to: genesis digest, or `root`.
