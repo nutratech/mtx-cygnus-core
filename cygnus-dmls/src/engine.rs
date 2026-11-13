@@ -215,6 +215,29 @@ fn summarize(
     })
 }
 
+/// The identity of this device's own leaf in any held state of `entry`.
+///
+/// Lets exports that take only a group id and the device seed build the
+/// [`Signer`] without the caller restating who it is; a wrong seed is then
+/// caught by the engine's own-leaf key check.
+///
+/// # Errors
+///
+/// [`EngineError::BadArgument`] if no state is held or the leaf is unusable.
+pub fn own_identity(entry: &GroupEntry) -> Result<MemberIdentity, EngineError> {
+    let (_, branch) = entry
+        .branches()
+        .next()
+        .ok_or(EngineError::BadArgument("own_leaf"))?;
+    let leaf = branch
+        .group()
+        .own_leaf()
+        .ok_or(EngineError::BadArgument("own_leaf"))?;
+    let key = member_of(leaf.credential())?;
+    MemberIdentity::new(key.principal, key.device_id)
+        .map_err(|_| EngineError::BadArgument("credential"))
+}
+
 fn verify_own_leaf(group: &MlsGroup, signer: &Signer) -> Result<(), EngineError> {
     let leaf = group
         .own_leaf()
@@ -319,6 +342,7 @@ pub fn encrypt(
     if group_id_of(group)? != *group_id {
         return Err(EngineError::BadArgument("group_id"));
     }
+    verify_own_leaf(group, signer)?;
     let message = group
         .create_message(provider, &signer.pair, plaintext)
         .map_err(mls)?;
@@ -387,6 +411,11 @@ pub fn encrypt_at(
 ) -> Result<Value, EngineError> {
     let id = entry.resolve_tip(at)?;
     let group_id = entry.group_id();
+    // Checked up front so a wrong seed is `bad_argument`, not a wrapped crypto
+    // failure from inside the copy-then-swap closure.
+    if let Some(held) = entry.branch(&id) {
+        verify_own_leaf(held.group(), signer)?;
+    }
     entry
         .update(&id, |group, provider| {
             encrypt(signer, group, provider, &group_id, plaintext)
@@ -870,7 +899,13 @@ pub struct RebootOut {
     pub recipients: Vec<RebootRecipient>,
 }
 
-fn key_package_owner(bytes: &[u8]) -> Result<MemberKey, EngineError> {
+/// The member a serialized `KeyPackage` belongs to, from its leaf credential.
+///
+/// # Errors
+///
+/// [`EngineError`] if the bytes are not a valid `KeyPackage` or its credential
+/// is not a Cygnus member credential.
+pub fn key_package_owner(bytes: &[u8]) -> Result<MemberKey, EngineError> {
     let mut slice = bytes;
     let package = KeyPackageIn::tls_deserialize(&mut slice)
         .map_err(mls)?

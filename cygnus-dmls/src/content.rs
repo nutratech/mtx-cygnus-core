@@ -986,6 +986,65 @@ impl EncryptedContent {
     }
 }
 
+/// Build the §13 application plaintext: canonical JSON
+/// `{"room_id", "type", "content"}`.
+///
+/// # Errors
+///
+/// [`ContentError::Malformed`] if `content` is not a JSON object or `inner_type`
+/// is empty, [`ContentError::Canonical`] if it cannot be serialized.
+pub fn application_plaintext(room_id: &str, inner_type: &str, content: &Value) -> Result<Vec<u8>> {
+    if inner_type.is_empty() {
+        return Err(ContentError::Malformed("type"));
+    }
+    if !matches!(content, Value::Object(_)) {
+        return Err(ContentError::Malformed("content"));
+    }
+    let value = object([
+        ("room_id", Value::from(room_id)),
+        ("type", Value::from(inner_type)),
+        ("content", content.clone()),
+    ]);
+    to_canonical_string(&value)
+        .map(String::into_bytes)
+        .map_err(|_| ContentError::Canonical)
+}
+
+/// Parse a decrypted §13 plaintext and bind it to `expected_room`.
+///
+/// Returns the inner event type and content.
+///
+/// # Errors
+///
+/// [`ContentError`] for non-canonical or non-JSON bytes, a missing or extra
+/// field, or a `room_id` other than `expected_room` (`mismatch:room_id`), which
+/// is what stops a ciphertext replayed into another room.
+pub fn parse_application_plaintext(
+    plaintext: &[u8],
+    expected_room: &str,
+) -> Result<(String, Value)> {
+    let text = std::str::from_utf8(plaintext).map_err(|_| ContentError::Malformed("plaintext"))?;
+    let value = Value::parse_strict(text).map_err(|_| ContentError::Malformed("plaintext"))?;
+    let Value::Object(entries) = &value else {
+        return Err(ContentError::Malformed("plaintext"));
+    };
+    if entries.len() != 3 {
+        return Err(ContentError::Malformed("plaintext"));
+    }
+    if string(&value, "room_id")? != expected_room {
+        return Err(ContentError::Mismatch("room_id"));
+    }
+    let inner_type = string(&value, "type")?;
+    if inner_type.is_empty() {
+        return Err(ContentError::Malformed("type"));
+    }
+    let content = field(&value, "content")?;
+    if !matches!(content, Value::Object(_)) {
+        return Err(ContentError::Malformed("content"));
+    }
+    Ok((inner_type.to_owned(), content.clone()))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1695,5 +1754,27 @@ mod tests {
             ExtremityRef::parse(&huge, false),
             Err(ContentError::Malformed("mls_epoch"))
         );
+    }
+
+    #[test]
+    fn application_plaintext_round_trips_and_binds_the_room() {
+        let content = Value::parse_strict(r#"{"body":"hi","msgtype":"m.text"}"#).unwrap();
+        let bytes = application_plaintext(ROOM, "m.room.message", &content).unwrap();
+        let (kind, parsed) = parse_application_plaintext(&bytes, ROOM).unwrap();
+        assert_eq!((kind.as_str(), &parsed), ("m.room.message", &content));
+        assert_eq!(
+            parse_application_plaintext(&bytes, "!other:example.org").unwrap_err(),
+            ContentError::Mismatch("room_id")
+        );
+        // Extra fields, non-objects and non-canonical input are refused.
+        assert!(parse_application_plaintext(
+            br#"{"a":1,"content":{},"room_id":"!room:example.org","type":"t"}"#,
+            ROOM
+        )
+        .is_err());
+        assert!(parse_application_plaintext(b"[]", ROOM).is_err());
+        assert!(parse_application_plaintext(b"\xff", ROOM).is_err());
+        assert!(application_plaintext(ROOM, "", &content).is_err());
+        assert!(application_plaintext(ROOM, "t", &Value::from("x")).is_err());
     }
 }
