@@ -372,6 +372,78 @@ pub fn decrypt(
     }
 }
 
+/// Encrypt at the named branch, or the sole tip, and advance its ratchet.
+///
+/// # Errors
+///
+/// [`EngineError::Registry`] with `fork_unresolved` when several tips are held
+/// and none is named, `missing_base_state` for an unheld branch, or any error
+/// of [`encrypt`]. The entry is unchanged on error.
+pub fn encrypt_at(
+    entry: &mut GroupEntry,
+    signer: &Signer,
+    at: Option<&[u8; 32]>,
+    plaintext: &[u8],
+) -> Result<Value, EngineError> {
+    let id = entry.resolve_tip(at)?;
+    let group_id = entry.group_id();
+    entry
+        .update(&id, |group, provider| {
+            encrypt(signer, group, provider, &group_id, plaintext)
+                .map_err(|e| RegistryError::Mls(e.to_string()))
+        })
+        .map_err(Into::into)
+}
+
+/// The outcome of [`decrypt_in`].
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum DecryptOutcome {
+    /// Decrypted on the branch `commit_id`, whose ratchet advanced.
+    Ok {
+        /// The decrypted message.
+        message: Decrypted,
+        /// The branch that held the epoch secrets.
+        commit_id: [u8; 32],
+    },
+    /// No held branch is at the message's epoch; buffer it (§13.4).
+    MissingState(u64),
+    /// Malformed, or no branch at that epoch could decrypt it; the code is
+    /// stable. Every held state is unchanged.
+    Rejected(&'static str),
+}
+
+/// Decrypt by trying every held state at the ciphertext's epoch.
+///
+/// Sibling tips (and retained states) can share an epoch and only the one with
+/// the right secrets succeeds. Each try runs on a copy, so a failed try leaves
+/// its branch untouched, and only the branch that decrypts is replaced.
+#[must_use]
+pub fn decrypt_in(entry: &mut GroupEntry, content: &Value) -> DecryptOutcome {
+    let group_id = entry.group_id();
+    let parsed = match EncryptedContent::parse(content, &group_id) {
+        Ok(parsed) => parsed,
+        Err(error) => return DecryptOutcome::Rejected(error.code()),
+    };
+    let candidates: Vec<[u8; 32]> = entry
+        .branches()
+        .filter(|(_, branch)| branch.epoch() == parsed.mls_epoch)
+        .map(|(id, _)| *id)
+        .collect();
+    if candidates.is_empty() {
+        return DecryptOutcome::MissingState(parsed.mls_epoch);
+    }
+    for commit_id in candidates {
+        let tried = entry.update(&commit_id, |group, provider| {
+            decrypt(group, provider, &group_id, content)
+                .map_err(|e| RegistryError::Mls(e.to_string()))
+        });
+        if let Ok(message) = tried {
+            return DecryptOutcome::Ok { message, commit_id };
+        }
+    }
+    DecryptOutcome::Rejected("decrypt_failed")
+}
+
 /// The output of a locally produced Commit.
 #[derive(Debug)]
 pub struct CommitOut {
@@ -1579,6 +1651,42 @@ mod tests {
         let mut entry = GroupEntry::new(group_id);
         entry.insert_root(summary.commit_id, branch).unwrap();
         entry
+    }
+
+    #[test]
+    fn decrypt_in_finds_the_branch_at_the_epoch_and_buffers_the_rest() {
+        let (alice, bob, mut a, mut b, tip) = three_member_group();
+        let content = encrypt_at(&mut a, &alice, None, b"hi").unwrap();
+        let before = b.export();
+        let DecryptOutcome::Ok { message, commit_id } = decrypt_in(&mut b, &content) else {
+            panic!("expected ok");
+        };
+        assert_eq!(message.plaintext, b"hi");
+        assert_eq!(message.sender, alice.member_key());
+        assert_eq!(commit_id, tip.id.commit_id);
+        assert_ne!(b.export(), before);
+
+        // A replay cannot decrypt; nothing changes.
+        let after = b.export();
+        assert_eq!(
+            decrypt_in(&mut b, &content),
+            DecryptOutcome::Rejected("decrypt_failed")
+        );
+        assert_eq!(b.export(), after);
+
+        // A later epoch is not held: buffer it.
+        let next = commit(&mut a, &alice, &tip, &CommitOp::SelfUpdate).unwrap();
+        let future = encrypt_at(&mut a, &alice, Some(&next.commit_id), b"later").unwrap();
+        assert_eq!(decrypt_in(&mut b, &future), DecryptOutcome::MissingState(3));
+        assert_eq!(b.export(), after);
+
+        // Two tips: encrypting needs a named branch.
+        commit(&mut a, &alice, &tip, &CommitOp::SelfUpdate).unwrap();
+        assert!(matches!(
+            encrypt_at(&mut a, &alice, None, b"x"),
+            Err(EngineError::Registry(RegistryError::ForkUnresolved))
+        ));
+        let _ = bob;
     }
 
     #[test]
