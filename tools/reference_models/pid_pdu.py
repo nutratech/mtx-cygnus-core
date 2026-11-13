@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""PDU layer and event-auth harness for MSCxxxx (room version tk.nutra.cygnus.1).
+"""PDU layer and event-auth harness for MSCxxxx (room version tk.nutra.cygnus.12).
 
 Implements: canonical JSON, room v12 redaction plus this MSC's additions (section 4.3),
 content hashes, reference hashes, event and room IDs, PDU signing, signer resolution
@@ -26,7 +26,7 @@ from typing import Dict, List, Optional, Set, Tuple, TypedDict, TypeVar
 import pid_ref as p
 from pid_ref import Invalid
 
-ROOM_VERSION = "tk.nutra.cygnus.1"
+ROOM_VERSION = "tk.nutra.cygnus.12"
 SERVER_EPOCH = "m.room.server_epoch"
 USER_EPOCH = "m.room.user_epoch"
 SERVER_SEAL = "m.room.server_seal"
@@ -127,13 +127,20 @@ def redact(ev: dict) -> dict:
     return out
 
 
+# A room v12 PDU has no `event_id`; callers often attach one, so it is never
+# hashed or signed.
 def content_hash(ev: dict) -> str:
-    e = {k: v for k, v in ev.items() if k not in ("unsigned", "signatures", "hashes")}
+    e = {
+        k: v
+        for k, v in ev.items()
+        if k not in ("event_id", "unsigned", "signatures", "hashes")
+    }
     return p.b64u(p.sha256(cjson(e)))
 
 
 def signing_input(ev: dict) -> bytes:
     r = redact(ev)
+    r.pop("event_id", None)
     r.pop("signatures", None)
     r.pop("unsigned", None)
     return cjson(r)
@@ -645,7 +652,6 @@ class Room:
         self, t: str, sender: str, sk: Optional[str], content: dict
     ) -> List[str]:
         keys = [
-            ("m.room.create", ""),
             ("m.room.join_rules", ""),
             ("m.room.power_levels", ""),
             ("m.room.member", sender),
@@ -1394,7 +1400,7 @@ def run():
         ),
         False,
     )
-    outsider = "@" + p.b64u(p.sha256(b"nobody"))
+    outsider = "@" + p.b64u(p.blake3_digest(b"nobody"))
     attempt(
         Q,
         "P4 a non-member cannot relay (relay requires join)",
@@ -2058,6 +2064,15 @@ def main():
     C, vec = run()
     if vec:
         R, steps = vec
+        # Attaching `event_id` to a PDU must not change its hashes.
+        for _, e in steps:
+            tagged = dict(e, event_id=event_id(e))
+            assert event_id(tagged) == event_id(e), (
+                "event_id changed the reference hash"
+            )
+            assert content_hash(tagged) == content_hash(e), (
+                "event_id changed the content hash"
+            )
         out = {
             "room_version": ROOM_VERSION,
             "room_id": R.room_id,

@@ -42,769 +42,769 @@
       "leaf_count": 1,
       "node_count": 1,
       "root": 0,
-      "topology_sha256": "885134631fff84f8ab210d8869a5f75d4589f84108a0a86da3ca95a2620d5743"
+      "topology_blake3": "0d1fa309bfd67001ef3e55130acee0d15b0bebe0699b0f550df0b336745a4a65"
     },
     {
       "leaf_count": 2,
       "node_count": 3,
       "root": 1,
-      "topology_sha256": "e4bd918b8899b92ff85431b38536d862b7f8abb908edfa96b6c0e62f62d199a4"
+      "topology_blake3": "bccb7f6bb7288f47170c0117d9d6e795c733d5941783b401dc54f6340c8ee5de"
     },
     {
       "leaf_count": 3,
       "node_count": 5,
       "root": 3,
-      "topology_sha256": "1b2dfc7f0db0a335d979ff5fb12ed1c72f13175277198e6b0b0aa539fdc370dd"
+      "topology_blake3": "c9059ee5193bab1fa72b0d0a850ce4843bb34e3192da3958abd738a66f2f90e9"
     },
     {
       "leaf_count": 4,
       "node_count": 7,
       "root": 3,
-      "topology_sha256": "7107669feaeab3fa238d133264d96596d6dab8c7977436c283829e2a19dbdc8f"
+      "topology_blake3": "5276fc65cea75108fbd0eb1a9f2962b03d8b03e33df98b052c772946ffc05f0e"
     },
     {
       "leaf_count": 5,
       "node_count": 9,
       "root": 7,
-      "topology_sha256": "6f783efd88501a076fb8034520e8b918a887dbc9c071243449e1c2dc5f3ed8cf"
+      "topology_blake3": "185741620dea6374ce41281f3f7513e07de2528402977cefffd2701b1feb9dc2"
     },
     {
       "leaf_count": 6,
       "node_count": 11,
       "root": 7,
-      "topology_sha256": "e7f5ad3a02b71d968269c06b11283eb16f8ebde5d8113a888f6a45b7699fb5f3"
+      "topology_blake3": "4c863285ba86b15bd671499876b878965a5ae415c6631146db44cec976389a42"
     },
     {
       "leaf_count": 7,
       "node_count": 13,
       "root": 7,
-      "topology_sha256": "b57e584b8cc95bc601233e7f06cfa58b71f110634d48f543d72a4749c3c01dfe"
+      "topology_blake3": "590dd9a6d120856bdfa81b623c70496f621d181e6dfa37e9b5adbd7c6f61c167"
     },
     {
       "leaf_count": 8,
       "node_count": 15,
       "root": 7,
-      "topology_sha256": "72f32ad5f7aa896c755607454ca10f66a79e391b10be1d84f3f4b8d3fdac8ab1"
+      "topology_blake3": "63001a44c55ce0f6b3b71f523814c0a489dc35952fb08a5e62572321f55a1d69"
     },
     {
       "leaf_count": 9,
       "node_count": 17,
       "root": 15,
-      "topology_sha256": "4694a12905abb3ce9afc56d57f0716bc30224cf3c582d80dfc6d7d040d7179d9"
+      "topology_blake3": "6c23eedb3ed2e95cebb518288d7b7b15282101dda7d918eb9eb1612af3bcf61a"
     },
     {
       "leaf_count": 10,
       "node_count": 19,
       "root": 15,
-      "topology_sha256": "ea3a9a8b564985f01dc80b775d7760884a6c125ba71e4e8a8baeb9159108fe44"
+      "topology_blake3": "c49214340df1f7f782d88ca5ba1c8b66e9ccf01ab3ad31e0948c6ab1a23ac020"
     },
     {
       "leaf_count": 11,
       "node_count": 21,
       "root": 15,
-      "topology_sha256": "e12bad72ba19efd2c559983da8433bb25ff2f9e3a518914fefdca043d3a29951"
+      "topology_blake3": "3f35ad9d1dfa78dc88b91a5a2f2f16fa3212f268388ea58ed181cb307f430443"
     },
     {
       "leaf_count": 12,
       "node_count": 23,
       "root": 15,
-      "topology_sha256": "515358875682c58a8b129865669c660eb19777dfa818fd09eb445794f76be644"
+      "topology_blake3": "edfb757084c2a23dfde1ad7d1277f72facb9e291f4d6dc7bc4b264246d43b482"
     },
     {
       "leaf_count": 13,
       "node_count": 25,
       "root": 15,
-      "topology_sha256": "42c085a1339980e160c08eb2624c5c88470b0587079b4a2b4bc0687a0780ce54"
+      "topology_blake3": "16af8c779164ef501adf633711d96222f43517862fd4e5c88f54948517232952"
     },
     {
       "leaf_count": 14,
       "node_count": 27,
       "root": 15,
-      "topology_sha256": "2eeb27ce85ef0d7212e7e6ec25aa2fcd4d0331aff30f8e9cf155977aac791eb2"
+      "topology_blake3": "4fbee1f372c31ff24256b7b8cf48ceb68fb57ef246d8b1dfdfca62df551d247f"
     },
     {
       "leaf_count": 15,
       "node_count": 29,
       "root": 15,
-      "topology_sha256": "6315fb5fd68dc83ad668b26f0079df3aeff9b51ab9ba51f15cc348f5819f10f0"
+      "topology_blake3": "53816b0bfc1451aaa315300645a6f450818dcd2525daa5f01978662b97f7e7a1"
     },
     {
       "leaf_count": 16,
       "node_count": 31,
       "root": 15,
-      "topology_sha256": "1098b9a2eeb91ad60138eeff5a3fae23393ec52d2b0fb1e4c604e07147c65721"
+      "topology_blake3": "f49f8fff5337d55a73e6b7114fd22c329d9929e60b737dd6c66debd9880268a2"
     },
     {
       "leaf_count": 17,
       "node_count": 33,
       "root": 31,
-      "topology_sha256": "c91c7ede30fc535807c29b5511681c311b473774d429fc69c90c8d50c3e4719a"
+      "topology_blake3": "0232d0a1f85c58cf45201665b16b33aecb42ace1ff5648f74843b4fc84964b41"
     },
     {
       "leaf_count": 18,
       "node_count": 35,
       "root": 31,
-      "topology_sha256": "ccec89aa412edd73d67d784216613b346b4da0e060a99ce10a0b87534184babc"
+      "topology_blake3": "b527cf88a0c3624da1ec115ae405b30eb14da344665ff74cd9f9b1041ed93292"
     },
     {
       "leaf_count": 19,
       "node_count": 37,
       "root": 31,
-      "topology_sha256": "2cc75c37b526570184116fe0af31f4a065407d36d1efb42a7df64e22338e6197"
+      "topology_blake3": "5825b43916fb3f902d74916a1585af33ffba9f3c7c6ab9b09fac2aa5824c8308"
     },
     {
       "leaf_count": 20,
       "node_count": 39,
       "root": 31,
-      "topology_sha256": "896f855185524aea511c1d3fed7058356e206b31783b94936875d2b82028c40f"
+      "topology_blake3": "c8141a3261a6eace7b67c89cebc42ad8f99182af4b3c21cf206a1ab069b6c457"
     },
     {
       "leaf_count": 21,
       "node_count": 41,
       "root": 31,
-      "topology_sha256": "3b2d0b81198bf67a02d7b8b8d27a1f4e292e90a64ebcb547e011c17d30f8e387"
+      "topology_blake3": "2c7bea3dcbf2237de009435eb64f06906719b68d0869c356d4c8678913a02c0d"
     },
     {
       "leaf_count": 22,
       "node_count": 43,
       "root": 31,
-      "topology_sha256": "191e74c3e9bc2b4a775b2a3fd2cf919e640b515e336983b1bc84c72333ae42d0"
+      "topology_blake3": "8c1e977378df2e325c12ba90f88d3c37a60cc56d40baaeed0b40014966b71cbd"
     },
     {
       "leaf_count": 23,
       "node_count": 45,
       "root": 31,
-      "topology_sha256": "aa34ad02be92b4afea1cea343d9f07fc45ee374c7a3656e7fe4e306e6e9d0805"
+      "topology_blake3": "946769e0835fbcc89522b0a823223d82a306782a55d4a16f594ea57cb538edc3"
     },
     {
       "leaf_count": 24,
       "node_count": 47,
       "root": 31,
-      "topology_sha256": "5269a17dcd8f7dbeb5d1fe7fe6889529b781c423e7b919f2e488747c7c5b399c"
+      "topology_blake3": "42b81b49bd57893c80d7c91dee5132096d5e404752504ba18b078258774a671f"
     },
     {
       "leaf_count": 25,
       "node_count": 49,
       "root": 31,
-      "topology_sha256": "c7d8078c85d6769c17dad232095f6aaf3fa2b1db4929f079997367f182e45d35"
+      "topology_blake3": "444fdebd09c18c37242ff1ba21a622482f49e48ba2fd923dac2147239d9a5092"
     },
     {
       "leaf_count": 26,
       "node_count": 51,
       "root": 31,
-      "topology_sha256": "52a066015e24e54619c6a0bf70cfaaafccf92f8d9dfd772c9c2e8079df9fdafb"
+      "topology_blake3": "135de2f3b97649bbfed2542de291c434ba2d556258e304f59859cd4966b96e8e"
     },
     {
       "leaf_count": 27,
       "node_count": 53,
       "root": 31,
-      "topology_sha256": "f373c74f1c09385becdfef8791be627dfdc8b3c478ed96a8c58d5d2652673e94"
+      "topology_blake3": "2887bd9c0e720d707bb2c6a6af9359ddc7f64cc73228857e02cfeb077ab4d0ab"
     },
     {
       "leaf_count": 28,
       "node_count": 55,
       "root": 31,
-      "topology_sha256": "9cd035e460196ebd9dd40e38e85a7beaf7b7626fac5ed6bb7db72d238971826c"
+      "topology_blake3": "67f27fed1a6fa21382414f41b5dfbe63ece5bbdeb74b31402d7347a0dfa0ddf8"
     },
     {
       "leaf_count": 29,
       "node_count": 57,
       "root": 31,
-      "topology_sha256": "bd05cafd012491eca7818e63cb74ae1e88c10df7a724d750e1794610da1b7a47"
+      "topology_blake3": "94b47a9b1672753927e3f756efccacd5f5bcca1035c93b6d4450a08482afe225"
     },
     {
       "leaf_count": 30,
       "node_count": 59,
       "root": 31,
-      "topology_sha256": "7f2efcea5aca03dc8e0d1d6c69a1cd0fd8bf8fed8a435fb02c0a64647815c14c"
+      "topology_blake3": "d0927a892c57938b82dd03f0dde6b5e3fa0175abe446f8aa40b425fee6689fb1"
     },
     {
       "leaf_count": 31,
       "node_count": 61,
       "root": 31,
-      "topology_sha256": "6878a82abb0367c2ad447711130c0286b1af737ef448e11f433d2bf9c03d0efd"
+      "topology_blake3": "b78f1142aa09c90ba0044a21fbbe46ff7146ef4ab75c18017e23732e2276ea49"
     },
     {
       "leaf_count": 32,
       "node_count": 63,
       "root": 31,
-      "topology_sha256": "00f152ab5f090cf7fbafa7377fef29a642c582b14531c6aedec0e39b394ed80e"
+      "topology_blake3": "7962d1dd2e811ae82827a15938a470828b548f3316ed9412259970c680357b51"
     },
     {
       "leaf_count": 33,
       "node_count": 65,
       "root": 63,
-      "topology_sha256": "43e50c76328c905d266f2eecdeb595dc95d45ddda41815198997bd5a2f514818"
+      "topology_blake3": "9b394565866a85e1861c6c74df3e7934b62fa57361ca7fabb99322057cf9397b"
     },
     {
       "leaf_count": 34,
       "node_count": 67,
       "root": 63,
-      "topology_sha256": "ab4a05932fb8bf86bd0e3668a67c50495e9217ac3bf6110251ea1c34cabb9c55"
+      "topology_blake3": "ee554cc3753f2d256e7a1d666ceffbbecf4dbdf2b8c7c132839b33d030d237e6"
     },
     {
       "leaf_count": 35,
       "node_count": 69,
       "root": 63,
-      "topology_sha256": "fd03275e7d92f22f664aa657d6fbe0061611fb837be78604ecd4810dbce6d15a"
+      "topology_blake3": "b26d4fc9a0fdbc4c46b3e40cc63d0a9e28ab26b70c73358a7d9c9a27ced5a80a"
     },
     {
       "leaf_count": 36,
       "node_count": 71,
       "root": 63,
-      "topology_sha256": "1070b840135f926ffe81833a229e5d6f03ba1f05a8402912e2ec4e4fd9d34931"
+      "topology_blake3": "9c479c94c57a56c76688d80b8457bd2634f134727684ea52e064b9f4c1136c18"
     },
     {
       "leaf_count": 37,
       "node_count": 73,
       "root": 63,
-      "topology_sha256": "ba2339219beb3550389cb07a74d8d75aef90c6c29abeca4c2468e2ba3469542d"
+      "topology_blake3": "4e6cd9a99a3f05f3324ad93ab38fc53852c48783ec133fcc28fd1ee763aaba33"
     },
     {
       "leaf_count": 38,
       "node_count": 75,
       "root": 63,
-      "topology_sha256": "aaa421541e829135c4794624ebed36c071ea9f3246a9c77d026c6d7f5dfc8e53"
+      "topology_blake3": "2d1268c9c62c247ed950f93a3bd4fe2cd8c48fbcfdcfbcedbe23423cfcca9571"
     },
     {
       "leaf_count": 39,
       "node_count": 77,
       "root": 63,
-      "topology_sha256": "f8e35cc83b24f3e59d165aba6bdc05092a5654fb2260509858118b3544cfaf82"
+      "topology_blake3": "82ec844c1bf925111c80dc04d28f9199a6f0329885fa4593498b6eb6e202d302"
     },
     {
       "leaf_count": 40,
       "node_count": 79,
       "root": 63,
-      "topology_sha256": "49b004b7dce5b92d5c7975c28fc81b937159155af8deb1d10fdff87af2735d8c"
+      "topology_blake3": "6aaee882a583bda02cc83a7c1fe500a592e1c18e47ca7d1a54e470db6c4171b3"
     },
     {
       "leaf_count": 41,
       "node_count": 81,
       "root": 63,
-      "topology_sha256": "b1cc58734a524d2147262edb9fcf8429244720fcb040508571afac2b1bff6c22"
+      "topology_blake3": "8b442f076bd92948161093306777ba217315e25d1dea57db09311692dbd46173"
     },
     {
       "leaf_count": 42,
       "node_count": 83,
       "root": 63,
-      "topology_sha256": "56bce7953185c7528399f3c9a14f59993e707b7199c905b0c68c993dce34e63e"
+      "topology_blake3": "d147b55c5aac001c5dd7524deec330e2e7b806c7281cfd8fbf27dc2ed5636036"
     },
     {
       "leaf_count": 43,
       "node_count": 85,
       "root": 63,
-      "topology_sha256": "37024ef587fe11aef5072ff5b8534c99c947c1780ce6b9f35f76c9cce43e6575"
+      "topology_blake3": "556a8447e8147999e82853f0a8a5d4dcef7e2cd42ac37352063e53115bb7cf08"
     },
     {
       "leaf_count": 44,
       "node_count": 87,
       "root": 63,
-      "topology_sha256": "cdf50259f3a6901b4ed99af5a11f5fffd3a06041c30c774ab4428d92f1d673ae"
+      "topology_blake3": "6eec2c29744c18a43f2d9d61de89196ddbdc229863c233b453165be02203d54a"
     },
     {
       "leaf_count": 45,
       "node_count": 89,
       "root": 63,
-      "topology_sha256": "71cd920fc1122b76f1031ed685f96e2647777a70adf2caa31ed1befe18290430"
+      "topology_blake3": "a4fbbbdf83028be12328d6444859f0d8ddf196e5f0478000c9de2b324dca992b"
     },
     {
       "leaf_count": 46,
       "node_count": 91,
       "root": 63,
-      "topology_sha256": "c41ab30415ac6b7b602ca24d2ffe4776a204e2c9a27b3a3212397ca35c64b0b2"
+      "topology_blake3": "d8d6a1aaa5e69541599ea3a9d1ccbc74e3f465b74dd738d5aebe765c35119894"
     },
     {
       "leaf_count": 47,
       "node_count": 93,
       "root": 63,
-      "topology_sha256": "7fbc182d1b98c242653b9363d2e94bcb44ecfc2b0864d4cf651c3aaa8e6b3333"
+      "topology_blake3": "7a3cc8ff453ca1931146c5a848cca1d923163ce2ee5f1d438e36f49dc4d17ef7"
     },
     {
       "leaf_count": 48,
       "node_count": 95,
       "root": 63,
-      "topology_sha256": "d6e5d4358feab21caa8c216cfa95eef2bd1c3f92fb1fd7957191a09a59e6b0e4"
+      "topology_blake3": "c50561a4c4d6b9a1d1c90adf9f12093b5d5323378da3e61b705750ec4d71a966"
     },
     {
       "leaf_count": 49,
       "node_count": 97,
       "root": 63,
-      "topology_sha256": "9436d7a50206af560cc43ec64c9a7859ed6df4f21be66510ee70706030916efd"
+      "topology_blake3": "2d3304506fe36cd22452b39c120c05d5fe66bd0b7dee4e8dc3393b683d7b5dae"
     },
     {
       "leaf_count": 50,
       "node_count": 99,
       "root": 63,
-      "topology_sha256": "2bcef4b9786d9f6f83369dcf702e784c68da865f8415e23c9baf4b2150ab6f01"
+      "topology_blake3": "2dda1b44951b1afbdc4d6db9e78b81c2fb041b79e15f05b64c0f661fcf59e4ca"
     },
     {
       "leaf_count": 51,
       "node_count": 101,
       "root": 63,
-      "topology_sha256": "f17187974c804f77d16d1e3a95044faf8099936856ab26f96194bbd6a0be5ed4"
+      "topology_blake3": "ea96c83c104ed3cebae8ab6397651892fb6bdc74ad85a2cb3a7fa8bc58ebde74"
     },
     {
       "leaf_count": 52,
       "node_count": 103,
       "root": 63,
-      "topology_sha256": "61623da113a341e16e7ee87f02f8ce2fcd6120c592afd06ce828cb699328b7d5"
+      "topology_blake3": "dc2e8012f00a006e2f4ae2c5910cacf60738f57fd0d39a73b5630b03dfe9edf2"
     },
     {
       "leaf_count": 53,
       "node_count": 105,
       "root": 63,
-      "topology_sha256": "28960bc51260e5a9e5bbb2db7f53f7c632045246d4f172d602a6e1c2046c16d7"
+      "topology_blake3": "2856ee5eabdd64ed181b72121aae5ad60f6012fc902b18d9234cfc63694487e7"
     },
     {
       "leaf_count": 54,
       "node_count": 107,
       "root": 63,
-      "topology_sha256": "b3c24efebc00d2cfb7951c0b94261d100fcf6f4b53c226b98172dc8df3c64081"
+      "topology_blake3": "66db78505a3c7ab48f3ea651fc5a2c5fb06f52d05c05f59ee7e88b352eed6db6"
     },
     {
       "leaf_count": 55,
       "node_count": 109,
       "root": 63,
-      "topology_sha256": "50426e43a75c1e6507d7993e081e53f7ab29811191751f2639c05bd7c5949507"
+      "topology_blake3": "a0b8c14959b1e8853d0857c24a51b9b6314d9059447415d0cc1729dc11617435"
     },
     {
       "leaf_count": 56,
       "node_count": 111,
       "root": 63,
-      "topology_sha256": "67b1e3b3786f59f62e55bab591f6f929d07ccfec8fa2559da32e310f5a34b65b"
+      "topology_blake3": "fe68091614b30b39173814dab6763677f18a1d3cb48a8b20b833c7a82d863b91"
     },
     {
       "leaf_count": 57,
       "node_count": 113,
       "root": 63,
-      "topology_sha256": "29789345fac553a91808731493ff0dde56c038638816fe3d5cb5a499f7b8d20e"
+      "topology_blake3": "1b0270ff19afcaaf181dd5ede5f4315a800d5d3164cec90587dac1478166f5e0"
     },
     {
       "leaf_count": 58,
       "node_count": 115,
       "root": 63,
-      "topology_sha256": "8dc817922907cc5e7a9d9460ceb224e4a89585ca469719f149031172e8f3a9aa"
+      "topology_blake3": "af12c8857821c211894c5da72c1f7ab17df8b932c3f4159ba67466427bfeec1d"
     },
     {
       "leaf_count": 59,
       "node_count": 117,
       "root": 63,
-      "topology_sha256": "c14cac1d3f88e66045fd9ba894dba1475fa2bbf050b36ea5ed0f2a7d86a8986e"
+      "topology_blake3": "7d11ef24f81cfa9f811e1cacf4521496f46b3c941941ff93c6167a867c8e05c6"
     },
     {
       "leaf_count": 60,
       "node_count": 119,
       "root": 63,
-      "topology_sha256": "beeeb89e72096b06ffd4e7cc0cc9c915bd2a22b835551343020f188be3534cbd"
+      "topology_blake3": "29feecebeb7f2790ae05e1a9ceb1c15f38fb80182a4c1f8cab70447f95a564e1"
     },
     {
       "leaf_count": 61,
       "node_count": 121,
       "root": 63,
-      "topology_sha256": "43bce30725c47be62d1ab773adf668f3c459425d3731c4b3c03e22df250edfcd"
+      "topology_blake3": "085619000f75f391247151cb9210ba19ccd8e43c4e52f3d262262355a410ac26"
     },
     {
       "leaf_count": 62,
       "node_count": 123,
       "root": 63,
-      "topology_sha256": "8c9fc75a1d2aee4e82d5f2ca4bc3c43ccc69d8913fc843dbf2125c36f005688c"
+      "topology_blake3": "361d28d73565fb85b8c40057fb4281c6701e6d114942c10ce961249c71663033"
     },
     {
       "leaf_count": 63,
       "node_count": 125,
       "root": 63,
-      "topology_sha256": "5b42c3e7f7a2b2d78638ead856aade1a76ead1c338e7a4e8a948abfc346641ee"
+      "topology_blake3": "46ac80f1eaa57358cd83ffb6900df85d490b738342c59fa1486d3fee74dd4ed5"
     },
     {
       "leaf_count": 64,
       "node_count": 127,
       "root": 63,
-      "topology_sha256": "45a2d3d8f9326b36e503b445508df921abff42dd5d19392871eaac3f8134312a"
+      "topology_blake3": "efbc7c9997bab5ea82ae237277958a1746ea47cb3f70632efe677e224ced321e"
     },
     {
       "leaf_count": 65,
       "node_count": 129,
       "root": 127,
-      "topology_sha256": "3960e253c5d560cea461a0161635923c08cc99504733b86976bf60015c43cbc2"
+      "topology_blake3": "71021eecd29c55bce1192ccfb7a31f96929c9bf2ae537047ade88fc7b3cb435f"
     },
     {
       "leaf_count": 66,
       "node_count": 131,
       "root": 127,
-      "topology_sha256": "e5579b95a917407d5dbc50172ccd6ec494c42d52ab4e6eec84e7f8bdfd7ceb9b"
+      "topology_blake3": "e72d67779b763215618a7fc43754968064d0f032b42c44ddfab9e4f039672e4c"
     },
     {
       "leaf_count": 67,
       "node_count": 133,
       "root": 127,
-      "topology_sha256": "205f69ba44329fca385afccf9188f2788de001a3b9f9d81aa6dec1b56409357d"
+      "topology_blake3": "802a78d06e8b75fcac9b9adc626b895a812ddfb1d8df6cb90319cb675c3dab22"
     },
     {
       "leaf_count": 68,
       "node_count": 135,
       "root": 127,
-      "topology_sha256": "4fa91a4ec03803f653f6785e387454f720f1de782c7ec770b48f830dfc53b4fd"
+      "topology_blake3": "92127d3a2f8d58b03e47a8aa85ba7e463f56d9dbcccf2c3b280e494500e9f82f"
     },
     {
       "leaf_count": 69,
       "node_count": 137,
       "root": 127,
-      "topology_sha256": "86951da8386e00a1293f7be95d557af9fc2fbb0ec9e04d64af79aba3eb64fa2d"
+      "topology_blake3": "4735f6c282208a32fe1d068deb5b04db28282641d74a6edff02ca86d3c66430f"
     },
     {
       "leaf_count": 70,
       "node_count": 139,
       "root": 127,
-      "topology_sha256": "274bd0f5d129ef4d443d89eff04dc1941e264ca4ae13ac6229022b699d059609"
+      "topology_blake3": "6d2cf7641d408bd0e0718f1a8465e3c1b29ee45797a84afa2c79952b8b70a946"
     },
     {
       "leaf_count": 71,
       "node_count": 141,
       "root": 127,
-      "topology_sha256": "f9ee47a7c8f2cb5893c3cd881a21ad3bd7f76bf467bba0150a399f67b7e2d784"
+      "topology_blake3": "4893bde8efe4b798983f8ae4b391009e37c281968f8a4eb6f6c8f049c9f084de"
     },
     {
       "leaf_count": 72,
       "node_count": 143,
       "root": 127,
-      "topology_sha256": "4a7af548f63df046385b11c451d1e2db4cea94239e7243918e6cf59a90b8f427"
+      "topology_blake3": "9c075fee4892bed743419b57d293e833e393fa0ddb2ba5652b963b80d2e6863b"
     },
     {
       "leaf_count": 73,
       "node_count": 145,
       "root": 127,
-      "topology_sha256": "80bbaa1bd5005dcc32690aa026f6c0d6685568747b2eadeb30a886c8a55ab346"
+      "topology_blake3": "da150454a700ef79eb247860c97ce32c4aed96511cd5e4420162a56eb86bea57"
     },
     {
       "leaf_count": 74,
       "node_count": 147,
       "root": 127,
-      "topology_sha256": "12a5c6418f7e6b6e74f4d5034936d92dc8268f56dc9be9798f2154439f005cc5"
+      "topology_blake3": "5a1f06997029ff016738f9c96157997e9a18b4aa9cd06cac5b3037211df88982"
     },
     {
       "leaf_count": 75,
       "node_count": 149,
       "root": 127,
-      "topology_sha256": "58e94fdc1f30c2d253ab433c6e1d8d957c0086a63cc91944cca0a8d51d5b6084"
+      "topology_blake3": "7235874318fdd0002e4879f207e753502cb22502191f5d1cb3f6094f6adebd78"
     },
     {
       "leaf_count": 76,
       "node_count": 151,
       "root": 127,
-      "topology_sha256": "d14feecddd96898d911a5dcdbc1a46956ccff33c9b9d7a580b84fb9f9a49fe60"
+      "topology_blake3": "169b00337db3f0338f99556585e2e85d8384ffeffb6ce408842d3887d618814e"
     },
     {
       "leaf_count": 77,
       "node_count": 153,
       "root": 127,
-      "topology_sha256": "63112a1d91aa325bd5dfa8b2f71cac03c3c059861a376507d76ede3aa14940c7"
+      "topology_blake3": "34656c54283c3cbc96f878bcb3d972463e549e7d7e1d191e5d402c31e7c31ca3"
     },
     {
       "leaf_count": 78,
       "node_count": 155,
       "root": 127,
-      "topology_sha256": "503afb74d7faad23924da1d5ed6d5715b04f93f3242c352a8af3209e9305dd3e"
+      "topology_blake3": "3164107776e1154f9438fad9b5ea12d730dd5d286391f24f0a4ee63de1494a10"
     },
     {
       "leaf_count": 79,
       "node_count": 157,
       "root": 127,
-      "topology_sha256": "0b43304c5f458f34d41080228d6968169923f1587b43c3df28268478d9af34a3"
+      "topology_blake3": "f80acf4c15cea55cb7ff2efeee1f93615aba5cc0091b766a28f400cbcf2b834f"
     },
     {
       "leaf_count": 80,
       "node_count": 159,
       "root": 127,
-      "topology_sha256": "c56f1e13dc207e34aec5aa7764024d24e023d2c1e69cfbefca27b4f4b5d8a843"
+      "topology_blake3": "16392d397c207bffc3c6bdf2e59637ecc6acf2fb1409d76fcdfa6ed2f88c5c5c"
     },
     {
       "leaf_count": 81,
       "node_count": 161,
       "root": 127,
-      "topology_sha256": "12f1d7c8677122b39e078909978cd47137c756d0ae62a4e7b4730411b8296d47"
+      "topology_blake3": "4e29a83c82f89d95c883b924c0db3e710f570056f34817d2f04106a4a51de6fd"
     },
     {
       "leaf_count": 82,
       "node_count": 163,
       "root": 127,
-      "topology_sha256": "0e49c3c967f70369dde27e8fa8312b1755f4d826b290f8359497b9b4cb761e22"
+      "topology_blake3": "e776d375bba2e64906847d244d96627507aa1747be9b9b38c6607e41a20e57f7"
     },
     {
       "leaf_count": 83,
       "node_count": 165,
       "root": 127,
-      "topology_sha256": "1411d8fa535baef64433ebc937e92ddc7b395c474f924870e54b1168f16d11a7"
+      "topology_blake3": "faced2a4fc895d5cca1c83d3ed77d281c6bcad20c27fb58f131d933f5177efbf"
     },
     {
       "leaf_count": 84,
       "node_count": 167,
       "root": 127,
-      "topology_sha256": "6148772d3dd43990e8e4d1fb3704b64c7a137166334e6e16cc8dc837e384b059"
+      "topology_blake3": "a60de9104401621573c5b03c7d817ff788954fdb34709943389b7282c1b4379e"
     },
     {
       "leaf_count": 85,
       "node_count": 169,
       "root": 127,
-      "topology_sha256": "1455a95ec6b15623b252de2858be82c375ce6f98d3ba236003f3c93733f65e22"
+      "topology_blake3": "4e36dcd1309f052db7a5d0675b2ceb7f75d8db468cecf611b9ee39a9ceb377d5"
     },
     {
       "leaf_count": 86,
       "node_count": 171,
       "root": 127,
-      "topology_sha256": "b6aa2c3c3653e71cafc25ef922817811dba32171968a6ca68be95469597c57f2"
+      "topology_blake3": "39d064b8b53f87ff79fa51376a0932f06a56152ee5439026ed13fd529f700f8a"
     },
     {
       "leaf_count": 87,
       "node_count": 173,
       "root": 127,
-      "topology_sha256": "9e57567930dc90cf3eba37aa0b764ffadd9193035e8d498f9736b3a63b505fef"
+      "topology_blake3": "f207881db4e959584db81f047a43e9256261856f29b6c65ed1c689bb86d57ffa"
     },
     {
       "leaf_count": 88,
       "node_count": 175,
       "root": 127,
-      "topology_sha256": "03e04c7f457e6a388c2d5a18acd43b5a2837d8e09ba36fb5de6d0a8ce3032165"
+      "topology_blake3": "a8922d671ad1b7452e1e26806d50eb4a3b8af83beba2f93d099e7456f51c1124"
     },
     {
       "leaf_count": 89,
       "node_count": 177,
       "root": 127,
-      "topology_sha256": "f25b98f821ec65229fd5291a1bd88632d836844075309727c2a768a6adf0b7b8"
+      "topology_blake3": "14d42d624f46b908020863321fef82ed8cd2bb352a5d7b34921af5635579af92"
     },
     {
       "leaf_count": 90,
       "node_count": 179,
       "root": 127,
-      "topology_sha256": "a11f51117e482d91414f8a4586c748f10c5c152d6fe0df08be49bf47bb9c2e86"
+      "topology_blake3": "89dbe344767bc553d9001f77fe3619a0f24aefb85790e049f664aef31e6bd8f1"
     },
     {
       "leaf_count": 91,
       "node_count": 181,
       "root": 127,
-      "topology_sha256": "722cf610c360ed98c27204997c10528b657730a33a3769b5cc262d25966ed4dc"
+      "topology_blake3": "466c29270ce1e965f3dc31d60d00cdd0e2055c708840c9a3cd75ae156c04542e"
     },
     {
       "leaf_count": 92,
       "node_count": 183,
       "root": 127,
-      "topology_sha256": "765fe4250f580cf7ba3098b3dc8179734d31744eb4001db672ad876fe494bff5"
+      "topology_blake3": "f860129cfdc6c5c88b441b4b6fa5ef53c26555655c625d0f424235b20579277f"
     },
     {
       "leaf_count": 93,
       "node_count": 185,
       "root": 127,
-      "topology_sha256": "119ed476cecc1e91b2cbf80d84fa48b67cbf3fb737083d6856f256bed16431be"
+      "topology_blake3": "e56260e00634f18b4cbe6fd6ee79949b87e0ac8f75469d502dc9ef671e87d9dd"
     },
     {
       "leaf_count": 94,
       "node_count": 187,
       "root": 127,
-      "topology_sha256": "bb115fa879804b1a99dc09406d0a0e328b453287b874c0c294ffd8108b0463bd"
+      "topology_blake3": "341b324b4aa98293f8d8b536d5ca5b3823d3fe084fedf83a264b63dfe443f8b7"
     },
     {
       "leaf_count": 95,
       "node_count": 189,
       "root": 127,
-      "topology_sha256": "b2c161fac541f70cb67a976d720390294bbf1b165838f3b2fa35d2eed827f7b3"
+      "topology_blake3": "70d00415360ff312c560a7f7c4a988773c12607f9c4eabc19ebebdf21e5d602e"
     },
     {
       "leaf_count": 96,
       "node_count": 191,
       "root": 127,
-      "topology_sha256": "19168f5533a20cf1e6bbdb90d0661899a13e0747d1289e8ff5c26b160466bb6d"
+      "topology_blake3": "bc9cabd596e8ab2067c325d57d1c5160127378aca0223c076566aae8f4d819d3"
     },
     {
       "leaf_count": 97,
       "node_count": 193,
       "root": 127,
-      "topology_sha256": "7c6067ad35796d7eef07052cf9040adbbac1bc39320b76cc1fbd7af1c281c320"
+      "topology_blake3": "4cd2a5cbfad4e88a0e5f42660f9e6b8fe1fa5dcd54b65d46655942adac46d206"
     },
     {
       "leaf_count": 98,
       "node_count": 195,
       "root": 127,
-      "topology_sha256": "64faef42466357fe97bd768a361e48f440b688b0c49f3595dd77fb8c625c0a69"
+      "topology_blake3": "058c55d6a5c7e7915aeeecd249b892a5bcc9fb265e94d1855066825b9c403ade"
     },
     {
       "leaf_count": 99,
       "node_count": 197,
       "root": 127,
-      "topology_sha256": "096712fcdb7a77e69a8c55e636ca295ee999150b58dc630eb773ed7179b372e0"
+      "topology_blake3": "7394a605e36992cbc5c6f6e58e55ad0aee8a613add259064461f103f5616ef83"
     },
     {
       "leaf_count": 100,
       "node_count": 199,
       "root": 127,
-      "topology_sha256": "180b28a5f61e0516e9c5d7ac8b07d0ebd647f230846ab7d869924bbd3c9c0732"
+      "topology_blake3": "ee9ba7c25d351db90435cff748e597715b000af461caf16c23f8bcc2dcec9c12"
     },
     {
       "leaf_count": 101,
       "node_count": 201,
       "root": 127,
-      "topology_sha256": "d6abd670fc24adc730dd59c76c6219acdb3dbfbfd0ba9e2728d48e4f6554a285"
+      "topology_blake3": "0fe82a3b2da5c1a4bfd356d2a29f0a97eb2b7735f2468bb43d2eb6250df25bbf"
     },
     {
       "leaf_count": 102,
       "node_count": 203,
       "root": 127,
-      "topology_sha256": "da71600419f63e735139f9be5f4256b69b3ed163cad4d9e552cf1707370d694a"
+      "topology_blake3": "aa8c4df4cb36921a1fa8236a4c422f958887e785ef4a6a82cd57360f42408312"
     },
     {
       "leaf_count": 103,
       "node_count": 205,
       "root": 127,
-      "topology_sha256": "f73425f9ee78a47c5d4eb0a891442c56f93c3a2016779a97ca645eb7ec488bc5"
+      "topology_blake3": "a53c0865017f8190ca95e43cd603f34eda06cc3a6d611f928045b2bd2c48e4c0"
     },
     {
       "leaf_count": 104,
       "node_count": 207,
       "root": 127,
-      "topology_sha256": "d59a15f790afc62e18783d3c91fd8f85d839b3c1c30cd31fff37480af400178b"
+      "topology_blake3": "9effa2e6feb67c65bd7188b8b1db9e5edd7abb89c4c1551c4b53175606898521"
     },
     {
       "leaf_count": 105,
       "node_count": 209,
       "root": 127,
-      "topology_sha256": "0bfd149c54d3c67cd559e8ac8001fd9c151b35cbb058f346f1505c9f00a74218"
+      "topology_blake3": "293c809b71137805befdc97eb63089e162bff7872496003c199ae9dfb251ab67"
     },
     {
       "leaf_count": 106,
       "node_count": 211,
       "root": 127,
-      "topology_sha256": "deaab9c629a59a578e7975fbc3f92441cda7074c0de076e2a75e212c95530397"
+      "topology_blake3": "3ca94d26e7f74ec1b2f0c0f87be6a7a12723d4c4af48cbe287825c9093a0b7d5"
     },
     {
       "leaf_count": 107,
       "node_count": 213,
       "root": 127,
-      "topology_sha256": "586ebcb3457f4fb99a0f5bf38351c3dd272be023d4aad640d54312db41e3a889"
+      "topology_blake3": "18064a0e2491e64df797f204197818d19bf460531fbd80adddeb726a07c05a18"
     },
     {
       "leaf_count": 108,
       "node_count": 215,
       "root": 127,
-      "topology_sha256": "c9bba4370600846cd34d1eafbf3f27c34614789b287f76dd4bc8b81da64f6910"
+      "topology_blake3": "406bf57000e577ba38500d4de9bfd6da360029800152d0e6682cc448d181181c"
     },
     {
       "leaf_count": 109,
       "node_count": 217,
       "root": 127,
-      "topology_sha256": "6f5263642a1ca1fb13181e24c1be1e3e88c039a8493bbc4e83dfc32423f688e2"
+      "topology_blake3": "5d81decd0acd843c4d351fab2c2fa5e51af6f476e13bd8eb9245bdf1de339250"
     },
     {
       "leaf_count": 110,
       "node_count": 219,
       "root": 127,
-      "topology_sha256": "8e276474f46d7d063f1ceccb090ebc8ea172a34384bc23b18d82287f8fc4944e"
+      "topology_blake3": "d6477c04b01b5bc87946c4acbe41b3e1f1aa9984870a909f8d2e827e887bf0a3"
     },
     {
       "leaf_count": 111,
       "node_count": 221,
       "root": 127,
-      "topology_sha256": "e634c90b01d41a33dd054e0d111fd45c0a6a206be09a3db7760a94fbb37e3b61"
+      "topology_blake3": "eaa3dead61e0f9dfaf0783b39bd6402d6a9bb0d5039fd792d0eb0a49dce5225c"
     },
     {
       "leaf_count": 112,
       "node_count": 223,
       "root": 127,
-      "topology_sha256": "6a065ed6a3a974a8b9baea29ca3e91bd5f24f195d25e208d41002c91274a8f6c"
+      "topology_blake3": "b077c5cec1cefca8cd145e31903bed64c6800ca17327c051b7581aba44761e1e"
     },
     {
       "leaf_count": 113,
       "node_count": 225,
       "root": 127,
-      "topology_sha256": "e129cf1d07f780e6bf8c1c5c5223d786bb4fa62ba05dcbd208c9e429ae538bea"
+      "topology_blake3": "78d4baef296e40ec6b757c857b098b7d60c93d8804338c68ef6cd4688f3678ad"
     },
     {
       "leaf_count": 114,
       "node_count": 227,
       "root": 127,
-      "topology_sha256": "fa2b7c943f3d5f23adff3ce93fb011cc7488003fe21c8b345205c544258df44d"
+      "topology_blake3": "7d9e2496200f63c648e4e2300f66c07fdfc33f6b40db037511da4e457962e21d"
     },
     {
       "leaf_count": 115,
       "node_count": 229,
       "root": 127,
-      "topology_sha256": "48322a9634b58998867d714b3bf03f69c4f48103def676d8ea384bce61871a90"
+      "topology_blake3": "91ef70000c7000fe20d95b18e3fb4a8978a46afa9c6ae2f203768636ede7b811"
     },
     {
       "leaf_count": 116,
       "node_count": 231,
       "root": 127,
-      "topology_sha256": "1ceb325c1aa24501a0b3fbcaf457cc9ab30c8f3b1334c8ba22f520d3b0fa3e88"
+      "topology_blake3": "c93fc4463124bcb660f71878f0e5459a4fbb92ec7447d615f6b60dc3cca63b2c"
     },
     {
       "leaf_count": 117,
       "node_count": 233,
       "root": 127,
-      "topology_sha256": "dfed5e00a1db6c7cdc01409baf01ff8db6e60f96cf49eca24d74d5470a95c0ed"
+      "topology_blake3": "53ea862aa2acafeccf76bf64fa85efa95f9517fdf484cd07980671b6c4d86e38"
     },
     {
       "leaf_count": 118,
       "node_count": 235,
       "root": 127,
-      "topology_sha256": "7a2464c3116ef0c2524ed1c8e50ae4c1aadcf4ab372d7d0e3cd159cda52d97ba"
+      "topology_blake3": "52cd0b09c83ecef2145fe359335d2b2b33b95b090e2068556141ebe6310fcb47"
     },
     {
       "leaf_count": 119,
       "node_count": 237,
       "root": 127,
-      "topology_sha256": "318f2df887c0668d8d1bbfae14fdedeaccc6669e5da1e2a4c05a4ac06109ac86"
+      "topology_blake3": "20fa9eecf1ca185522032ea86bb1372bc4531402c1ec3cb4a1a77e811049cdaa"
     },
     {
       "leaf_count": 120,
       "node_count": 239,
       "root": 127,
-      "topology_sha256": "0788f60dfe35f82f0711393a5ea6ce178407541ef4a356f9afe73f628e374de3"
+      "topology_blake3": "f9b0ba32db4574296c24e946fe12de9bb018f5074efd218718bd9c4b17f4b041"
     },
     {
       "leaf_count": 121,
       "node_count": 241,
       "root": 127,
-      "topology_sha256": "4e2d4126923f48c4836b5d353653dbe15d55a191450410fe7c89c04ad8d308ff"
+      "topology_blake3": "53be267b2746dc5aa3dc5215d737d81dbaac6943e538c4d90138bb6dc7105155"
     },
     {
       "leaf_count": 122,
       "node_count": 243,
       "root": 127,
-      "topology_sha256": "c891b446123e36d41c3c0c602fbec083651ad56423c9bb0fc31b1872251a54aa"
+      "topology_blake3": "32ee6f65974dd2609368f7461d18d1c7c70ca05cbc6b3f048df40b4287c94c80"
     },
     {
       "leaf_count": 123,
       "node_count": 245,
       "root": 127,
-      "topology_sha256": "a860450b7460660121be244b8bb1940d85836cc73a95eb0b6ca4bcba5554a230"
+      "topology_blake3": "4ab30b29f56ffffe5f04cff957930a8483b6b03adae757c56b3858c137fd8d11"
     },
     {
       "leaf_count": 124,
       "node_count": 247,
       "root": 127,
-      "topology_sha256": "a6c1f100f0600f4839a2cbe757b66f3f6b5af09991bc543bd53e535a86285229"
+      "topology_blake3": "eda83d5368c927e3bc05973ce75fed38b0e5cfc105336e7948c35d95398189b5"
     },
     {
       "leaf_count": 125,
       "node_count": 249,
       "root": 127,
-      "topology_sha256": "77b1179ddcac66c39795056fc886ab9064b6699b700fed1683d28c21ca0881c7"
+      "topology_blake3": "5cffc1854d7d4b97aef610387c4496cfb5c9bdac8c0ded6da791a1c5618f8b81"
     },
     {
       "leaf_count": 126,
       "node_count": 251,
       "root": 127,
-      "topology_sha256": "957a59903b6d66cc7132acf99664ed479f259871e8f245651738d1ef530ad591"
+      "topology_blake3": "406245cf355f2311baf6e19a302e46f73fa2bd8432d7f2b20810e15ea6b6cf63"
     },
     {
       "leaf_count": 127,
       "node_count": 253,
       "root": 127,
-      "topology_sha256": "cdf732bf21208a156e6f9fc3e453f4170adc02b22436518ea1defd5d5d747a1b"
+      "topology_blake3": "de3c0334234ff7134b94ffe853cfea0ca594e57f3080f6bfc039eb7cfe6c1d74"
     },
     {
       "leaf_count": 128,
       "node_count": 255,
       "root": 127,
-      "topology_sha256": "49732116219276bd0ac6a0272c0803ae30c542377d293cc545df90bcc87d83c2"
+      "topology_blake3": "390dbc292cebddcacd9d709809ccdb26e4ccdd8fd75b488fa0372cf195352438"
     }
   ],
   "leaf_signature_guards": {
@@ -826,82 +826,82 @@
     {
       "leaf_capacity": 1,
       "node_count": 1,
-      "paths_sha256": "f897cf807fed3c1a4f5b6127b65f2a2bf8ae3a1d420691c0b66bec22bcfc99b4",
+      "paths_blake3": "d2d8cda309deffa7c3eb74be54722bc149202d9aa5aff8dbf97fcd748c0558ff",
       "root": 0,
-      "tree_sha256": "885134631fff84f8ab210d8869a5f75d4589f84108a0a86da3ca95a2620d5743",
-      "vector_sha256": "b5f2bdbf23363b696cb1c3022c4ce739d04803647b1a9939c4f4dd8c2853361b"
+      "tree_blake3": "0d1fa309bfd67001ef3e55130acee0d15b0bebe0699b0f550df0b336745a4a65",
+      "vector_blake3": "dbb585ee913a6b3b3876fb4ef9837bf21ec6b57401157513b157f86d2cc5af2d"
     },
     {
       "leaf_capacity": 2,
       "node_count": 3,
-      "paths_sha256": "b5ffa8013205b3b87f3812662fb40e923e6c7682ba21f495c55aa0c0af931fe7",
+      "paths_blake3": "59d3678dc476c604a1f95a866ac859b2b2f21ed9a9c298225ff0bcccb85def96",
       "root": 1,
-      "tree_sha256": "e4bd918b8899b92ff85431b38536d862b7f8abb908edfa96b6c0e62f62d199a4",
-      "vector_sha256": "7a82211e0693a5375b804c229f9daf2fa5b7940b36df6e6ced781ca5300d7f4b"
+      "tree_blake3": "bccb7f6bb7288f47170c0117d9d6e795c733d5941783b401dc54f6340c8ee5de",
+      "vector_blake3": "8967d771fc047f9109866b9bad3e37a6f023a50145d6ab5533f733afbde26846"
     },
     {
       "leaf_capacity": 4,
       "node_count": 7,
-      "paths_sha256": "23f207c5a48bdb76a9f9256522916d0da2a29fb2a5bda1dab94ce4b28b30b1ce",
+      "paths_blake3": "e21285a6d2840daf66ec310995b450c81c96427912d527e6db3ecf68fa746334",
       "root": 3,
-      "tree_sha256": "7107669feaeab3fa238d133264d96596d6dab8c7977436c283829e2a19dbdc8f",
-      "vector_sha256": "a35645840511a96570c64ccd990d04368939a1d48d9d490d17b65792f33b5a92"
+      "tree_blake3": "5276fc65cea75108fbd0eb1a9f2962b03d8b03e33df98b052c772946ffc05f0e",
+      "vector_blake3": "884045464f1a09bffd7b4ae7e29df2157107325ca5fe8eca6f7316204ad1685e"
     },
     {
       "leaf_capacity": 8,
       "node_count": 15,
-      "paths_sha256": "1ddf88cb87051891d6261626746612f71fa0ecaa59e5320f54fa438d5c227d20",
+      "paths_blake3": "b4a8b53f4dd189e1ac8f1eb5b3e16e34678e1fbc6f10527d51eb1934fa66b96d",
       "root": 7,
-      "tree_sha256": "72f32ad5f7aa896c755607454ca10f66a79e391b10be1d84f3f4b8d3fdac8ab1",
-      "vector_sha256": "ad4361c89c3e9e4b93d99f893f58ba075d5cf4b420058a764d2e3c2a22c25ce8"
+      "tree_blake3": "63001a44c55ce0f6b3b71f523814c0a489dc35952fb08a5e62572321f55a1d69",
+      "vector_blake3": "ea3b97e7ce233a069ffecfeab61cc6a1e10f0131ae31ffe7687030678e664b27"
     },
     {
       "leaf_capacity": 16,
       "node_count": 31,
-      "paths_sha256": "e29c0e5ea8fe839422600c83e2f72c9566690f4dc8a9db8ded25edc72f84ba2c",
+      "paths_blake3": "3198cd335356f2dd0c5983349d40c78b206b0821b26ba162707ef5321d2f9107",
       "root": 15,
-      "tree_sha256": "1098b9a2eeb91ad60138eeff5a3fae23393ec52d2b0fb1e4c604e07147c65721",
-      "vector_sha256": "7d6e1c190285feb1c9a29fc66602dff7119269845f529a1c502c2658179d1f24"
+      "tree_blake3": "f49f8fff5337d55a73e6b7114fd22c329d9929e60b737dd6c66debd9880268a2",
+      "vector_blake3": "5f3d3b9646a1e76fec95d559cd6a08b1785abb739d44676d5fb504f96856e6e7"
     },
     {
       "leaf_capacity": 32,
       "node_count": 63,
-      "paths_sha256": "cccef43f90d057a97446698e39f64b3737f87f67b62c45e605d929c18e9b1f45",
+      "paths_blake3": "dceb2c3f2f521d5448323d381bd213483027ee8863186cf829b155a9d7d5036e",
       "root": 31,
-      "tree_sha256": "00f152ab5f090cf7fbafa7377fef29a642c582b14531c6aedec0e39b394ed80e",
-      "vector_sha256": "96069df297f7bbcba0b6720bff0b115b395daaf3b761ca416fbf4b3ddb3f62d6"
+      "tree_blake3": "7962d1dd2e811ae82827a15938a470828b548f3316ed9412259970c680357b51",
+      "vector_blake3": "b54dac0dda08e48e327979f41f47bfd4fd798c2135b793c5525366901784b6c1"
     },
     {
       "leaf_capacity": 64,
       "node_count": 127,
-      "paths_sha256": "a9c942c02b72c15ae8b3897670d9d3396b14c65831f74677d5d4c37b9f362ac1",
+      "paths_blake3": "cc063d26c1252e981058c06d7507d6d8b554b60fab29685f4005c0f0665cecd4",
       "root": 63,
-      "tree_sha256": "45a2d3d8f9326b36e503b445508df921abff42dd5d19392871eaac3f8134312a",
-      "vector_sha256": "b1560989778ec22c4242fb04853b10075ad093d3e0da7d2082ebb1421f692071"
+      "tree_blake3": "efbc7c9997bab5ea82ae237277958a1746ea47cb3f70632efe677e224ced321e",
+      "vector_blake3": "ff6738acac77f4d54c837756ddb9075d0795f3a51a043060c53ca2cc4805c16e"
     },
     {
       "leaf_capacity": 128,
       "node_count": 255,
-      "paths_sha256": "0d68bfbd3077bcf6cf2b8cf68f33a0b60ef1f252362dcea2dafb9905e043a385",
+      "paths_blake3": "80767d5a996123b4eb007d02ca0cc84e2f21cf733629efdefb7c1acf02786d26",
       "root": 127,
-      "tree_sha256": "49732116219276bd0ac6a0272c0803ae30c542377d293cc545df90bcc87d83c2",
-      "vector_sha256": "6c31e045fe5bb36a4131ad26090158f086236ad78d8cd7c79c7f7c7fd52a2135"
+      "tree_blake3": "390dbc292cebddcacd9d709809ccdb26e4ccdd8fd75b488fa0372cf195352438",
+      "vector_blake3": "cf601f3bb3808ab12bfd8538705f23d2993bac8853adde502389ac13fe892d1c"
     },
     {
       "leaf_capacity": 256,
       "node_count": 511,
-      "paths_sha256": "46b98e826affb1d8901beaee236de3e2fb3e92daba4316bf2b22fb4b837a156b",
+      "paths_blake3": "738ccefa3e1a02ac8f76d2f0458e4ff82ee6e3c63a83697574227e00ed5b47f7",
       "root": 255,
-      "tree_sha256": "e94b543f1f2c131648264905148f7f60b0e2cbc76b06e8670710560ffcf92d39",
-      "vector_sha256": "ee0c9f937eb6b48742be09c9814791bdfc2f55219249a6d1c922fe9da7a213bf"
+      "tree_blake3": "0886397e62574aa836ff1fe40be259a40436055012e356a825a58fa602326fa8",
+      "vector_blake3": "67b70a74c33250c1c14444430bd156a30cddd8812da156cd28872cc6e65555a4"
     },
     {
       "leaf_capacity": 512,
       "node_count": 1023,
-      "paths_sha256": "0beb4e2dd46d72d192345dadb3db64f2904a2f42d7cbbcb24e0a5d7a95132084",
+      "paths_blake3": "dfe4974ac4cb2c526c77c9f8275ad76bc14ae8900878af969c73c4bc2d830142",
       "root": 511,
-      "tree_sha256": "7c3ea666a033c4b001c36b41883d88da4a981904e75ea60cb3d918b081e98550",
-      "vector_sha256": "cc35dad139d3a0375000f43e351c63a37dc14ce3db4b206454b1345fb2bd2501"
+      "tree_blake3": "7ece9d3deed5baec0fd0894a53e9e2cf41d9567e3c6be8df4166d70b9a6aed7c",
+      "vector_blake3": "5db75a65417224a16b3f046c1a9de0a6c0a50ee56548ad5b0317d787a6dd7ef1"
     }
   ],
   "resolution_cost": {
@@ -3987,8 +3987,8 @@
     }
   ],
   "tree_math_fixture": {
-    "file": "dmls_tree_math_vectors.json",
-    "sha256": "c19ebe0957f03b447c5d133feffcdcd42e2f84a9bc1dd800e61deb41208c240f"
+    "blake3": "11d3ea41fc2d3b11acddd29a8ea46ec555b0d87fdf5fd52a687c714d723be0d5",
+    "file": "dmls_tree_math_vectors.json"
   },
   "tree_math_source": "mlswg/mls-implementations tree-math vectors",
   "version": 1,

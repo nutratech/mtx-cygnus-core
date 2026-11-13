@@ -2,12 +2,11 @@
 //!
 //! A link is `body ‖ trailer`. The digest covers only the body, so signature
 //! encoding can never change an identity. All signatures are verified under
-//! ZIP-215 rules (via `ed25519-consensus`).
+//! ZIP-215 rules (via `ed25519-zebra`).
 
 use crate::{commitment, principal::Principal, Error, LINK_TAG};
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD as B64, Engine};
-use ed25519_consensus::{Signature, SigningKey, VerificationKey};
-use sha2::{Digest, Sha256};
+use ed25519_zebra::{Signature, SigningKey, VerificationKey};
 
 const ZERO: [u8; 32] = [0; 32];
 
@@ -203,6 +202,7 @@ impl Body {
 struct Reader<'a>(&'a [u8]);
 
 impl<'a> Reader<'a> {
+    /// Read exactly `n` bytes and advance the reader.
     fn take(&mut self, n: usize) -> Result<&'a [u8], Error> {
         if self.0.len() < n {
             return Err(Error::Truncated);
@@ -211,15 +211,19 @@ impl<'a> Reader<'a> {
         self.0 = b;
         Ok(a)
     }
+    /// Read one byte.
     fn u8(&mut self) -> Result<u8, Error> {
         Ok(self.take(1)?[0])
     }
+    /// Read a big-endian `u16`.
     fn u16(&mut self) -> Result<u16, Error> {
         Ok(u16::from_be_bytes(self.take(2)?.try_into().expect("2")))
     }
+    /// Read a 32-byte array.
     fn arr(&mut self) -> Result<[u8; 32], Error> {
         Ok(self.take(32)?.try_into().expect("32"))
     }
+    /// Read `n` ASCII bytes as a string.
     fn ascii(&mut self, n: usize, field: &'static str) -> Result<String, Error> {
         let s = self.take(n)?;
         if !s.is_ascii() {
@@ -287,10 +291,10 @@ impl Link {
         B64.encode(self.to_bytes())
     }
 
-    /// `D_h = SHA-256(body)`.
+    /// `D_h = BLAKE3(body)`.
     #[must_use]
     pub fn digest(&self) -> [u8; 32] {
-        Sha256::digest(&self.body_bytes).into()
+        *blake3::hash(&self.body_bytes).as_bytes()
     }
 
     /// The principal this link belongs to: genesis digest, or `root`.
@@ -340,7 +344,7 @@ impl Link {
     /// Propagates [`Body::encode`] errors.
     pub fn sign_successor(body: Body, rotation: &SigningKey) -> Result<Self, Error> {
         let body_bytes = body.encode()?;
-        let key = rotation.verification_key().to_bytes();
+        let key = <[u8; 32]>::from(rotation.verification_key());
         let sig = rotation.sign(&[LINK_TAG, &body_bytes, &key].concat());
         let trailer = [key.as_slice(), &sig.to_bytes()].concat();
         Ok(Self {
@@ -428,6 +432,7 @@ pub fn verify_slice<'a>(parent: &'a Link, slice: &'a [Link]) -> Result<&'a Link,
     Ok(tip)
 }
 
+/// Verify an Ed25519 signature over `msg` with a 32-byte public key.
 pub(crate) fn verify(key: &[u8], msg: &[u8], sig: &[u8]) -> Result<(), Error> {
     let vk = VerificationKey::try_from(key).map_err(|_| Error::PublicKey)?;
     let sig = Signature::try_from(sig).map_err(|_| Error::Signature)?;

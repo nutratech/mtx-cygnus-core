@@ -2,15 +2,21 @@
 
 These files are copied verbatim from the proposal repository so the
 conformance tests do not depend on a sibling checkout or on the network.
+The table below lists the three PID vector files. The broader
+`provenance.json` manifest additionally hashes the DMLS fixtures
+(`tests/vectors/dmls/`) and the reference models (`tools/reference_models/`),
+which are copied verbatim from the same `proposals/` directory at the same
+commit. Only `tools/reference_models/check.py` and `requirements.txt` are
+maintained here.
 
 | File                   | Source path                      | SHA-256                                                            |
 | ---------------------- | -------------------------------- | ------------------------------------------------------------------ |
-| `pid_vectors.json`     | `proposals/pid_vectors.json`     | `d8a66c5fbd28607a58e997ee8203a4bb402f75d71d5d2dbbe1db1b2f63451dbf` |
-| `pid_pdu_vectors.json` | `proposals/pid_pdu_vectors.json` | `a17c3ababc1716f6cba61f3e7a3648aa927082f75228c6587fd86a843360a93a` |
+| `pid_vectors.json`     | `proposals/pid_vectors.json`     | `2f51dc3f6efe73858cb4af13e6c3feff270f620d029b5faeb39fcdec786ce432` |
+| `pid_pdu_vectors.json` | `proposals/pid_pdu_vectors.json` | `54923a7100e9e0566cb46c0d2557a35f017a78bfdbe69ba7702368789034376d` |
 | `pid_known_gaps.json`  | `proposals/pid_known_gaps.json`  | `61159a3aac4536fc85d62c86a5acbda0d438c05920b5d60ee2a678d42c9cc9cb` |
 
 - Source: `https://gitlab.com/wombat-foundation/proposals` (or the
-  `../proposals` checkout), commit `d85eafda527a89c021103f44814d7e57513a0192`.
+  `../proposals` checkout), commit `4e14a372dbfd5fb5f2aad0aa2a6c1275b6739b19`.
 - License: Apache License 2.0. See `LICENSE-APACHE`, copied from the source
   repository's `LICENSE`.
 - Regenerating: the vectors are produced by `proposals/pid_ref.py` and

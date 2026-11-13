@@ -3,9 +3,12 @@
 use cygnus_core::bundle::TipBundle;
 use rezzy_json::Value;
 
+fn fixture() -> Value {
+    Value::parse(include_str!("vectors/pid_pdu_vectors.json")).unwrap()
+}
+
 fn p1_events() -> Vec<(String, Value)> {
-    Value::parse(include_str!("vectors/pid_pdu_vectors.json"))
-        .unwrap()
+    fixture()
         .get("events")
         .and_then(Value::as_array)
         .unwrap()
@@ -24,10 +27,16 @@ fn p1_events() -> Vec<(String, Value)> {
 }
 
 fn bundle() -> TipBundle {
+    let events = p1_events();
     TipBundle {
-        room_id: "!30zU4L44nR8z-TbH4R7So2CfI9UJzMYnMhzY9NKHXgY".to_owned(),
-        forward_extremities: vec!["$BXkrdLiSP578J-TcBTJKLVTHoYgEhN33tOiDFORGzMo".to_owned()],
-        events: p1_events(),
+        room_id: fixture()
+            .get("room_id")
+            .and_then(Value::as_str)
+            .unwrap()
+            .to_owned(),
+        // The last fixture event (the message via B) is the only extremity.
+        forward_extremities: vec![events.last().unwrap().0.clone()],
+        events,
     }
 }
 
@@ -37,18 +46,16 @@ fn verifies_p1_bundle_ids_room_create_and_extremity() {
     assert_eq!(verified.room_id(), bundle().room_id);
     assert_eq!(verified.forward_extremities().len(), 1);
     assert_eq!(verified.create().room_id, verified.room_id());
-    assert!(verified
-        .event("$C8i5Ge_hS22gMYJ787v2i-SpIKe2xT5-YrXrLhJVCVQ")
-        .is_some());
+    // Alice's join.
+    assert!(verified.event(&p1_events()[4].0).is_some());
 }
 
 #[test]
 fn client_can_resolve_each_event_id_it_intends_to_cite() {
     let verified = bundle().verify().unwrap();
-    let cited = vec![
-        "$30zU4L44nR8z-TbH4R7So2CfI9UJzMYnMhzY9NKHXgY".to_owned(),
-        "$fi3T31nHNiiYBgbqjRI6dSCQvMYG6gBQTYxFVoOFJLY".to_owned(),
-    ];
+    // The create and server A's h=1 epoch.
+    let events = p1_events();
+    let cited = vec![events[0].0.clone(), events[3].0.clone()];
     assert_eq!(verified.require_events(&cited).unwrap().len(), 2);
     assert!(verified.require_events(&["$missing".to_owned()]).is_err());
 }

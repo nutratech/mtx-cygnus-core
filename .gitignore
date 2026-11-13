@@ -21,3 +21,7 @@ __pycache__
 .env.*
 .tmp/
 /*.txt
+cygnus-wasm/pkg/
+
+# top-level stuff
+/pr.*.md

@@ -17,7 +17,7 @@ format: ##H Format code
 
 .PHONY: fix
 fix: ##H Apply auto-fixes with clippy
-	$(CARGO) clippy --fix --allow-dirty --allow-staged --allow-no-vcs --all-targets
+	$(CARGO) clippy --fix --allow-dirty --allow-staged --allow-no-vcs --workspace --all-targets
 
 .PHONY: lint
 lint: ##H Clippy, warnings are errors
@@ -26,6 +26,17 @@ lint: ##H Clippy, warnings are errors
 .PHONY: test
 test: ##H Run tests
 	$(CARGO) test --workspace --all-features
+
+.PHONY: cov
+cov: ##H Test coverage (native crates; needs cargo-llvm-cov); HTML in target/llvm-cov/html
+	$(CARGO) llvm-cov --workspace --exclude cygnus-wasm --all-features --no-report
+	$(CARGO) llvm-cov report -p cygnus-core -p cygnus-dmls --html
+	$(CARGO) llvm-cov report -p cygnus-core -p cygnus-dmls --summary-only
+
+.PHONY: build
+build: ##H Build the workspace and the browser wasm package
+	$(CARGO) build --release --workspace --all-targets --all-features
+	$(MAKE) wasm
 
 .PHONY: check
 check: ##H Cargo check and code dupe
@@ -43,3 +54,25 @@ typos: ##H Spell-check
 .PHONY: clean
 clean: ##H Remove build artifacts
 	$(CARGO) clean
+	rm -rf cygnus-wasm/pkg
+
+.PHONY: extras/cloc
+extras/cloc: ##H Count lines of code (excludes vendored vectors and reference models)
+	cloc --vcs=git . --fmt=2 --exclude-dir=vectors,reference_models
+
+.PHONY: wasm
+wasm: ##H Build the browser verifier (needs wasm-pack)
+	wasm-pack build cygnus-wasm --release --target web --out-dir pkg
+
+# DIHYDROGEN_PATH is the Hydrogen checkout, set in .env (gitignored) or the
+# environment; WASM_DEST can still be overridden on the command line.
+-include .env
+DIHYDROGEN_PATH ?= ../hydrogen
+WASM_DEST ?= $(DIHYDROGEN_PATH)/src/matrix/cygnus/wasm
+WASM_FILES := cygnus_wasm.js cygnus_wasm.d.ts cygnus_wasm_bg.wasm
+
+.PHONY: install
+install: wasm ##H Build the wasm package and copy it into $DIHYDROGEN_PATH (from .env)
+	@test -d "$(WASM_DEST)" || { echo "WASM_DEST=$(WASM_DEST) does not exist; set DIHYDROGEN_PATH in .env"; exit 1; }
+	cp $(addprefix cygnus-wasm/pkg/,$(WASM_FILES)) "$(WASM_DEST)/"
+	@echo "Installed cygnus-wasm $$(git rev-parse --short HEAD)$$(git diff --quiet HEAD || echo -dirty) into $(WASM_DEST)"

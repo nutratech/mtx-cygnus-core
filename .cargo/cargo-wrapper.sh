@@ -33,6 +33,13 @@ done
 # features the target cannot execute, and mold is not a valid linker for every
 # target (e.g. Mach-O).
 #
+# Native codegen is opt-in in CI. Proc macros (e.g. wasm-bindgen's) are host
+# dylibs loaded by rustc even when building for wasm. Caching those dylibs
+# across CI runners with different microarchitectures makes rustc die with
+# SIGILL when it loads an instruction the current runner does not implement.
+# Keep CI builds on the portable baseline; developers can still opt in with
+# CYGNUS_NATIVE=1.
+#
 # A global `RUSTFLAGS="-C target-cpu=native"` (e.g. from a direnv `.env`) is
 # applied by cargo to *every* target, including cross targets, and cannot be
 # removed by config -- cargo appends RUSTFLAGS to the rustc command line, so
@@ -46,6 +53,14 @@ if [[ -n "$HOST_TRIPLE" && "$TARGET_TRIPLE" == "$HOST_TRIPLE" ]]; then
 	IS_HOST=1
 fi
 
+# Local checkouts keep native codegen by default; CI is portable unless the
+# caller explicitly opts back in.
+if [[ -n "${CI:-}" ]]; then
+	USE_NATIVE="${CYGNUS_NATIVE:-0}"
+else
+	USE_NATIVE="${CYGNUS_NATIVE:-1}"
+fi
+
 # These flags must come *after* the passthrough args ("$@"), not before: when
 # invoked through clippy-driver, $RUSTC is clippy-driver itself and the real
 # rustc path is the first element of "$@" -- it must immediately follow, or
@@ -55,7 +70,9 @@ if ((IS_HOST)); then
 	if command -v mold >/dev/null 2>&1; then
 		TARGET_FLAGS+=("-C" "link-arg=-fuse-ld=mold")
 	fi
-	TARGET_FLAGS+=("-C" "target-cpu=native")
+	if [[ "$USE_NATIVE" == "1" ]]; then
+		TARGET_FLAGS+=("-C" "target-cpu=native")
+	fi
 	exec "${CMD[@]}" "$@" "${TARGET_FLAGS[@]}"
 fi
 

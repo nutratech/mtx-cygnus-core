@@ -1,0 +1,28 @@
+[package]
+name = "cygnus-wasm"
+version = "0.0.1"
+edition = "2021"
+rust-version = "1.89"
+authors = ["Shane Jaroch <shane@nutra.tk>"]
+license = "MIT OR Apache-2.0"
+repository = "https://git.nutra.tk/gamesguru/cygnus-core"
+description = "WebAssembly bindings for cygnus-core: verification and client-side signing for browser clients."
+publish = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+base64 = "0.23"
+cygnus-core = { path = ".." }
+cygnus-dmls = { path = "../cygnus-dmls" }
+ed25519-zebra = { version = "5", default-features = false }
+rezzy-json = { git = "https://gitlab.com/wombat-foundation/rezzy.git", branch = "dev" }
+wasm-bindgen = "0.2"
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3"
+
+[lints.rust]
+unsafe_code = "forbid"
+missing_docs = "warn"

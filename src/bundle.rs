@@ -9,11 +9,11 @@ use crate::{
     Error, Principal,
 };
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD as B64, Engine};
-use sha2::{Digest, Sha256};
+
 use std::collections::BTreeMap;
 
 /// Unstable room-version identifier used by the current MSC00FC vectors.
-pub const ROOM_VERSION: &str = "tk.nutra.cygnus.1";
+pub const ROOM_VERSION: &str = "tk.nutra.cygnus.12";
 
 /// A full client-server tip bundle as delivered by sync or the tip-bundle API.
 /// Event IDs are separate because Matrix reference IDs are not part of the
@@ -164,6 +164,7 @@ impl VerifiedTipBundle {
     }
 }
 
+/// Validate that `prev_events` and `auth_events` are arrays of strings.
 fn validate_event_references(object: &rezzy_json::Object) -> Result<(), Error> {
     for field in ["prev_events", "auth_events"] {
         if let Some(value) = object.get(field) {
@@ -336,24 +337,112 @@ pub struct ActiveAncestor {
 }
 
 /// A structurally and cryptographically verified identity epoch.
+///
+/// Fields are private: values come only from [`VerifiedEpoch::active`] and
+/// [`VerifiedEpoch::burned`], so a caller cannot fabricate a verified chain.
 #[derive(Debug, Clone)]
 pub struct VerifiedEpoch {
-    /// Event ID used only for deterministic tie-breaking.
+    event_id: String,
+    principal: Principal,
+    status: EpochStatus,
+    links: Vec<Link>,
+    fork_height: Option<u64>,
+    claim: Vec<Link>,
+    branches: Option<(Link, Link)>,
+    ancestors: Vec<ActiveAncestor>,
+}
+
+/// Raw epoch fields for tests that need states the verifiers cannot reach.
+/// Only built with the `test-support` feature; never enable it in production.
+#[cfg(feature = "test-support")]
+#[derive(Debug, Clone)]
+#[allow(missing_docs)]
+pub struct EpochParts {
     pub event_id: String,
-    /// Principal whose epoch is being advanced or burned.
     pub principal: Principal,
-    /// Active or burned event form.
     pub status: EpochStatus,
-    /// Full active chain, or the burn's anchored active chain.
     pub links: Vec<Link>,
-    /// Burn fork height; absent for active epochs.
     pub fork_height: Option<u64>,
-    /// The chain claim through height `fork_height - 1` for burns.
     pub claim: Vec<Link>,
-    /// The two conflicting links for burns.
     pub branches: Option<(Link, Link)>,
-    /// Prior active events on the auth chain, oldest first.
     pub ancestors: Vec<ActiveAncestor>,
+}
+
+#[cfg(feature = "test-support")]
+impl VerifiedEpoch {
+    /// Build an epoch without verifying anything. Test use only.
+    #[must_use]
+    pub fn from_parts_unchecked(parts: EpochParts) -> Self {
+        Self {
+            event_id: parts.event_id,
+            principal: parts.principal,
+            status: parts.status,
+            links: parts.links,
+            fork_height: parts.fork_height,
+            claim: parts.claim,
+            branches: parts.branches,
+            ancestors: parts.ancestors,
+        }
+    }
+
+    /// Take the fields back out. Test use only.
+    #[must_use]
+    pub fn into_parts(self) -> EpochParts {
+        EpochParts {
+            event_id: self.event_id,
+            principal: self.principal,
+            status: self.status,
+            links: self.links,
+            fork_height: self.fork_height,
+            claim: self.claim,
+            branches: self.branches,
+            ancestors: self.ancestors,
+        }
+    }
+}
+
+impl VerifiedEpoch {
+    /// Event ID of the epoch event.
+    #[must_use]
+    pub fn event_id(&self) -> &str {
+        &self.event_id
+    }
+
+    /// Principal whose epoch is advanced or burned.
+    #[must_use]
+    pub fn principal(&self) -> Principal {
+        self.principal
+    }
+
+    /// Active or burned form.
+    #[must_use]
+    pub fn status(&self) -> EpochStatus {
+        self.status
+    }
+
+    /// Full active chain, or the burn's anchored active chain.
+    #[must_use]
+    pub fn links(&self) -> &[Link] {
+        &self.links
+    }
+
+    /// Burn fork height; `None` for active epochs.
+    #[must_use]
+    pub fn fork_height(&self) -> Option<u64> {
+        self.fork_height
+    }
+
+    /// Chain claim through height `fork_height - 1` for burns.
+    #[must_use]
+    pub fn claim(&self) -> &[Link] {
+        &self.claim
+    }
+
+    /// The two conflicting links of a burn.
+    #[must_use]
+    pub fn branches(&self) -> Option<&(Link, Link)> {
+        self.branches.as_ref()
+    }
 }
 
 /// Owned result of Pass 0. A freeze may select an auth-chain ancestor that is
@@ -373,6 +462,7 @@ pub struct Pass0Resolution {
 }
 
 impl Pass0Resolution {
+    /// Snapshot the resolution fields from a verified epoch.
     fn from_epoch(epoch: &VerifiedEpoch) -> Self {
         Self {
             event_id: epoch.event_id.clone(),
@@ -522,7 +612,7 @@ impl VerifiedEpoch {
         }
         let parent_bytes = decode_b64(string(content.get("parent"))?)?;
         let parent_body = Body::parse_exact(&parent_bytes)?;
-        let parent_digest: [u8; 32] = Sha256::digest(&parent_bytes).into();
+        let parent_digest: [u8; 32] = *blake3::hash(&parent_bytes).as_bytes();
         let parent = Link {
             body: parent_body,
             body_bytes: parent_bytes,
@@ -754,6 +844,7 @@ pub fn verify_epoch_custodian_signature(
     verify_custodian_signature(event, &principal.to_id(), tip.body.height, online_key)
 }
 
+/// Check that epoch content restates the tip link's height, digest and payload.
 fn check_restatements(content: &rezzy_json::Object, kind: Kind, tip: &Link) -> Result<(), Error> {
     if content.get("height").and_then(rezzy_json::Value::as_u64) != Some(tip.body.height) {
         return Err(Error::Epoch("height does not match link tip"));
@@ -806,10 +897,12 @@ fn check_restatements(content: &rezzy_json::Object, kind: Kind, tip: &Link) -> R
     Ok(())
 }
 
+/// Parse a genesis-first link chain of `kind`.
 fn parse_chain(value: Option<&rezzy_json::Value>, kind: Kind) -> Result<Vec<Link>, Error> {
     parse_link_slice(value, kind, None)
 }
 
+/// Parse a link slice, verifying it from `parent` or from genesis.
 fn parse_link_slice(
     value: Option<&rezzy_json::Value>,
     kind: Kind,
@@ -840,12 +933,14 @@ fn parse_link_slice(
     Ok(links)
 }
 
+/// Extract a required string field from epoch content.
 fn string(value: Option<&rezzy_json::Value>) -> Result<&str, Error> {
     value
         .and_then(rezzy_json::Value::as_str)
         .ok_or(Error::Epoch("required string field is missing"))
 }
 
+/// Decode canonical base64url bytes.
 fn decode_b64(value: &str) -> Result<Vec<u8>, Error> {
     let bytes = B64.decode(value).map_err(|_| Error::Base64)?;
     if B64.encode(&bytes) != value {
@@ -854,10 +949,12 @@ fn decode_b64(value: &str) -> Result<Vec<u8>, Error> {
     Ok(bytes)
 }
 
+/// Whether `prefix` is a prefix of `value`.
 fn is_prefix<T: Eq>(prefix: &[T], value: &[T]) -> bool {
     prefix.len() <= value.len() && value[..prefix.len()] == *prefix
 }
 
+/// Find the longest common prefix of the maximal chains and its height.
 fn divergence(chains: &[Vec<[u8; 32]>]) -> (Vec<[u8; 32]>, u64) {
     let maximal: Vec<&Vec<[u8; 32]>> = chains
         .iter()
@@ -881,6 +978,7 @@ fn divergence(chains: &[Vec<[u8; 32]>]) -> (Vec<[u8; 32]>, u64) {
     (maximal[0][..height].to_vec(), height as u64)
 }
 
+/// Whether a burn is live relative to the common chain and threshold.
 fn burn_is_live(burn: &VerifiedEpoch, common: &[[u8; 32]], threshold: u64, linear: bool) -> bool {
     let Some(fork_height) = burn.fork_height else {
         return false;

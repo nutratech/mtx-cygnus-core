@@ -2,12 +2,12 @@
 
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD as B64, Engine};
 use cygnus_core::{
-    bundle::{EpochStatus, VerifiedEpoch},
+    bundle::{EpochParts, EpochStatus, VerifiedEpoch},
     commitment, envelope,
     link::{Body, Kind, Link, Payload},
     Principal,
 };
-use ed25519_consensus::SigningKey;
+use ed25519_zebra::SigningKey;
 use rezzy_json::Value;
 
 fn key(seed: u8) -> SigningKey {
@@ -42,7 +42,7 @@ fn chains() -> (Vec<Link>, Vec<SigningKey>) {
         [0; 32],
         0,
         [0; 32],
-        commitment(&keys[0].verification_key().to_bytes()),
+        commitment(&<[u8; 32]>::from(keys[0].verification_key())),
         custodian,
         "alice",
     ))
@@ -53,7 +53,7 @@ fn chains() -> (Vec<Link>, Vec<SigningKey>) {
             root,
             1,
             genesis.digest(),
-            commitment(&keys[1].verification_key().to_bytes()),
+            commitment(&<[u8; 32]>::from(keys[1].verification_key())),
             custodian,
             "alice",
         ),
@@ -65,7 +65,7 @@ fn chains() -> (Vec<Link>, Vec<SigningKey>) {
             root,
             2,
             h1.digest(),
-            commitment(&keys[2].verification_key().to_bytes()),
+            commitment(&<[u8; 32]>::from(keys[2].verification_key())),
             custodian,
             "alice",
         ),
@@ -75,6 +75,8 @@ fn chains() -> (Vec<Link>, Vec<SigningKey>) {
     (vec![genesis, h1, h2], keys)
 }
 
+/// Create a sibling user link at the parent's next height with a distinct
+/// display name chosen by `nonce`.
 fn sibling(parent: &Link, signer: &SigningKey, nonce: u8) -> Link {
     let next = key(0x80 + nonce);
     let custodian = match &parent.body.payload {
@@ -86,7 +88,7 @@ fn sibling(parent: &Link, signer: &SigningKey, nonce: u8) -> Link {
             parent.principal().root,
             parent.body.height + 1,
             parent.digest(),
-            commitment(&next.verification_key().to_bytes()),
+            commitment(&<[u8; 32]>::from(next.verification_key())),
             custodian,
             if nonce % 2 == 0 { "alice" } else { "alice-alt" },
         ),
@@ -96,7 +98,7 @@ fn sibling(parent: &Link, signer: &SigningKey, nonce: u8) -> Link {
 }
 
 fn active(id: &str, links: Vec<Link>) -> VerifiedEpoch {
-    VerifiedEpoch {
+    VerifiedEpoch::from_parts_unchecked(EpochParts {
         event_id: id.to_owned(),
         principal: links[0].principal(),
         status: EpochStatus::Active,
@@ -105,9 +107,10 @@ fn active(id: &str, links: Vec<Link>) -> VerifiedEpoch {
         claim: vec![],
         branches: None,
         ancestors: vec![],
-    }
+    })
 }
 
+/// Build a burned user-epoch PDU carrying a fork proof.
 fn burn_event(
     anchor: &VerifiedEpoch,
     fork_height: u64,
@@ -129,11 +132,12 @@ fn burn_event(
     };
     Value::parse(&format!(
         "{{\"type\":\"m.room.user_epoch\",\"state_key\":\"{}\",\"sender\":\"@bob:chat.example.org\",\"content\":{{\"status\":\"burned\",\"fork_height\":{fork_height},\"parent\":\"{}\",\"bridge\":[{bridge_json}],\"branch_a\":\"{}\",\"branch_b\":\"{}\"}}}}",
-        anchor.principal.to_id(), B64.encode(&parent_bytes), a.to_b64(), b.to_b64()
+        anchor.principal().to_id(), B64.encode(&parent_bytes), a.to_b64(), b.to_b64()
     ))
     .unwrap()
 }
 
+/// Verify a burn event against its active anchor.
 fn verify_burn(event: &Value, anchor: &VerifiedEpoch) -> Result<VerifiedEpoch, cygnus_core::Error> {
     VerifiedEpoch::burned(event, envelope::event_id(event)?, anchor)
 }
@@ -146,16 +150,13 @@ fn burn_parser_accepts_current_tip_fork_proof_and_derives_claim() {
     let event = burn_event(&anchor, 1, &links[0], &[], &links[1], &alternate);
 
     let burn = verify_burn(&event, &anchor).unwrap();
-    assert_eq!(burn.status, EpochStatus::Burned);
-    assert_eq!(burn.fork_height, Some(1));
+    assert_eq!(burn.status(), EpochStatus::Burned);
+    assert_eq!(burn.fork_height(), Some(1));
     assert_eq!(
-        burn.claim.iter().map(Link::digest).collect::<Vec<_>>(),
+        burn.claim().iter().map(Link::digest).collect::<Vec<_>>(),
         vec![links[0].digest()]
     );
-    assert_eq!(
-        burn.branches.as_ref().unwrap().0.digest(),
-        links[1].digest()
-    );
+    assert_eq!(burn.branches().unwrap().0.digest(), links[1].digest());
 }
 
 #[test]
@@ -167,9 +168,9 @@ fn burn_parser_accepts_a_bridge_from_the_room_tip_to_a_future_fork() {
     let event = burn_event(&anchor, 2, &links[1], &[links[1].clone()], &a, &b);
 
     let burn = verify_burn(&event, &anchor).unwrap();
-    assert_eq!(burn.fork_height, Some(2));
+    assert_eq!(burn.fork_height(), Some(2));
     assert_eq!(
-        burn.claim.iter().map(Link::digest).collect::<Vec<_>>(),
+        burn.claim().iter().map(Link::digest).collect::<Vec<_>>(),
         vec![links[0].digest(), links[1].digest()]
     );
 }
@@ -181,11 +182,12 @@ fn burn_parser_rejects_wrong_anchor_and_malformed_branch_proofs() {
     let a = links[1].clone();
     let b = sibling(&links[0], &keys[0], 5);
     let event = burn_event(&anchor, 1, &links[0], &[], &a, &b);
-    let mut wrong_anchor = anchor.clone();
-    wrong_anchor.principal = Principal {
+    let mut parts = anchor.clone().into_parts();
+    parts.principal = Principal {
         kind: Kind::Server,
-        root: anchor.principal.root,
+        root: anchor.principal().root,
     };
+    let wrong_anchor = VerifiedEpoch::from_parts_unchecked(parts);
     assert!(verify_burn(&event, &wrong_anchor).is_err());
 
     let duplicate = burn_event(&anchor, 1, &links[0], &[], &a, &a);

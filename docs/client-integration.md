@@ -8,42 +8,50 @@ each SDK's Matrix client, room timeline, or UI.
 
 The sibling checkouts use different layers:
 
-| Project           | Existing integration layer                                                                                                                                                                                              | Cygnus work needed                                                                                                                                      |
-| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `matrix-js-sdk`   | Room-version strings and Matrix event/client APIs. Unknown room versions currently receive the room-v12/Hydra creator behavior; there is no Cygnus link, certificate, or event-signing support.                         | Add Cygnus-aware event construction and verification through a wasm binding; gate room creation and flows on advertised server support.                 |
-| `matrix-rust-sdk` | `matrix-sdk-base` uses Ruma room-version rules; `matrix-sdk-crypto` exposes `vodozemac`; Android uses the Rust SDK's UniFFI surface.                                                                                    | Add explicit Cygnus handling to the SDK and Ruma rules; expose the Cygnus core through its FFI without making ordinary room-v12 rooms use Cygnus rules. |
-| `ruma`            | Typed Matrix IDs/events, room-version rules, canonical JSON/redaction, and event-auth support. `RoomVersionId` accepts custom strings, but custom versions have no rules. No Cygnus-specific types or rules were found. | Add Cygnus event/content types and an explicit Cygnus room-version rules variant, with proposal vectors as conformance tests.                           |
-| Cinny             | Uses `matrix-js-sdk` 41.5.0.                                                                                                                                                                                            | Cygnus support should arrive through the SDK; add UI for identity and device status after the SDK exposes it.                                           |
-| Element Web       | Uses the Matrix JS SDK stack.                                                                                                                                                                                           | Same JS SDK boundary; add account/device and room-creation UI after protocol support exists.                                                            |
-| Element X Android | Uses the Matrix Rust SDK Android package (`org.matrix.rustcomponents:sdk-android`) backed by UniFFI.                                                                                                                    | Add Rust SDK APIs and bindings, then device/identity and room-version UI.                                                                               |
-| FluffyChat        | Uses the Dart `matrix` SDK (`^10.0.1`).                                                                                                                                                                                 | Add Cygnus to that SDK or provide a Dart FFI binding; then account/device and room-creation UI.                                                         |
+| Project           | Existing integration layer                                                                                                                                                                                                                                     | Cygnus work needed                                                                                                                              |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `matrix-js-sdk`   | Room-version strings and Matrix event/client APIs. The sibling SDK does not yet integrate Cygnus, but `cygnus-wasm` already exports link verification, bootstrap-response checks, device-certificate creation, event hashing/signing, and user-chain rotation. | Integrate the existing wasm exports; add Cygnus-aware event construction, verification and room flows, gated on advertised server support.      |
+| `matrix-rust-sdk` | `matrix-sdk-base` uses Ruma room-version rules; `matrix-sdk-crypto` exposes `vodozemac`; Android uses the Rust SDK's UniFFI surface. The Cygnus Rust core exists, but no Cygnus UniFFI integration is present.                                                 | Add explicit Cygnus handling to the SDK and Ruma rules; expose the core through UniFFI without making ordinary room-v12 rooms use Cygnus rules. |
+| `ruma`            | Typed Matrix IDs/events, room-version rules, canonical JSON/redaction, and event-auth support. `RoomVersionId` accepts custom strings, but custom versions have no rules. No Cygnus-specific types or rules were found.                                        | Add Cygnus event/content types and an explicit Cygnus room-version rules variant, with proposal vectors as conformance tests.                   |
+| Cinny             | Uses `matrix-js-sdk` 41.5.0.                                                                                                                                                                                                                                   | Cygnus support should arrive through the SDK; add UI for identity and device status after the SDK exposes it.                                   |
+| Element Web       | Uses the Matrix JS SDK stack.                                                                                                                                                                                                                                  | Same JS SDK boundary; add account/device and room-creation UI after protocol support exists.                                                    |
+| Element X Android | Uses the Matrix Rust SDK Android package (`org.matrix.rustcomponents:sdk-android`) backed by UniFFI.                                                                                                                                                           | Add Rust SDK APIs and bindings, then device/identity and room-version UI.                                                                       |
+| FluffyChat        | Uses the Dart `matrix` SDK (`^10.0.1`).                                                                                                                                                                                                                        | Add Cygnus to that SDK or provide a Dart FFI binding; then account/device and room-creation UI.                                                 |
 
 The requested `matrix-sdk-rust` path is named `matrix-rust-sdk` in this
-workspace. The six sibling projects were inspected read-only; this plan does
-not modify them.
+workspace. The six sibling projects were inspected read-only; this plan does not
+modify them.
 
 ## Protocol APIs the core must expose
 
 For all four client stacks to implement the same wire behavior, Cygnus needs a
 small stable API with shared JSON fixtures:
 
-1. **Principal and link operations**: parse/render identifiers, build genesis
-   links, validate successor chains, report height and active signing keys.
-2. **Certificate operations**: create and verify master → self-signing → device
-   certificates, with stable error categories and strict version/encoding
-   checks.
-3. **Event envelope operations**: room-v12/Cygnus redaction, canonical bytes,
-   content/reference hashes, signing-object construction, device/custodian
-   signatures, and PDU verification. This is the next protocol gate after the
-   current link and certificate modules.
+1. **Principal and link operations**: the core parses/renders identifiers,
+   builds genesis and successor links, and verifies chains. `cygnus-wasm`
+   exposes principal parsing, chain verification, link parsing, bootstrap
+   response checks and user-chain rotation; server-side genesis construction
+   remains a Rust-core operation.
+2. **Certificate operations**: the core creates and verifies master →
+   self-signing → device certificates. `cygnus-wasm` exposes certificate
+   creation and device-signature verification; SDKs still need to integrate
+   those exports and handle certificate lifecycle flows.
+3. **Event envelope operations**: the core provides room-v12/Cygnus redaction,
+   canonical bytes, content/reference hashes, signing-object construction, and
+   device/custodian signatures are in `envelope`. Verifying a PDU also needs
+   `bundle` (epochs and link bundles), `auth` (authorization), and the caller's
+   selected room state.
 4. **Epoch and bundle operations**: parse and verify epoch/burn events, resolve
    link tips and authorization state, and validate supplied link bundles.
-5. **Client flow data**: typed inputs/outputs for account creation, device
-   certification, custodian migration/rebinding, room creation/upgrade, and
-   relay/ingress decisions. HTTP itself remains in each SDK.
-6. **Bindings**: `wasm-bindgen` for the JS SDK, UniFFI for Element X, and a Dart
-   bridge or Dart SDK integration for FluffyChat. Keep these as thin wrappers
-   over the same Rust behavior.
+5. **Client flow data**: bootstrap link construction (fresh rotation key,
+   commitment C₀, user/server genesis and successors) is in `bootstrap`;
+   higher-level typed flows for device certification, revocation, custodian
+   migration/rebinding, room creation/upgrade, and relay/ingress decisions
+   remain. HTTP itself stays in each SDK.
+6. **Bindings**: `cygnus-wasm` already provides the `wasm-bindgen` surface for
+   the JS SDK. UniFFI for Element X and a Dart bridge or Dart SDK integration
+   for FluffyChat remain. Keep these as thin wrappers over the same Rust
+   behavior.
 
 ## Required cross-SDK tests
 
@@ -63,8 +71,24 @@ small stable API with shared JSON fixtures:
 
 ## Current coverage
 
-The crate currently implements principal IDs, link encoding/verification, and
-device-certificate verification. It does not yet provide the envelope, epoch,
-state-resolution, HTTP-flow, SDK binding, or client UI APIs above. Keeping this
-gap explicit prevents an SDK from treating ordinary room-v12 behavior as full
-Cygnus support.
+The core crate implements principal IDs, link encoding/verification and
+bootstrap (caller-CSPRNG rotation keys, commitments, genesis/successor
+builders), device-certificate creation via `DeviceCertificate::issue` and
+verification, the event envelope (redaction, hashes, event IDs, device and
+custodian signatures), epoch/burn/seal/tip-bundle verification, Pass 0
+resolution, and the Cygnus authorization overlay. With `state-res`, it can run
+Rezzy's Matrix v12 base authorization on caller-selected state; state selection
+and resolution remain the caller's responsibility.
+
+The `cygnus-wasm` crate exposes principal parsing, link and chain inspection,
+bootstrap-response verification, device-certificate creation via
+`createDeviceCertificate`, event hashing, device/custodian signature
+verification, event signing, and user-chain rotation. The
+`wasm32-unknown-unknown` artifact enables Wasm SIMD128 and needs a runtime that
+supports that standard feature. These are usable wasm-bindgen exports, not
+integrations in `matrix-js-sdk` or another client SDK. The exports still require
+the caller to supply and store seeds; they do not provide private-key
+storage/backup, HTTP flows, or client UI. UniFFI and Dart bindings remain
+planned. The bootstrap API never derives identity material from Olm or Megolm
+keys; secret storage and recovery remain client responsibilities. Ordinary
+room-v12 behavior remains separate from full Cygnus support.

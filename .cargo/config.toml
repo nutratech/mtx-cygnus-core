@@ -1,2 +1,7 @@
 [build]
 rustc-wrapper = ".cargo/cargo-wrapper.sh"
+
+# The browser artifact uses the standard WebAssembly SIMD128 feature. Host
+# proc macros remain on the portable native baseline.
+[target.wasm32-unknown-unknown]
+rustflags = ["-C", "target-feature=+simd128"]

@@ -3,22 +3,39 @@ name = "cygnus-core"
 version = "0.0.1"
 edition = "2021"
 rust-version = "1.89"
-authors = ["Shane Jaroch <chown_tee@proton.me>"]
+authors = ["Shane Jaroch <shane@nutra.tk>"]
 license = "MIT OR Apache-2.0"
+repository = "https://git.nutra.tk/gamesguru/cygnus-core"
 description = "Client-side core for MSC00FC (Cygnus) self-certifying Matrix identities: links, principals, verification."
 keywords = ["matrix", "identity", "ed25519", "cygnus"]
 categories = ["cryptography"]
 readme = "README.md"
 
+[workspace]
+members = [".", "cygnus-dmls", "cygnus-wasm"]
+
 [dependencies]
-base64 = "0.22"
-ed25519-consensus = { version = "2", default-features = false }
-sha2 = "0.10"
-# Tracks the `dev` branch of rezzy, which carries the strict `Value` canonical
-# writer. Pinned by branch (not rev), so `cargo update -p rezzy-json` moves it.
+base64 = "0.23"
+blake3 = { version = "1.5", default-features = false }
+ed25519-zebra = { version = "5", default-features = false }
+rand_core = { version = "0.10", default-features = false }
+sha2 = "0.11"
+# Tracks the rezzy `dev` branch (the strict `Value` canonical writer landed there);
+# Cargo.lock pins the exact commit.
+# Bump with `cargo update -p rezzy-json`; keep the source identical across every rezzy dependency.
 rezzy-json = { git = "https://gitlab.com/wombat-foundation/rezzy.git", branch = "dev" }
+# Matrix v12 auth and state resolution for the P2-P5 checks. Optional so
+# client and wasm builds do not compile the state engine.
+rezzy = { git = "https://gitlab.com/wombat-foundation/rezzy.git", branch = "dev", optional = true }
+
+[features]
+default = []
+state-res = ["dep:rezzy"]
+# Exposes unchecked epoch constructors for tests. Never enable in production.
+test-support = []
 
 [dev-dependencies]
+cygnus-core = { path = ".", features = ["test-support"] }
 hex = "0.4"
 
 [lints.rust]

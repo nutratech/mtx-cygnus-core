@@ -3,7 +3,7 @@
 //! which signatures are valid: non-canonical point encodings are accepted,
 //! while a scalar `s >= l` is rejected.
 
-use ed25519_consensus::{Signature, VerificationKey};
+use ed25519_zebra::{Signature, VerificationKey};
 
 /// Little-endian group order l.
 const L: [u8; 32] = [

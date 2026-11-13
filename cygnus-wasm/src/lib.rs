@@ -1,0 +1,425 @@
+//! WebAssembly API over `cygnus-core` for browser clients: verification, plus
+//! the client-side signing steps of MSC00FC §7/§9 (identity bootstrap, device
+//! certificates, event signing and user-chain rotation).
+//!
+//! Every function takes and returns plain strings so it works from any JS
+//! environment without extra glue. Events are passed as JSON text. Keys are
+//! unpadded base64url. Errors are thrown as JS `Error`s carrying the
+//! `cygnus-core` message. Seeds are 32 random bytes as unpadded base64url;
+//! the caller generates them (for example with `crypto.getRandomValues`) and
+//! is responsible for storing them.
+
+pub mod dmls;
+pub use dmls::*;
+
+use base64::{engine::general_purpose::URL_SAFE_NO_PAD as B64, Engine};
+use cygnus_core::{
+    bootstrap::{self, RotationKey},
+    envelope, link, DeviceCertificate, Kind, Link, Payload, Principal,
+};
+use ed25519_zebra::SigningKey;
+use rezzy_json::Value;
+use wasm_bindgen::prelude::*;
+
+/// Convert a core error into the `Error` thrown on the JS side.
+fn err(e: impl std::fmt::Display) -> JsError {
+    JsError::new(&e.to_string())
+}
+
+/// Parse event JSON strictly, rejecting duplicate keys and non-canonical input.
+fn event(json: &str) -> Result<Value, JsError> {
+    Value::parse_strict(json).map_err(err)
+}
+
+/// Require the event's `device_certificate` to match the sender and device
+/// being used to sign.
+fn require_matching_device_certificate(
+    event: &Value,
+    sender: &str,
+    device_id: &str,
+    device_key: &str,
+) -> Result<(), &'static str> {
+    let Some(Value::Object(certificate)) = event.get("device_certificate") else {
+        return Err("event must carry a device_certificate object");
+    };
+    if event.get("sender").and_then(Value::as_str) != Some(sender) {
+        return Err("event sender does not match the signing sender");
+    }
+    if certificate.get("device_id").and_then(Value::as_str) != Some(device_id) {
+        return Err("device_certificate device_id does not match the signing device");
+    }
+    if certificate.get("device_key").and_then(Value::as_str) != Some(device_key) {
+        return Err("device_certificate device_key does not match the signing key");
+    }
+    Ok(())
+}
+
+/// Decode a 32-byte key from unpadded base64url.
+fn key(b64: &str) -> Result<[u8; 32], JsError> {
+    let bytes = B64.decode(b64).map_err(err)?;
+    <[u8; 32]>::try_from(bytes.as_slice()).map_err(|_| JsError::new("key must be 32 bytes"))
+}
+
+/// Parse a principal (`~server` or `@user`) and return its canonical form.
+///
+/// # Errors
+/// Throws if the identifier is padded, the wrong length or not base64url.
+#[wasm_bindgen(js_name = parsePrincipal)]
+pub fn parse_principal(id: &str) -> Result<String, JsError> {
+    Ok(Principal::parse(id).map_err(err)?.to_id())
+}
+
+/// Verify a link chain given as base64url links, genesis first, and return
+/// the principal that the chain identifies.
+///
+/// # Errors
+/// Throws on the first link that fails to parse or verify.
+#[wasm_bindgen(js_name = verifyChain)]
+pub fn verify_chain(links: Vec<String>) -> Result<String, JsError> {
+    let parsed = links
+        .iter()
+        .map(|l| Link::from_b64(l))
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(err)?;
+    let (genesis, rest) = parsed
+        .split_first()
+        .ok_or_else(|| JsError::new("empty chain"))?;
+    genesis.verify_genesis().map_err(err)?;
+    link::verify_slice(genesis, rest).map_err(err)?;
+    Ok(genesis.principal().to_id())
+}
+
+/// Matrix v3 event ID (`$` plus reference hash) of an event.
+///
+/// # Errors
+/// Throws if the event is not valid canonical JSON.
+#[wasm_bindgen(js_name = eventId)]
+pub fn event_id(event_json: &str) -> Result<String, JsError> {
+    envelope::event_id(&event(event_json)?).map_err(err)
+}
+
+/// Content hash of an event as unpadded base64url.
+///
+/// # Errors
+/// Throws if the event is not valid canonical JSON.
+#[wasm_bindgen(js_name = contentHash)]
+pub fn content_hash(event_json: &str) -> Result<String, JsError> {
+    envelope::content_hash_b64(&event(event_json)?).map_err(err)
+}
+
+/// Verify a device's signature over an event against its certified key.
+///
+/// # Errors
+/// Throws if the signature entry is missing, malformed or invalid.
+#[wasm_bindgen(js_name = verifyDeviceSignature)]
+pub fn verify_device_signature(
+    event_json: &str,
+    sender: &str,
+    device_id: &str,
+    public_key: &str,
+) -> Result<(), JsError> {
+    envelope::verify_device_signature(&event(event_json)?, sender, device_id, &key(public_key)?)
+        .map_err(err)
+}
+
+/// Verify a custodian (server) signature over an event at a chain height.
+///
+/// `height` is a decimal string, since protocol heights are `u64` and exceed
+/// what a JS number represents exactly.
+///
+/// # Errors
+/// Throws if the signature entry is missing, malformed or invalid.
+#[wasm_bindgen(js_name = verifyCustodianSignature)]
+pub fn verify_custodian_signature(
+    event_json: &str,
+    custodian: &str,
+    height: &str,
+    public_key: &str,
+) -> Result<(), JsError> {
+    envelope::verify_custodian_signature(
+        &event(event_json)?,
+        custodian,
+        height
+            .parse::<u64>()
+            .map_err(|_| JsError::new("height must be a decimal u64"))?,
+        &key(public_key)?,
+    )
+    .map_err(err)
+}
+
+/// Build an Ed25519 signing key from a 32-byte seed.
+fn signing_key(seed: &str) -> Result<SigningKey, JsError> {
+    Ok(SigningKey::from(key(seed)?))
+}
+
+/// Build a rotation key from a 32-byte seed.
+fn rotation_key(seed: &str) -> Result<RotationKey, JsError> {
+    Ok(RotationKey::from_seed(key(seed)?))
+}
+
+/// Ed25519 public key for a 32-byte seed, as unpadded base64url.
+///
+/// # Errors
+/// Throws if the seed is not 32 bytes of base64url.
+#[wasm_bindgen(js_name = publicKey)]
+pub fn public_key(seed: &str) -> Result<String, JsError> {
+    Ok(B64.encode(<[u8; 32]>::from(signing_key(seed)?.verification_key())))
+}
+
+/// Rotation commitment `C = commitment(K_rot)` for a rotation seed, as sent to
+/// the server in the §7 principal request.
+///
+/// # Errors
+/// Throws if the seed is not 32 bytes of base64url.
+#[wasm_bindgen(js_name = rotationCommitment)]
+pub fn rotation_commitment(rotation_seed: &str) -> Result<String, JsError> {
+    Ok(B64.encode(rotation_key(rotation_seed)?.commitment()))
+}
+
+/// Check the server's §7 `POST /principal` response against the rotation
+/// seed and master key the client sent, and return the genesis link.
+///
+/// # Errors
+/// Throws if the principal, link count, master key or commitment does not
+/// match the request.
+#[wasm_bindgen(js_name = verifyUserPrincipalResponse)]
+pub fn verify_user_principal_response(
+    rotation_seed: &str,
+    master_pub: &str,
+    principal: &str,
+    links: Vec<String>,
+) -> Result<String, JsError> {
+    let link = bootstrap::verify_user_principal_response(
+        &rotation_key(rotation_seed)?,
+        &key(master_pub)?,
+        principal,
+        &links,
+    )
+    .map_err(err)?;
+    Ok(link.to_b64())
+}
+
+/// Issue a version-1 `device_certificate` (JSON text): the master key
+/// certifies the self-signing key, which certifies the device key.
+///
+/// # Errors
+/// Throws for a non-user sender, an invalid device ID or a malformed seed.
+#[wasm_bindgen(js_name = createDeviceCertificate)]
+pub fn create_device_certificate(
+    sender: &str,
+    master_seed: &str,
+    self_signing_seed: &str,
+    device_id: &str,
+    device_seed: &str,
+) -> Result<String, JsError> {
+    let certificate = DeviceCertificate::issue(
+        sender,
+        &signing_key(master_seed)?,
+        &signing_key(self_signing_seed)?,
+        device_id,
+        &signing_key(device_seed)?,
+    )
+    .map_err(err)?;
+    rezzy_json::to_canonical_string(&certificate).map_err(err)
+}
+
+/// Set the content hash and add the device signature to an event that
+/// already carries its `device_certificate`; returns the signed event JSON.
+/// The custodian signature is added by the server.
+///
+/// # Errors
+/// Throws if the event is not valid JSON, lacks an object-valued
+/// `device_certificate`, the event sender or certificate's `device_id` /
+/// `device_key` does not match the signing arguments, or a seed is malformed.
+#[wasm_bindgen(js_name = signEvent)]
+pub fn sign_event(
+    event_json: &str,
+    sender: &str,
+    device_id: &str,
+    device_seed: &str,
+) -> Result<String, JsError> {
+    sign_event_inner(event_json, sender, device_id, device_seed).map_err(|e| JsError::new(&e))
+}
+
+/// `signEvent` with plain `String` errors, so native tests can exercise the
+/// validation (a `JsError` cannot be built off wasm).
+fn sign_event_inner(
+    event_json: &str,
+    sender: &str,
+    device_id: &str,
+    device_seed: &str,
+) -> Result<String, String> {
+    let mut event = Value::parse_strict(event_json).map_err(|e| e.to_string())?;
+    let seed = B64.decode(device_seed).map_err(|e| e.to_string())?;
+    let seed = <[u8; 32]>::try_from(seed.as_slice()).map_err(|_| "key must be 32 bytes")?;
+    let key = SigningKey::from(seed);
+    let public_key = B64.encode(<[u8; 32]>::from(key.verification_key()));
+    require_matching_device_certificate(&event, sender, device_id, &public_key)?;
+    envelope::set_content_hash(&mut event).map_err(|e| e.to_string())?;
+    envelope::sign_device(&mut event, sender, device_id, &key).map_err(|e| e.to_string())?;
+    rezzy_json::to_canonical_string(&event).map_err(|e| e.to_string())
+}
+
+/// Extend a user chain: sign the next link with the rotation key the parent
+/// committed to, committing to `nextRotationSeed` for the following link.
+///
+/// `custodian` is the custodian server's 32-byte principal root (base64url).
+///
+/// # Errors
+/// Throws if the parent is not a user link, the current rotation seed does
+/// not match its commitment, or the master key differs from the parent's.
+#[wasm_bindgen(js_name = userSuccessor)]
+pub fn user_successor(
+    parent_link: &str,
+    current_rotation_seed: &str,
+    next_rotation_seed: &str,
+    custodian: &str,
+    master_pub: &str,
+    display_user_id: &str,
+) -> Result<String, JsError> {
+    let parent = Link::from_b64(parent_link).map_err(err)?;
+    let link = bootstrap::user_successor(
+        &parent,
+        &rotation_key(current_rotation_seed)?,
+        &rotation_key(next_rotation_seed)?,
+        key(custodian)?,
+        key(master_pub)?,
+        display_user_id,
+    )
+    .map_err(err)?;
+    Ok(link.to_b64())
+}
+
+/// Parse one link without verifying it, returning its fields as JSON text:
+/// `kind` (`"user"`/`"server"`), `height` (decimal string), `principal`, and
+/// for user links `custodian` (`~` ID), `master_key`, `display_user_id`, or for
+/// server links `server_name` and `online_key`; the other kind's fields are
+/// `null`. Pair it with [`verify_chain`] before trusting any field.
+///
+/// # Errors
+/// Throws if the link is not well-formed base64url link bytes.
+#[wasm_bindgen(js_name = parseLink)]
+pub fn parse_link(link_b64: &str) -> Result<String, JsError> {
+    let link = Link::from_b64(link_b64).map_err(err)?;
+    let mut object = rezzy_json::Object::new();
+    let string = |value: String| Value::String(value);
+    object.insert("height".into(), string(link.body.height.to_string()));
+    object.insert("principal".into(), string(link.principal().to_id()));
+    let (kind, custodian, master_key, display_user_id, server_name, online_key) =
+        match &link.body.payload {
+            Payload::User {
+                custodian,
+                master_key,
+                display_user_id,
+            } => (
+                "user",
+                Some(
+                    Principal {
+                        kind: Kind::Server,
+                        root: *custodian,
+                    }
+                    .to_id(),
+                ),
+                master_key.map(|key| B64.encode(key)),
+                Some(display_user_id.clone()),
+                None,
+                None,
+            ),
+            Payload::Server {
+                online_key,
+                server_name,
+            } => (
+                "server",
+                None,
+                None,
+                None,
+                Some(server_name.clone()),
+                Some(B64.encode(online_key)),
+            ),
+        };
+    object.insert("kind".into(), kind.into());
+    for (field, value) in [
+        ("custodian", custodian),
+        ("master_key", master_key),
+        ("display_user_id", display_user_id),
+        ("server_name", server_name),
+        ("online_key", online_key),
+    ] {
+        object.insert(field.into(), value.map_or(Value::Null, string));
+    }
+    rezzy_json::to_canonical_string(&Value::Object(object)).map_err(err)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Rejects malformed certificates, including mismatched sender, device ID,
+    /// device key, and non-object certificate values.
+    #[test]
+    fn device_certificate_must_match_the_signing_arguments() {
+        for json in [
+            "{}",
+            r#"{"sender":"@alice","device_certificate":null}"#,
+            r#"{"sender":"@alice","device_certificate":"certificate"}"#,
+            r#"{"sender":"@alice","device_certificate":[]}"#,
+            r#"{"sender":"@alice","device_certificate":1}"#,
+            r#"{"sender":"@bob","device_certificate":{"device_id":"DEV","device_key":"device-key"}}"#,
+            r#"{"sender":"@alice","device_certificate":{"device_key":"device-key"}}"#,
+            r#"{"sender":"@alice","device_certificate":{"device_id":"OTHER","device_key":"device-key"}}"#,
+            r#"{"sender":"@alice","device_certificate":{"device_id":"DEV"}}"#,
+            r#"{"sender":"@alice","device_certificate":{"device_id":"DEV","device_key":"other-key"}}"#,
+        ] {
+            let event = Value::parse_strict(json).unwrap();
+            assert!(
+                require_matching_device_certificate(&event, "@alice", "DEV", "device-key").is_err(),
+                "{json}"
+            );
+        }
+        let event = Value::parse_strict(
+            r#"{"sender":"@alice","device_certificate":{"device_id":"DEV","device_key":"device-key"}}"#,
+        )
+        .unwrap();
+        assert!(require_matching_device_certificate(&event, "@alice", "DEV", "device-key").is_ok());
+    }
+
+    /// Signs a matching event, rejects a mismatched sender/device/key, and
+    /// rejects an event without a device certificate.
+    #[test]
+    fn sign_event_rejects_mismatched_certificates_and_accepts_matching_ones() {
+        let seed = |b: u8| B64.encode([b; 32]);
+        let device = seed(3);
+        let alice = Principal {
+            kind: Kind::User,
+            root: [7; 32],
+        }
+        .to_id();
+        let bob = Principal {
+            kind: Kind::User,
+            root: [8; 32],
+        }
+        .to_id();
+        let sk = |b: u8| SigningKey::from([b; 32]);
+        let certificate = rezzy_json::to_canonical_string(
+            &DeviceCertificate::issue(&alice, &sk(1), &sk(2), "DEV", &sk(3)).unwrap(),
+        )
+        .unwrap();
+        let event = format!(
+            r#"{{"type":"m.room.message","content":{{}},"sender":"{alice}","device_certificate":{certificate}}}"#
+        );
+
+        let signed = sign_event_inner(&event, &alice, "DEV", &device).unwrap();
+        assert!(signed.contains("signatures"));
+
+        assert!(sign_event_inner(&event, &bob, "DEV", &device).is_err());
+        assert!(sign_event_inner(&event, &alice, "OTHER", &device).is_err());
+        assert!(sign_event_inner(&event, &alice, "DEV", &seed(9)).is_err());
+        assert!(sign_event_inner(
+            &format!(r#"{{"sender":"{alice}"}}"#),
+            &alice,
+            "DEV",
+            &device
+        )
+        .is_err());
+    }
+}

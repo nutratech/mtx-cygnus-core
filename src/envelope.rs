@@ -5,7 +5,7 @@
 
 use crate::Error;
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD as B64, Engine};
-use ed25519_consensus::SigningKey;
+use ed25519_zebra::SigningKey;
 use rezzy_json::{Object, Value};
 use sha2::{Digest, Sha256};
 
@@ -86,13 +86,15 @@ pub fn redact_event(event: &Value) -> Result<Value, Error> {
 }
 
 /// Canonical JSON bytes used for ordinary room-v12 event signing and reference
-/// hashing: redacted event with `signatures` and `unsigned` removed.
+/// hashing: redacted event with `signatures`, `unsigned`, and any attached
+/// `event_id` removed.
 ///
 /// # Errors
 /// Returns an error for an invalid event shape or non-canonical JSON value.
 pub fn signing_bytes(event: &Value) -> Result<Vec<u8>, Error> {
     let mut object = redact_event(event)?;
-    remove_fields(&mut object, &["signatures", "unsigned"])?;
+    // `event_id` is not part of the signed room-v12 event.
+    remove_fields(&mut object, &["event_id", "signatures", "unsigned"])?;
     rezzy_json::to_canonical_bytes(&object).map_err(|_| Error::CanonicalJson)
 }
 
@@ -111,14 +113,19 @@ pub fn device_signing_bytes(event: &Value) -> Result<Vec<u8>, Error> {
 }
 
 /// Matrix content hash: SHA-256 over canonical JSON after removing
-/// `unsigned`, `signatures`, and `hashes`.
+/// `unsigned`, `signatures`, and `hashes`, and any attached `event_id` (a room
+/// v12 PDU has none, but callers often add it).
 ///
 /// # Errors
 /// Returns [`Error::Envelope`] when the event is not an object, or
 /// [`Error::CanonicalJson`] when canonical JSON validation fails.
 pub fn content_hash(event: &Value) -> Result<[u8; 32], Error> {
     let mut object = event.clone();
-    remove_fields(&mut object, &["unsigned", "signatures", "hashes"])?;
+    // `event_id` is not part of a room v12 PDU, but a caller may have attached it.
+    remove_fields(
+        &mut object,
+        &["event_id", "unsigned", "signatures", "hashes"],
+    )?;
     let bytes = rezzy_json::to_canonical_bytes(&object).map_err(|_| Error::CanonicalJson)?;
     Ok(Sha256::digest(bytes).into())
 }
@@ -243,6 +250,7 @@ pub fn verify_custodian_signature(
     crate::link::verify(public_key, &signing_bytes(event)?, &signature)
 }
 
+/// Remove top-level fields from an event.
 fn remove_fields(value: &mut Value, fields: &[&str]) -> Result<(), Error> {
     let object = value
         .as_object_mut()
@@ -253,6 +261,7 @@ fn remove_fields(value: &mut Value, fields: &[&str]) -> Result<(), Error> {
     Ok(())
 }
 
+/// Insert a base64url signature under `signer` and `key_id`.
 fn insert_signature(
     event: &mut Value,
     signer: &str,
@@ -270,6 +279,7 @@ fn insert_signature(
     Ok(())
 }
 
+/// Get or create an object field, rejecting an existing non-object value.
 fn ensure_object_field<'a>(event: &'a mut Value, field: &str) -> Result<&'a mut Object, Error> {
     let object = event
         .as_object_mut()
@@ -282,6 +292,7 @@ fn ensure_object_field<'a>(event: &'a mut Value, field: &str) -> Result<&'a mut 
         .ok_or(Error::Envelope("signatures must be an object"))
 }
 
+/// Decode one canonical base64url signature entry.
 fn signature_entry(event: &Value, signer: &str, key_id: &str) -> Result<[u8; 64], Error> {
     let signature = event
         .get("signatures")
@@ -297,6 +308,7 @@ fn signature_entry(event: &Value, signer: &str, key_id: &str) -> Result<[u8; 64]
     Ok(signature)
 }
 
+/// Borrow the raw text of one signature entry.
 fn signature_entry_text<'a>(
     event: &'a Value,
     signer: &str,
@@ -310,6 +322,7 @@ fn signature_entry_text<'a>(
         .ok_or(Error::Signature)
 }
 
+/// The content fields redaction keeps for an event type.
 fn kept_content_fields(event_type: &str) -> &'static [&'static str] {
     match event_type {
         "m.room.member" => &[

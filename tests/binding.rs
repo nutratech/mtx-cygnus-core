@@ -4,14 +4,14 @@ use cygnus_core::binding::{admit, Acl, BindingState, Ingress, NameBinding};
 use cygnus_core::commitment;
 use cygnus_core::link::{Body, Link, Payload};
 use cygnus_core::Principal;
-use ed25519_consensus::SigningKey;
+use ed25519_zebra::SigningKey;
 
 fn key(seed: u8) -> SigningKey {
     SigningKey::from([seed; 32])
 }
 
 fn pubkey(key: &SigningKey) -> [u8; 32] {
-    key.verification_key().to_bytes()
+    <[u8; 32]>::from(key.verification_key())
 }
 
 fn server_genesis(online: &SigningKey, rotation: &SigningKey, name: &str) -> Link {

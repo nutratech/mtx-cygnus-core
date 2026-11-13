@@ -29,9 +29,10 @@ fn pdu(events: &[Value], index: usize) -> &Value {
 fn p1_create_validates_room_id_both_chains_and_both_signatures() {
     let events = vectors();
     let created = VerifiedCreate::verify(pdu(&events, 0), event_id(&events, 0)).unwrap();
+    let fixture = Value::parse(include_str!("vectors/pid_pdu_vectors.json")).unwrap();
     assert_eq!(
-        created.room_id,
-        "!30zU4L44nR8z-TbH4R7So2CfI9UJzMYnMhzY9NKHXgY"
+        Some(created.room_id.as_str()),
+        fixture.get("room_id").and_then(Value::as_str)
     );
     assert_eq!(created.user_links.len(), 1);
     assert_eq!(created.server_links.len(), 2);
@@ -50,10 +51,10 @@ fn p1_genesis_epochs_and_server_rotation_verify_against_link_state() {
     verify_epoch_custodian_signature(pdu(&events, 2), &signer_links).unwrap();
     verify_epoch_custodian_signature(pdu(&events, 3), &created_server_links(&events)).unwrap();
 
-    assert_eq!(user.status, cygnus_core::bundle::EpochStatus::Active);
-    assert_eq!(user.links.len(), 1);
-    assert_eq!(server.links.len(), 1);
-    assert_eq!(advanced.links.len(), 2);
+    assert_eq!(user.status(), cygnus_core::bundle::EpochStatus::Active);
+    assert_eq!(user.links().len(), 1);
+    assert_eq!(server.links().len(), 1);
+    assert_eq!(advanced.links().len(), 2);
     assert_eq!(advanced.tip().body.height, 1);
 }
 
@@ -71,7 +72,7 @@ fn p1_create_rejects_a_modified_required_signature() {
     let server_signer = signatures
         .as_object_mut()
         .unwrap()
-        .get_mut("~soEUx9hiteZoLx9OwBJ94-GCuVrDksXROkIYuLn8Lb0")
+        .get_mut("~1AreHGP7Cv7EMZkhE3ChnfH_mR6pqDmBL9CPpBr87yA")
         .unwrap();
     let signature = server_signer
         .as_object_mut()

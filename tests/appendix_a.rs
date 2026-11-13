@@ -1,29 +1,29 @@
 //! MSC00FC Appendix A vectors: keys from repeated-byte seeds.
 
 use cygnus_core::{commitment, link::verify_slice, Link, Principal};
-use ed25519_consensus::SigningKey;
+use ed25519_zebra::SigningKey;
 
 fn key(b: u8) -> SigningKey {
     SigningKey::from([b; 32])
 }
 fn pubkey(b: u8) -> [u8; 32] {
-    key(b).verification_key().to_bytes()
+    <[u8; 32]>::from(key(b).verification_key())
 }
 
-const A0: &str = "AQEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACn43blzT6rgsVNzZYO7Q2Rty6Gui6qDEtLT9KTxg_8UIqI4910CfGV_VLbLTy6XXLKZwm_HZQSG_N0iAG0D29cABBjaGF0LmV4YW1wbGUub3Jn2Q1TtCiz1ePkElNMfK781u9YMaFhnLO0hG8z6K_y2aSahTHRknkQ8MVLscIBbzf0LtD98Jfza5nXkVQuh_K0CQ";
-const A1: &str = "AQGygRTH2GK15mgvH07AEn3j4YK5WsOSxdE6Qhi4ufwtvQAAAAAAAAABsoEUx9hiteZoLx9OwBJ94-GCuVrDksXROkIYuLn8Lb01Nmw5cTdJ5i-8iyk2_ucSDxdQdO6gPdbzTa9bC_blH-1JKMYo0cLG6ukDOJBZlWEpWSc6XGP5NjbBRhSshzfRABBjaGF0LmV4YW1wbGUub3JngTl3Dqh9F19Wo1Rmw0x-zMuNipG07jeiXfYPW4_Js5SxA7F2pH-iNJh8RCmwbClk188UfWoteisDrefjnO4Wcxjg6D_r5fzgWl4cY8xqkAxfEuhqoj3hZQxNf3P2ZfkK";
-const ALICE0: &str = "AQIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA4kBxguvojRXkm6JtORb1xDcBb37XlTZ9vN8bcmesKPLKBFMfYYrXmaC8fTsASfePhgrlaw5LF0TpCGLi5_C29AW4ywZdB8K-CYGEq6Z_RPYo4lEci4Ilk3SOXOPVSphU7ABdAYWxpY2U6Y2hhdC5leGFtcGxlLm9yZw";
-const ALICE1: &str = "AQIKXms8aCPazskczAXFIQ4d8Vgz8rQ8OmeFcQxjAyBC6gAAAAAAAAABCl5rPGgj2s7JHMwFxSEOHfFYM_K0PDpnhXEMYwMgQuo649E4EjrjmhOanIHIuTLppWYxG7SWxBFrLHRhtQjhexG709vz38lJA2ZWzLBWXgKf3t9LrbRJCn8EWkbqkeTEAW4ywZdB8K-CYGEq6Z_RPYo4lEci4Ilk3SOXOPVSphU7ABlAYWxpY2U6c2Vjb25kLmV4YW1wbGUubmV0iEuIV_TqoWE8YVBNs01L6vNGUXoOMd483dTZtCAdnQtyRd0w4wzGGK8ZO6MOJzxLDeTFpmz9Dap0bNCSlaaem79i4YumEN5sfrFdV8z8kYg0m5Fy466DasRnm58DfRYH";
+const A0: &str = "AQEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB_LjVaIv-BYnAih7bnqYkqlByvjgze1oFBXRvUvcl0b4qI4910CfGV_VLbLTy6XXLKZwm_HZQSG_N0iAG0D29cABBjaGF0LmV4YW1wbGUub3JnCK-nYNDic0Z89Ec_a2PGm3aq70QCRMlNp6PWikK9QAAUe3uL7tSPsdpcdmItB3XSgmkl9uP7p5zRTfGF1hfVDw";
+const A1: &str = "AQHUCt4cY_sK_sQxmSETcKGd8f-ZHqmoOYEv0I-kGvzvIAAAAAAAAAAB1AreHGP7Cv7EMZkhE3ChnfH_mR6pqDmBL9CPpBr87yCKugXi5WhUkH8s2il7gpcAwEd6SJBdTaBMuPyGTjjVY-1JKMYo0cLG6ukDOJBZlWEpWSc6XGP5NjbBRhSshzfRABBjaGF0LmV4YW1wbGUub3JngTl3Dqh9F19Wo1Rmw0x-zMuNipG07jeiXfYPW4_Js5R_TYGHVQw9Gxe6s_WWRrk0LN-Up85Q5Mi6p5VlMumtQT01Mg8_o3W8rUuTCtPEbLFP5_Ck_aN1STehH6yNT54C";
+const ALICE0: &str = "AQIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABy6iILWoFoOE2EAX0t6CZlC2DPbWvaHgkZZa_PY5nW-tQK3hxj-wr-xDGZIRNwoZ3x_5keqag5gS_Qj6Qa_O8gAW4ywZdB8K-CYGEq6Z_RPYo4lEci4Ilk3SOXOPVSphU7ABdAYWxpY2U6Y2hhdC5leGFtcGxlLm9yZw";
+const ALICE1: &str = "AQJ0j81vylrMxQwBbInjMwUO0md-00pjBC7am4YSQ8FwpgAAAAAAAAABdI_Nb8pazMUMAWyJ4zMFDtJnftNKYwQu2puGEkPBcKbWM2pymNf5kt-kkMMGkTlwXbeuhynyPavISmKxeUa1FQuR-FG3Hm6M3GOOf0vbjhd7uSUOJsxNtkN6OxV1MIp6AW4ywZdB8K-CYGEq6Z_RPYo4lEci4Ilk3SOXOPVSphU7ABlAYWxpY2U6c2Vjb25kLmV4YW1wbGUubmV0iEuIV_TqoWE8YVBNs01L6vNGUXoOMd483dTZtCAdnQuwqA7GGyvLxic_AkEcUPz0AZZwZGAhi3uaQR4W43K6R-3Nth2oaeyfZU2US7MIpGSKrfeOUBT_1kRUCUAQMxMA";
 
 #[test]
 fn commitments() {
     assert_eq!(
         hex::encode(commitment(&pubkey(0x02))),
-        "a7e376e5cd3eab82c54dcd960eed0d91b72e86ba2eaa0c4b4b4fd293c60ffc50"
+        "7f2e355a22ff8162702287b6e7a9892a941caf8e0cded681415d1bd4bdc9746f"
     );
     assert_eq!(
         hex::encode(commitment(&pubkey(0x21))),
-        "38901c60bafa23457926e89b4e45bd710dc05bdfb5e54d9f6f37c6dc99eb0a3c"
+        "72ea220b5a8168384d84017d2de826650b60cf6d6bda1e091965afcf6399d6fa"
     );
 }
 
@@ -33,11 +33,11 @@ fn server_a_chain() {
     g.verify_genesis().unwrap();
     assert_eq!(
         hex::encode(g.digest()),
-        "b28114c7d862b5e6682f1f4ec0127de3e182b95ac392c5d13a4218b8b9fc2dbd"
+        "d40ade1c63fb0afec43199211370a19df1ff991ea9a839812fd08fa41afcef20"
     );
     assert_eq!(
         g.principal().to_id(),
-        "~soEUx9hiteZoLx9OwBJ94-GCuVrDksXROkIYuLn8Lb0"
+        "~1AreHGP7Cv7EMZkhE3ChnfH_mR6pqDmBL9CPpBr87yA"
     );
     r.verify_successor(&g).unwrap();
     assert_eq!(r.principal(), g.principal());
@@ -54,7 +54,7 @@ fn alice_move_and_principal_roundtrip() {
     g.verify_genesis().unwrap();
     verify_slice(&g, std::slice::from_ref(&m)).unwrap();
     let id = g.principal().to_id();
-    assert_eq!(id, "@Cl5rPGgj2s7JHMwFxSEOHfFYM_K0PDpnhXEMYwMgQuo");
+    assert_eq!(id, "@dI_Nb8pazMUMAWyJ4zMFDtJnftNKYwQu2puGEkPBcKY");
     assert_eq!(Principal::parse(&id).unwrap(), g.principal());
 }
 

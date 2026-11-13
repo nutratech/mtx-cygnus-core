@@ -4,7 +4,7 @@
 //! the caller supplies complete, cryptographically verified server branches.
 
 use crate::link::{Kind, Link, Payload};
-use crate::Principal;
+use crate::{Error, Principal};
 use std::collections::{BTreeMap, BTreeSet};
 
 /// Observed state of one `(name, principal)` binding.
@@ -118,12 +118,47 @@ pub enum Ingress {
 
 /// A minimal name/principal ACL. Entries are glob patterns over server names,
 /// or `~<principal>` to match a principal directly.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct Acl {
     /// Allowed entries.
     pub allow: Vec<String>,
     /// Denied entries; checked before `allow`.
     pub deny: Vec<String>,
+}
+
+/// Parse and validate server ACL content, including canonical principal
+/// syntax required for entries beginning with the server sigil.
+///
+/// # Errors
+/// Returns an authorization error for non-array ACL fields, non-string
+/// entries, or malformed/non-canonical server principal entries.
+pub fn validate_server_acl_content(content: &rezzy_json::Value) -> Result<Acl, Error> {
+    let object = content
+        .as_object()
+        .ok_or(Error::Authorization("server ACL content must be an object"))?;
+    let mut acl = Acl::default();
+    for (field, target) in [("allow", &mut acl.allow), ("deny", &mut acl.deny)] {
+        let Some(value) = object.get(field) else {
+            continue;
+        };
+        let entries = value
+            .as_array()
+            .ok_or(Error::Authorization("server ACL entries must be arrays"))?;
+        for value in entries {
+            let entry = value
+                .as_str()
+                .ok_or(Error::Authorization("server ACL entries must be strings"))?;
+            if entry.starts_with('~') {
+                let principal = Principal::parse(entry)
+                    .map_err(|_| Error::Authorization("invalid principal in server ACL"))?;
+                if principal.kind != Kind::Server || principal.to_id() != entry {
+                    return Err(Error::Authorization("invalid principal in server ACL"));
+                }
+            }
+            target.push(entry.to_owned());
+        }
+    }
+    Ok(acl)
 }
 
 /// Applies §8 ingress policy over complete, shard-verified server branches.
@@ -212,11 +247,31 @@ pub fn admit(
     Ingress::Reject
 }
 
+/// Whether an ACL entry names this principal, either by principal ID or by a
+/// server name matched against `names`.
 fn matches_entry(entry: &str, principal_id: &str, names: &[&str]) -> bool {
     if entry.starts_with('~') {
         return entry == principal_id;
     }
     names.iter().any(|name| glob_match(entry, name))
+}
+
+/// Whether an ACL excludes `principal_id` at any of `names`.
+///
+/// Matches the reference model: an explicit deny wins, and otherwise the
+/// principal is excluded unless at least one `allow` entry matches. An empty
+/// `allow` list therefore denies everyone.
+pub(crate) fn acl_denies(acl: &Acl, principal_id: &str, names: &[&str]) -> bool {
+    if acl
+        .deny
+        .iter()
+        .any(|entry| matches_entry(entry, principal_id, names))
+    {
+        return true;
+    }
+    !acl.allow
+        .iter()
+        .any(|entry| matches_entry(entry, principal_id, names))
 }
 
 /// Whole-string wildcard match supporting `*` (any run) and `?` (one char).
@@ -248,6 +303,7 @@ fn glob_match(pattern: &str, text: &str) -> bool {
     pi == pattern.len()
 }
 
+/// The DNS name carried by a server link, if it is one.
 fn server_name(link: &Link) -> Option<&str> {
     match &link.body.payload {
         Payload::Server { server_name, .. } => Some(server_name),
@@ -255,6 +311,7 @@ fn server_name(link: &Link) -> Option<&str> {
     }
 }
 
+/// Whether `branch` is a complete genesis-first server chain for `principal`.
 fn complete_server_branch(branch: &[Link], principal: &Principal) -> bool {
     let Some(first) = branch.first() else {
         return false;
