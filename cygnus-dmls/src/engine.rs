@@ -15,7 +15,8 @@ use std::collections::{BTreeMap, BTreeSet};
 use crate::{
     branch_meta::BranchMeta,
     content::{
-        CommitContent, ContentError, EncryptedContent, ExtremityRef, KeyPackageContent, PlanSummary,
+        CommitContent, ContentError, EncryptedContent, ExternalCommitContent, ExtremityRef,
+        KeyPackageContent, PlanSummary,
     },
     device_root::{plan_with_device_roots, DeviceRootRegistry},
     merge::{Branch, ExtremityId, MemberId, MergeError, MergePlan},
@@ -646,6 +647,122 @@ pub fn merge(
         }
         Err(error) => Err(error),
     }
+}
+
+/// The output of [`external_commit`].
+#[derive(Debug)]
+pub struct ExternalOut {
+    /// `m.dmls.external_commit` content, ready to send.
+    pub content: Value,
+    /// The new extremity's commit id.
+    pub commit_id: [u8; 32],
+    /// The state the join produced.
+    pub summary: GroupSummary,
+}
+
+/// Join a group by external Commit against the `GroupInfo` of `target`.
+///
+/// `group_info` is the TLS-serialized `GroupInfo` `MLSMessage` (with its
+/// ratchet tree) taken from the target extremity's event, and `target` names
+/// that extremity with its event id. The joiner must not already hold a leaf,
+/// but `OpenMLS` resyncs a same-identity join by silently Removing the old leaf
+/// and the Commit body is not inspectable here, so this cannot detect it:
+/// receivers must reject an external Commit that carries a Remove (§8 rule 3).
+/// The returned branch is a new root for the caller to install with
+/// `GroupEntry::insert_root` (or a new entry), not a mutation of any entry.
+/// `key_package_id` is the digest of the joiner's new `LeafNode`, since an
+/// external Commit carries no `KeyPackage`.
+///
+/// # Errors
+///
+/// [`EngineError`] if the `GroupInfo` is malformed, is for another group or
+/// epoch than `target`, the tree holds the joiner twice, or `OpenMLS` fails.
+pub fn external_commit(
+    signer: &Signer,
+    group_id: &[u8; 32],
+    target: &ExtremityRef,
+    group_info: &[u8],
+) -> Result<(HeldBranch, ExternalOut), EngineError> {
+    let message = MlsMessageIn::tls_deserialize_exact(group_info).map_err(mls)?;
+    let MlsMessageBodyIn::GroupInfo(verifiable) = message.extract() else {
+        return Err(EngineError::UnexpectedMessage);
+    };
+    if verifiable.group_id().as_slice() != group_id.as_slice() {
+        return Err(EngineError::BadArgument("group_id"));
+    }
+    if verifiable.epoch().as_u64() != target.id.mls_epoch {
+        return Err(EngineError::BadArgument("target_epoch"));
+    }
+    let provider = OpenMlsRustCrypto::default();
+    let config = MlsGroupJoinConfig::builder()
+        .use_ratchet_tree_extension(true)
+        .build();
+    let (group, bundle) = MlsGroup::external_commit_builder()
+        .with_config(config)
+        .build_group(&provider, verifiable, signer.credential.clone())
+        .map_err(mls)?
+        .load_psks(provider.storage())
+        .map_err(mls)?
+        .build(provider.rand(), provider.crypto(), &signer.pair, |_| true)
+        .map_err(mls)?
+        .finalize(&provider)
+        .map_err(mls)?;
+
+    let me = signer.member_key();
+    let mine = group
+        .members()
+        .filter(|m| member_of(&m.credential).is_ok_and(|key| key == me))
+        .count();
+    if mine != 1 {
+        return Err(EngineError::BadArgument("already_member"));
+    }
+    verify_own_leaf(&group, signer)?;
+
+    let commit = bundle.commit().to_bytes().map_err(mls)?;
+    let commit_id = wire::commit_id(&commit);
+    let resulting_info = group
+        .export_group_info(provider.crypto(), &signer.pair, true)
+        .map_err(mls)?
+        .to_bytes()
+        .map_err(mls)?;
+    let own_leaf = group
+        .own_leaf_node()
+        .ok_or(EngineError::BadArgument("own_leaf"))?
+        .tls_serialize_detached()
+        .map_err(mls)?;
+    let epoch = group.epoch().as_u64();
+    let content = ExternalCommitContent {
+        group_id: *group_id,
+        target: target.clone(),
+        commit,
+        group_info: resulting_info,
+        key_package_id: wire::key_package_id(&own_leaf),
+        joiner: me.clone(),
+    };
+    if content.mls_epoch() != epoch {
+        return Err(EngineError::BadArgument("target_epoch"));
+    }
+    let content = content.to_value()?;
+
+    let mut meta =
+        BranchMeta::from_group(&group, group_id).map_err(|e| EngineError::Mls(e.to_string()))?;
+    let joiner = crate::branch_meta::member_id_from_key(&me);
+    if let Some(record) = meta.members.get_mut(&joiner) {
+        record.origin = crate::merge::LeafOrigin::ExternalCommit;
+        record.leaf.generation = epoch;
+    }
+    meta.external_joiners.insert(joiner);
+    let summary = summarize(&group, *group_id, commit_id)?;
+    let mut branch = HeldBranch::new(provider, group);
+    branch.set_meta(meta.encode());
+    Ok((
+        branch,
+        ExternalOut {
+            content,
+            commit_id,
+            summary,
+        },
+    ))
 }
 
 /// Caller-supplied facts about a received Commit event that wasm cannot know.
@@ -1715,5 +1832,42 @@ mod tests {
             plan_merge(&b, &[out.commit_id], &registry).unwrap(),
             PlanOutcome::Planned(plan) if plan.members.len() == 2
         ));
+    }
+
+    #[test]
+    fn external_commit_joins_from_a_group_info_and_refuses_bad_targets() {
+        let (alice, _bob, mut a, _b, tip) = three_member_group();
+        let group_id = a.group_id();
+        let s = commit(&mut a, &alice, &tip, &CommitOp::SelfUpdate).unwrap();
+        let info = CommitContent::parse(wire::COMMIT_EVENT, &s.content, &group_id)
+            .unwrap()
+            .group_info;
+        let target = ExtremityRef::new(ExtremityId::new(3, s.commit_id), "$s");
+        let dave_key = MemberKey {
+            principal: "@ggggggggggggggggggggggggggggggggggggggggggg".to_owned(),
+            device_id: "DAVE1".to_owned(),
+        };
+        let dave = signer(&dave_key.principal, "DAVE1", 4);
+
+        let (mut branch, out) = external_commit(&dave, &group_id, &target, &info).unwrap();
+        assert_eq!(out.summary.mls_epoch, 4);
+        assert_eq!(out.summary.members.len(), 4);
+        assert!(out.summary.members.contains(&dave_key));
+        let parsed = ExternalCommitContent::parse(&out.content, &dave_key, &group_id).unwrap();
+        assert_eq!(parsed.target, target);
+        assert_eq!(parsed.commit_id(), out.commit_id);
+
+        // The joiner is recorded as an external joiner and can encrypt at once.
+        let meta = BranchMeta::decode(branch.meta()).unwrap();
+        assert!(meta
+            .external_joiners
+            .contains(&crate::branch_meta::member_id_from_key(&dave_key)));
+        let (group, provider) = branch.parts_mut();
+        assert!(encrypt(&dave, group, provider, &group_id, b"hi").is_ok());
+
+        // A wrong epoch and a wrong group are refused.
+        let stale = ExtremityRef::new(ExtremityId::new(2, s.commit_id), "$s");
+        assert!(external_commit(&dave, &group_id, &stale, &info).is_err());
+        assert!(external_commit(&dave, &[9; 32], &target, &info).is_err());
     }
 }
