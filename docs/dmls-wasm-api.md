@@ -197,7 +197,8 @@ magic "CYDM" | version u16 | seq u64 | group_id 32 | body | blake3(all preceding
   `meta`, the parts of a merge `Branch` that an `MlsGroup` cannot give back:
   `parent_transcript_hash`, retained `removed` leaves, and `external_joiners`.
   `members` is **derived from the held group at plan time** and checked against
-  `meta`, so it cannot drift. Blob **version 2** (nothing shipped as v1).
+  `meta`, so it cannot drift. Blob **version 1**: nothing has been released, so
+  the format mutates in place and there is no older-version compatibility path.
 - `own_member` (`principal:device`).
 - **Unredeemed KeyPackage secrets** are _not_ here; they are per-device, not
   per-group (§4).

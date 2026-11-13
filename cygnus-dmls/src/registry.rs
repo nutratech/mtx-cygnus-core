@@ -30,7 +30,10 @@ pub const MAX_RETAINED_STATES: usize = 16;
 /// Blob magic.
 const MAGIC: &[u8; 4] = b"CYDM";
 /// Current blob version.
-pub const BLOB_VERSION: u16 = 2;
+///
+/// Nothing has been released, so the format evolves in place while it stays at
+/// version 1. There is no compatibility contract for older encodings.
+pub const BLOB_VERSION: u16 = 1;
 /// Upper bound on one storage entry, to bound allocation from a hostile blob.
 const MAX_BLOB_BYTES: usize = 64 * 1024 * 1024;
 
@@ -910,6 +913,16 @@ mod tests {
         assert_eq!(
             GroupEntry::import(&future).unwrap_err(),
             RegistryError::UnsupportedVersion(9)
+        );
+
+        // Any version other than the current in-place format is refused.
+        let mut old = blob[..blob.len() - 32].to_vec();
+        old[4..6].copy_from_slice(&2_u16.to_be_bytes());
+        let hash = blake3::hash(&old);
+        old.extend_from_slice(hash.as_bytes());
+        assert_eq!(
+            GroupEntry::import(&old).unwrap_err(),
+            RegistryError::UnsupportedVersion(2)
         );
     }
 
