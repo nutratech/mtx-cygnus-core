@@ -63,8 +63,9 @@ Consequences:
 - **Tips vs held states.** A commit's `resolves` includes its `base`, so applying
   it retires the base as a _tip_ but the base _state_ stays held; otherwise a
   concurrent sibling commit on the same base could never apply. Held states
-  are bounded by `MAX_HELD_STATES = 16` (oldest non-tip evicted first, tips
-  never). A sibling whose base was evicted returns `deferred`
+  are bounded by `MAX_RETAINED_STATES = 16` (oldest epoch evicted first, commit id
+  breaking ties; tips never). This is a bounded cache, not a guarantee for
+  arbitrarily late backfill. A sibling whose base was evicted returns `deferred`
   `missing_base_state`. The cap of 8 counts tips only.
 - **`seq`.** Every mutating call increments the entry's `seq` (create, join,
   apply, commit, merge, encrypt, **decrypt**). `dmlsExportGroup` serializes the
@@ -159,10 +160,11 @@ magic "CYDM" | version u16 | seq u64 | group_id 32 | body | blake3(all preceding
 - `branches`: for each held extremity, `commit_id` and the serialized
   `MlsGroup` plus its OpenMLS storage entries (epoch secrets, ratchet tree,
   own leaf private keys, encryption key pairs).
-- per branch, its `resolves` list (`mls_epoch`, `commit_id`). Each branch is flagged tip or
-  retained ancestor (with an insertion counter for eviction). `Branch` values for `merge.rs` are
-  **derived from the held groups at plan time**, not persisted, so there is no
-  second copy to drift.
+- per branch: a tip flag, its `resolves` list (`mls_epoch`, `commit_id`), and
+  `meta`, the parts of a merge `Branch` that an `MlsGroup` cannot give back:
+  `parent_transcript_hash`, retained `removed` leaves, and `external_joiners`.
+  `members` is **derived from the held group at plan time** and checked against
+  `meta`, so it cannot drift. Blob **version 2** (nothing shipped as v1).
 - `own_member` (`principal:device`).
 - **Unredeemed KeyPackage secrets** are _not_ here; they are per-device, not
   per-group (§4).

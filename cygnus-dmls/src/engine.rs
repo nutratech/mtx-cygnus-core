@@ -1,4 +1,4 @@
-//! Stateless-by-call operations over the [`Registry`].
+//! Stateless-by-call operations over the [`crate::registry::Registry`].
 //!
 //! Every function takes the device seed as an argument and builds a
 //! `SignatureKeyPair` for the call; the seed is never stored, so it cannot
