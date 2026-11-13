@@ -30,6 +30,10 @@ pub enum MergeError {
     /// An update candidate does not match the member identity.
     #[error("{0}")]
     IdentityMismatch(&'static str),
+    /// A leaf signature key is not certified for the claimed device identity
+    /// (a specialisation of an identity mismatch).
+    #[error("{0}")]
+    UncertifiedDevice(&'static str),
     /// An update candidate is stale or belongs to another MLS group.
     #[error("{0}")]
     Generation(&'static str),
